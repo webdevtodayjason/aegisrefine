@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Billing · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .stripebadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);padding:7px 12px;border:1px solid var(--line-2);border-radius:6px}
+
+  .topcards{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+  .pm{display:flex;align-items:center;gap:16px}
+  .pm .cardface{width:64px;height:42px;flex:0 0 auto;border-radius:7px;background:linear-gradient(135deg,#1a1c33,#0D0D0F);border:1px solid rgba(58,123,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#3A7BFF}
+  .pm .num{font-size:15px;font-weight:500}
+  .pm .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted-2)}
+  .updbtn{font-size:13px;color:var(--muted);background:transparent;border:1px solid var(--line-2);padding:8px 14px;border-radius:7px;cursor:pointer;font-family:inherit;transition:border-color .2s}
+  .updbtn:hover{border-color:var(--teal-line)}
+
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+  .stat{padding:18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat .num{font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .stat .sub{font-size:11.5px;color:var(--muted-2);margin-top:6px}
+
+  .tabs{display:flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;width:fit-content}
+  .tab{font-family:var(--mono);font-size:12px;padding:9px 16px;border-radius:6px;border:0;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--teal);background:var(--teal-dim)}
+
+  .ledger{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .ledger .lh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line)}
+  .ledger .lh .ttl{font-size:14px;font-weight:600}
+  .ledger .lh .note{font-family:var(--mono);font-size:10.5px;color:var(--muted-2)}
+
+  .ihead,.irow{display:grid;grid-template-columns:1.2fr 1.6fr .8fr .9fr 90px;gap:12px;align-items:center}
+  .lhd,.lrow{display:grid;grid-template-columns:1.4fr 1.6fr .8fr 1fr;gap:12px;align-items:center}
+  .ihead,.lhd{padding:12px 22px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted-2)}
+  .irow,.lrow{padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .irow:last-child,.lrow:last-child{border-bottom:0}
+  .irow:hover,.lrow:hover{background:rgba(255,255,255,.02)}
+  .ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pdf{font-family:var(--mono);font-size:11.5px;color:var(--teal);background:transparent;border:0;cursor:pointer;padding:0}
+  .paid{font-family:var(--mono);font-size:10.5px;color:var(--green);padding:4px 9px;border-radius:5px;border:1px solid rgba(34,197,94,0.3)}
+  .by{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .by i{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
+  .lempty{padding:34px 22px;text-align:center;color:var(--muted-2);font-size:13px;line-height:1.6}
+  .footnote{display:flex;align-items:center;gap:7px;padding:13px 22px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--muted-2);line-height:1.5}
+
+  #toast{position:fixed;top:18px;right:18px;z-index:60;display:flex;flex-direction:column;gap:10px;max-width:380px}
+  .toast{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);box-shadow:0 12px 40px rgba(0,0,0,0.5);font-size:12.5px;line-height:1.5}
+  .toast .i{color:var(--teal);font-size:15px;flex-shrink:0}
+
+  @media(max-width:900px){
+    .topcards{grid-template-columns:1fr}
+    .ihead,.irow{grid-template-columns:1.2fr 1fr 80px}
+    .ihead .h-amt,.irow .c-amt,.ihead .h-stat,.irow .c-stat{display:none}
+    .lhd,.lrow{grid-template-columns:1.2fr .8fr 1fr}
+    .lhd .h-reason,.lrow .c-reason{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;flex-direction:column;gap:24px">
+
+        <!-- page header -->
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// BILLING &amp; PAYMENTS</div>
+            <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0">Billing</h1>
+          </div>
+          <span class="stripebadge"><span class="teal">⛉</span> SECURED BY STRIPE · TEST MODE</span>
+        </div>
+
+        <!-- payment method + plan -->
+        <div class="topcards">
+          <div class="card">
+            <div class="label" style="margin-bottom:16px">Payment method <span class="muted2" style="text-transform:none;letter-spacing:0">— sample</span></div>
+            <div class="pm">
+              <div class="cardface">VISA</div>
+              <div style="flex:1">
+                <div class="num">•••• •••• •••• 4242</div>
+                <div class="meta">Expires 09 / 27 · Stripe test card</div>
+              </div>
+              <button class="updbtn" onclick="note('Card management opens the Stripe customer portal in production — not wired in this build.')">Update</button>
+            </div>
+          </div>
+          <div class="card glow">
+            <div class="label teal" style="margin-bottom:16px">Current plan</div>
+            <div style="font-size:18px;font-weight:600;margin-bottom:4px">Per Job · On-demand</div>
+            <div class="mono muted" style="font-size:13px">$20 flat per job + gated spend</div>
+            <a href="marketplace.html" style="display:inline-block;font-size:13px;color:var(--teal);margin-top:14px">View plans →</a>
+          </div>
+        </div>
+
+        <!-- stats (computed from live data) -->
+        <div class="statgrid" id="stats">
+          <div class="stat"><div class="label" style="margin-bottom:10px">Loading…</div><div class="num muted2">—</div></div>
+        </div>
+
+        <!-- tabs -->
+        <div class="tabs">
+          <button class="tab active" id="tab-invoices" onclick="setTab('invoices')">INVOICES</button>
+          <button class="tab" id="tab-ledger" onclick="setTab('ledger')">GATED SPEND LEDGER</button>
+        </div>
+
+        <!-- INVOICES -->
+        <div class="ledger" id="invoicesPane">
+          <div class="lh">
+            <div class="ttl">Invoices</div>
+            <div class="note" id="invNote">Each paid order is one $20 invoice · Stripe test mode</div>
+          </div>
+          <div class="ihead">
+            <div>INVOICE</div><div>JOB</div><div class="h-amt">AMOUNT</div><div class="h-stat">STATUS</div><div></div>
+          </div>
+          <div id="invoices">
+            <div class="lempty">Loading invoices…</div>
+          </div>
+          <div class="footnote"><span class="teal">⛉</span> Orders are real Stripe test-mode charges ($20 flat). Downloadable PDF receipts are not generated in this build.</div>
+        </div>
+
+        <!-- GATED SPEND LEDGER -->
+        <div class="ledger" id="ledgerPane" style="display:none">
+          <div class="lh">
+            <div class="ttl">Gated spend ledger</div>
+            <div class="note"><span class="dot" style="display:inline-block;vertical-align:middle;margin-right:5px"></span>LIVE · from the audit feed</div>
+          </div>
+          <div class="lhd">
+            <div>JOB</div><div class="h-reason">REASON</div><div>AMOUNT</div><div>APPROVED BY</div>
+          </div>
+          <div id="ledger">
+            <div class="lempty">Loading ledger…</div>
+          </div>
+          <div class="footnote"><span class="teal">⛉</span> Amounts pulled live from the immutable audit feed. Outbound payout is a test stub — the gate authorizes spend, but no real money has moved.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("billing", "billing");
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const money = n => "$" + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = s => { if (!s) return "—"; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); };
+const invNo = id => "INV-" + String(id).padStart(5,"0");
+
+function note(msg){
+  const t = document.createElement("div");
+  t.className = "toast rise";
+  t.innerHTML = `<span class="i">⛉</span><span>${esc(msg)}</span>`;
+  $("toast").appendChild(t);
+  setTimeout(() => { t.style.transition = "opacity .4s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 400); }, 6000);
+}
+
+// representative fallback invoices (clearly labelled SAMPLE when shown)
+const SAMPLE_INVOICES = [
+  { id: 147, input: "Support tickets → ChatML",   created_at: "2025-05-23" },
+  { id: 146, input: "Discord logs → ShareGPT",    created_at: "2025-05-23" },
+  { id: 141, input: "Scraped docs → ChatML",      created_at: "2025-05-21" },
+  { id: 138, input: "PDF manuals → instruct",     created_at: "2025-05-19" },
+  { id: 129, input: "Forum threads → QA pairs",   created_at: "2025-05-15" },
+];
+
+// ---------- tabs ----------
+let TAB = "invoices";
+function setTab(t){
+  TAB = t;
+  $("tab-invoices").classList.toggle("active", t === "invoices");
+  $("tab-ledger").classList.toggle("active", t === "ledger");
+  $("invoicesPane").style.display = t === "invoices" ? "" : "none";
+  $("ledgerPane").style.display = t === "ledger" ? "" : "none";
+}
+
+// ---------- stats (live) ----------
+function renderStats(jobs, activity){
+  const orders = jobs.length;
+  const billed = orders * 20;                       // $20 flat per order; a Job exists only post-checkout
+  // gated spend: outbound payout is a TEST STUB — sum amounts the gate has authorized (executed)
+  let gated = 0;
+  for (const a of activity){
+    if (a.action === "spend_executed" && a.details && typeof a.details.amount === "number") gated += a.details.amount;
+  }
+  // this billing month
+  const now = new Date();
+  const monthCount = jobs.filter(j => { const d = new Date(j.created_at); return !isNaN(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
+
+  const cards = [
+    ["TOTAL PAID", money(billed), orders + " order" + (orders===1?"":"s") + " · Stripe test", "var(--text)"],
+    ["JOB FEES (" + orders + ")", money(billed), "$20 flat per refinement job", "var(--green)"],
+    ["GATED SPEND (test)", money(gated), "authorized at the human gate", "var(--amber)"],
+    ["THIS MONTH", money(monthCount * 20), monthCount + " order" + (monthCount===1?"":"s") + " this period", "var(--text)"],
+  ];
+  $("stats").innerHTML = cards.map(([k,v,sub,col]) =>
+    `<div class="stat rise"><div class="label" style="margin-bottom:10px">${k}</div>`+
+    `<div class="num" style="color:${col}">${esc(v)}</div>`+
+    `<div class="sub">${esc(sub)}</div></div>`
+  ).join("");
+}
+
+// ---------- invoices (live orders → one $20 invoice each) ----------
+function renderInvoices(jobs){
+  const box = $("invoices");
+  let rows = jobs, sample = false;
+  if (!rows.length){ rows = SAMPLE_INVOICES; sample = true; }
+  $("invNote").innerHTML = sample
+    ? `<span class="amber">SAMPLE DATA</span> · no live orders yet`
+    : `Each paid order is one $20 invoice · Stripe test mode`;
+  box.innerHTML = rows.map(j => {
+    const name = esc(j.input || "Refinement job");
+    return `<div class="irow">`+
+      `<div><div class="mono" style="font-size:12.5px">${invNo(j.id)}</div>`+
+        `<div class="mono muted2" style="font-size:10.5px">${fmtDate(j.created_at)}</div></div>`+
+      `<div class="ellip" style="font-size:13.5px" title="${name}">${name}</div>`+
+      `<div class="mono c-amt" style="font-size:13px">$20.00</div>`+
+      `<div class="c-stat"><span class="paid">✓ PAID</span></div>`+
+      `<div style="text-align:right"><button class="pdf" onclick="note('Receipt PDFs aren\\'t generated in this build — invoices are the live $20 Stripe test-mode orders.')">↓ PDF</button></div>`+
+    `</div>`;
+  }).join("");
+}
+
+// ---------- gated spend ledger (live from /activity) ----------
+function ledgerRowMeta(action){
+  switch(action){
+    case "spend_executed": return { col:"#22C55E", by:"operator · authorized (test)" };
+    case "spend_approved": return { col:"#22C55E", by:"operator · approved" };
+    case "spend_rejected": return { col:"#ef4444", by:"rejected · no spend" };
+    case "spend_proposed": return { col:"#F59E0B", by:"Aegis-14B · awaiting gate" };
+    default:               return { col:"#A1A1AA", by:"—" };
+  }
+}
+function renderLedger(activity){
+  const box = $("ledger");
+  // dedupe to one row per job, keeping the most recent spend_* state (activity is newest-first)
+  const seen = {}; const rows = [];
+  for (const a of activity){
+    if (!a.action || a.action.indexOf("spend_") !== 0) continue;
+    if (a.action === "spend_decision") continue;     // agent-internal, not a ledger line
+    if (a.job_id in seen) continue;
+    seen[a.job_id] = 1;
+    rows.push(a);
+  }
+  if (!rows.length){
+    box.innerHTML = `<div class="lempty">No gated spend yet.<br>`+
+      `<span class="muted2" style="font-size:12px">The gate hasn't authorized any external spend. This ledger fills live as Aegis-14B proposes spend and a human decides at the Ops console.</span></div>`;
+    return;
+  }
+  box.innerHTML = rows.map(a => {
+    const m = ledgerRowMeta(a.action);
+    const amt = a.details && typeof a.details.amount === "number" ? money(a.details.amount) : "—";
+    const reason = esc(a.summary || (a.action||"").replace(/_/g," "));
+    return `<div class="lrow">`+
+      `<div class="mono" style="font-size:12.5px">JOB-${esc(a.job_id)}</div>`+
+      `<div class="c-reason" style="font-size:13px;color:var(--muted)">${reason}</div>`+
+      `<div class="mono amber" style="font-size:13px">${amt}</div>`+
+      `<div class="by"><i style="background:${m.col};box-shadow:0 0 6px ${m.col}"></i>${esc(m.by)}</div>`+
+    `</div>`;
+  }).join("");
+}
+
+// ---------- data flow ----------
+let lastJobs = [], lastActivity = [];
+
+async function loadJobs(){
+  try { lastJobs = await Aegis.listJobs(50) || []; }
+  catch(e){ lastJobs = []; $("invoices").innerHTML = `<div class="err" style="padding:22px">✗ Could not load orders: ${esc(e.message||e)} — showing sample below.</div>`; }
+  renderInvoices(lastJobs);
+}
+async function loadActivity(){
+  try { lastActivity = await Aegis.activity(50) || []; }
+  catch(e){ lastActivity = []; $("ledger").innerHTML = `<div class="err" style="padding:22px">✗ ${esc(e.message||e)}</div>`; return; }
+  renderLedger(lastActivity);
+}
+function refreshStats(){ renderStats(lastJobs, lastActivity); }
+
+async function boot(){
+  await Promise.all([loadJobs(), loadActivity()]);
+  refreshStats();
+  // gated-spend ledger is live — poll the audit feed
+  setInterval(async () => { await loadActivity(); refreshStats(); }, 8000);
+  setInterval(async () => { await loadJobs(); refreshStats(); }, 25000);
+}
+boot();
+</script>
+</body>
+</html>

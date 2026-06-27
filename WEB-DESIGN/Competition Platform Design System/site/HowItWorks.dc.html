@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  @keyframes ag-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  @keyframes ag-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+
+<div style="position: relative; min-height: 100vh; overflow-x: hidden;">
+  <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: url('assets/grid-texture.png'); background-size: cover; opacity: 0.08;"></div>
+  <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(900px 600px at 70% -8%, rgba(0,229,204,0.1), transparent 60%);"></div>
+
+  <div style="position: relative; z-index: 1;">
+
+  <!-- NAV -->
+  <nav style="position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px clamp(20px, 5vw, 64px); background: rgba(13,13,15,0.72); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 11px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <div style="display: flex; align-items: center; gap: 26px; font-size: 14px; color: #A1A1AA;">
+        <a href="HowItWorks.dc.html" style="color: #00E5CC;">How it works</a>
+        <a href="Docs.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">Docs</a>
+        <a href="Pricing.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">Pricing</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="Login.dc.html" style="font-size: 14px; color: #A1A1AA; padding: 8px 4px; white-space: nowrap;" style-hover="color: #F2F2F5;">Log in</a>
+        <a href="NewOrder.dc.html" style="font-size: 13.5px; font-weight: 500; color: #04100E; background: #00E5CC; padding: 9px 16px; border-radius: 4px; box-shadow: 0 0 18px rgba(0,229,204,0.35); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 26px rgba(0,229,204,0.55);">Start a job</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header style="text-align: center; max-width: 800px; margin: 0 auto; padding: clamp(48px, 7vw, 88px) clamp(20px, 5vw, 64px) 44px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 18px;">// HOW IT WORKS</div>
+    <h1 style="font-size: clamp(34px, 5vw, 58px); line-height: 1.05; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 18px;">Every consequential action passes through <span style="color: #00E5CC;">Conductor.</span></h1>
+    <p style="font-size: clamp(16px, 1.7vw, 19px); line-height: 1.6; color: #A1A1AA; margin: 0;">Triage, scoring, routing, spend proposal, human approval, and a permanent audit trail. Six stages — and a human gate on every dollar.</p>
+  </header>
+
+  <!-- INTERACTIVE LOOP -->
+  <section style="max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 64px) clamp(40px, 5vw, 64px);">
+    <!-- stage chips -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 28px;">
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.select }}" style="display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em; padding: 9px 15px; border-radius: 7px; cursor: pointer; transition: all .15s; color: {{ c.color }}; border: 1px solid {{ c.border }}; background: {{ c.bg }};"><span style="opacity: .7;">{{ c.num }}</span> {{ c.label }}</button>
+      </sc-for>
+    </div>
+
+    <!-- active stage detail -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: stretch; border-radius: 16px; background: #16161A; border: 1px solid {{ stageBorder }}; box-shadow: 0 0 50px {{ stageShadow }}; overflow: hidden; transition: all .3s;">
+      <div style="padding: clamp(28px, 3.5vw, 44px);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <span style="width: 48px; height: 48px; border-radius: 11px; background: {{ stageFill }}; border: 1px solid {{ stageBorder }}; display: flex; align-items: center; justify-content: center; font-size: 22px; color: {{ stageColor }};">{{ stageIcon }}</span>
+          <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: {{ stageColor }};">STAGE {{ stageNum }} / 6</div><div style="font-size: 22px; font-weight: 600;">{{ stageTitle }}</div></div>
+        </div>
+        <p style="font-size: 15px; line-height: 1.65; color: #A1A1AA; margin: 0 0 22px;">{{ stageDesc }}</p>
+        <div style="display: flex; flex-direction: column; gap: 11px;">
+          <sc-for list="{{ stageBullets }}" as="b" hint-placeholder-count="3">
+            <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: {{ stageColor }}; flex-shrink: 0;">▹</span> {{ b.text }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position: relative; background: linear-gradient(135deg, #121417, #0D0D0F); border-left: 1px solid rgba(255,255,255,0.06); padding: clamp(24px, 3vw, 40px); display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A;">{{ stagePanelLabel }}</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; color: #A1A1AA; padding: 18px; border-radius: 10px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06); white-space: pre-wrap;">{{ stagePanelBody }}</div>
+        <div style="display: flex; align-items: center; gap: 9px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ stageColor }};"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ stageColor }}; box-shadow: 0 0 8px {{ stageColor }}; animation: ag-pulse 1.6s infinite;"></span> {{ stagePanelStatus }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HUMAN GATE SPOTLIGHT -->
+  <section style="max-width: 1100px; margin: 0 auto; padding: clamp(24px, 4vw, 56px) clamp(20px, 5vw, 64px);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.2em; color: #22C55E; margin-bottom: 16px;">// THE MONEY MOMENT</div>
+        <h2 style="font-size: clamp(26px, 3.4vw, 40px); line-height: 1.14; font-weight: 500; letter-spacing: -0.015em; margin: 0 0 16px;">A human gate on every dollar.</h2>
+        <p style="font-size: 15px; line-height: 1.65; color: #A1A1AA; margin: 0 0 22px;">When the agent wants to spend real money on an external service, it stops and proposes. Nothing executes until a human reviews the reason, the amount, and the policy check — then approves. Reject, and the job continues with no spend and no charge.</p>
+        <a href="OrderDetail.dc.html" style="display: inline-flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: #04130A; background: #22C55E; padding: 13px 22px; border-radius: 7px; box-shadow: 0 0 24px rgba(34,197,94,0.35); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 34px rgba(34,197,94,0.6);">Try the live gate →</a>
+      </div>
+      <div style="position: relative; border-radius: 14px; background: #16161A; border: 1.5px solid rgba(34,197,94,0.4); box-shadow: 0 0 44px rgba(34,197,94,0.14); padding: 28px; text-align: center;">
+        <div style="position: absolute; top: 9px; left: 9px; width: 16px; height: 16px; border-top: 2px solid rgba(34,197,94,0.6); border-left: 2px solid rgba(34,197,94,0.6);"></div>
+        <div style="position: absolute; top: 9px; right: 9px; width: 16px; height: 16px; border-top: 2px solid rgba(34,197,94,0.6); border-right: 2px solid rgba(34,197,94,0.6);"></div>
+        <div style="position: absolute; bottom: 9px; left: 9px; width: 16px; height: 16px; border-bottom: 2px solid rgba(34,197,94,0.6); border-left: 2px solid rgba(34,197,94,0.6);"></div>
+        <div style="position: absolute; bottom: 9px; right: 9px; width: 16px; height: 16px; border-bottom: 2px solid rgba(34,197,94,0.6); border-right: 2px solid rgba(34,197,94,0.6);"></div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #22C55E; margin-bottom: 18px;">HUMAN APPROVAL GATE</div>
+        <div style="width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 50%; background: rgba(34,197,94,0.1); border: 2px solid rgba(34,197,94,0.6); display: flex; align-items: center; justify-content: center; font-size: 34px; color: #22C55E;">⛉</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">PROPOSED SPEND</div>
+        <div style="font-size: 38px; font-weight: 600; color: #F59E0B; margin: 4px 0 16px;">$4.00</div>
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 2; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #04130A; background: #22C55E; padding: 12px; border-radius: 7px;">✓ APPROVE</div>
+          <div style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; border: 1px solid rgba(255,255,255,0.14); padding: 12px; border-radius: 7px;">REJECT</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MONEY FLOW -->
+  <section style="max-width: 1100px; margin: 0 auto; padding: clamp(24px, 4vw, 56px) clamp(20px, 5vw, 64px);">
+    <h2 style="font-size: clamp(22px, 2.8vw, 32px); font-weight: 500; letter-spacing: -0.015em; text-align: center; margin: 0 0 32px;">Real money, in both directions</h2>
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 16px; align-items: center;">
+      <div style="padding: 26px; border-radius: 12px; background: #16161A; border: 1px solid rgba(34,197,94,0.3); text-align: center;">
+        <div style="font-size: 30px; color: #22C55E; margin-bottom: 10px;">$</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">Customer pays</div>
+        <p style="font-size: 13px; color: #A1A1AA; margin: 0;">$20 flat via Stripe Checkout starts the job.</p>
+      </div>
+      <div style="font-size: 22px; color: #52525B; text-align: center;">→</div>
+      <div style="padding: 26px; border-radius: 12px; background: #16161A; border: 1px solid rgba(0,229,204,0.3); text-align: center;">
+        <div style="font-size: 30px; color: #00E5CC; margin-bottom: 10px;">⌁</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">Agent earns &amp; works</div>
+        <p style="font-size: 13px; color: #A1A1AA; margin: 0;">Refines locally on Spark; proposes spends only when justified.</p>
+      </div>
+      <div style="font-size: 22px; color: #52525B; text-align: center;">→</div>
+      <div style="padding: 26px; border-radius: 12px; background: #16161A; border: 1px solid rgba(245,158,11,0.3); text-align: center;">
+        <div style="font-size: 30px; color: #F59E0B; margin-bottom: 10px;">⛉</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">You approve spend</div>
+        <p style="font-size: 13px; color: #A1A1AA; margin: 0;">Gated outbound spend executes only on approval — at cost.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NVIDIA -->
+  <section style="max-width: 1100px; margin: 0 auto; padding: clamp(24px, 4vw, 56px) clamp(20px, 5vw, 64px) clamp(40px, 5vw, 64px);">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: 30px; border-radius: 16px; background: linear-gradient(135deg, rgba(58,123,255,0.06), #16161A); border: 1px solid rgba(58,123,255,0.25);">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 12px; background: rgba(58,123,255,0.1); border: 1px solid rgba(58,123,255,0.4); display: flex; align-items: center; justify-content: center; color: #3A7BFF; font-size: 24px;">▰</span>
+      <div style="flex: 1; min-width: 280px;">
+        <h3 style="font-size: 20px; font-weight: 600; margin: 0 0 8px;">Bulk work runs on NVIDIA DGX Spark</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0;">Local inference means fast, private, zero-marginal-cost refinement with strong data residency. External APIs are reserved for the rare cases that justify them — and only when you approve.</p>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #3A7BFF; letter-spacing: 0.08em;">LOCAL-FIRST · SPARK 1</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top: 1px solid rgba(255,255,255,0.06);">
+    <div style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 80px) clamp(20px, 5vw, 64px);">
+      <div style="text-align: center; margin-bottom: 60px;">
+        <h2 style="font-size: clamp(28px, 4vw, 44px); font-weight: 500; letter-spacing: -0.02em; margin: 0 0 18px;">See the gate in action.</h2>
+        <a href="Landing.dc.html" style="display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px 26px; border-radius: 6px; box-shadow: 0 0 28px rgba(0,229,204,0.45); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 38px rgba(0,229,204,0.65);">Back to the live demo →</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.07);">
+        <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 11px;"><img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span></a>
+        <div style="display: flex; flex-wrap: wrap; gap: 22px; font-size: 13px; color: #A1A1AA;">
+          <a href="HowItWorks.dc.html" style-hover="color: #F2F2F5;">How it works</a>
+          <a href="Docs.dc.html" style-hover="color: #F2F2F5;">Docs</a>
+          <a href="Pricing.dc.html" style-hover="color: #F2F2F5;">Pricing</a>
+          <a href="Login.dc.html" style-hover="color: #F2F2F5;">Log in</a>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 9px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A; padding: 7px 13px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 7px #22C55E;"></span> RUNNING ON NVIDIA DGX SPARK</div>
+      </div>
+    </div>
+  </footer>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  state = { stage: 4 };
+  select(i) { this.setState({ stage: i }); }
+
+  renderVals() {
+    const stages = [
+      { label: 'TRIAGE', icon: '⊹', color: '#3A7BFF', title: 'Triage', desc: 'Incoming data is inspected and classified. Conductor identifies formats, detects the domain, and flags obvious noise before any work begins.', bullets: ['Detects source types (Discord, PDF, HTML, JSON)', 'Flags malformed and empty records', 'Routes to the right refinement track'], panelLabel: 'CONDUCTOR · TRIAGE NODE', panelBody: '> classify(input.zip)\n  formats: [html, json, pdf]\n  domain: support_tickets\n  noise_estimate: 41%', panelStatus: 'CLASSIFIED' },
+      { label: 'SCORE', icon: '◷', color: '#3A7BFF', title: 'Score', desc: 'Each job gets a complexity score that drives the cost estimate and the refinement plan. Higher complexity means more careful routing.', bullets: ['Estimates clean-row yield', 'Predicts likely external spend', 'Sets the auto-approve threshold context'], panelLabel: 'CONDUCTOR · SCORE NODE', panelBody: '> score(job)\n  complexity: 0.82 (HIGH)\n  est_clean_rows: 128,540\n  est_external_spend: ~$4.00', panelStatus: 'SCORED' },
+      { label: 'ROUTE', icon: '⇄', color: '#00E5CC', title: 'Route', desc: 'Conductor decides what runs locally versus what needs an external service. The default is always local-first on DGX Spark.', bullets: ['98% of work routed to local Spark inference', 'External calls isolated and minimized', 'Data residency preserved by default'], panelLabel: 'CONDUCTOR · ROUTE NODE', panelBody: '> route(tasks)\n  local (Spark): 98%\n  external (gated): 2%\n  residency: preserved', panelStatus: 'ROUTED' },
+      { label: 'PROPOSE', icon: '✎', color: '#F59E0B', title: 'Propose', desc: 'When an external paid step is needed, the agent creates a spend ticket — an explicit proposal with an amount, a reason, and a policy check.', bullets: ['Generates a spend ticket with rationale', 'Runs a policy check before surfacing', 'Never executes on its own'], panelLabel: 'CONDUCTOR · PROPOSE NODE', panelBody: '> propose_spend()\n  amount: $4.00\n  reason: OCR · 1,240 PDFs\n  policy_check: PASS', panelStatus: 'AWAITING GATE' },
+      { label: 'HUMAN GATE', icon: '⛉', color: '#22C55E', title: 'Human Gate', desc: 'The proposal pauses for a human. You see the amount, the reason, and the policy result, then approve or reject. This is the heart of governed autonomy.', bullets: ['No external money moves without approval', 'Approve → execute via Stripe at cost', 'Reject → continue, no spend, no charge'], panelLabel: 'HUMAN · APPROVAL GATE', panelBody: '> await_human()\n  proposed: $4.00\n  decision: APPROVE\n  actor: nous@studio.ai', panelStatus: 'APPROVED BY HUMAN' },
+      { label: 'AAR', icon: '⌁', color: '#00E5CC', title: 'AAR + Certificate', desc: 'After the job, Conductor generates an After Action Report and a signed audit certificate recording revenue, spend, every decision, and every approval.', bullets: ['Immutable record of all actions', 'Signed certificate (JSON + PDF)', 'The deliverable customers actually pay for'], panelLabel: 'CONDUCTOR · AAR NODE', panelBody: '> generate_cert()\n  revenue: $20.00\n  gated_spend: $4.00\n  approvals: 1/1\n  signed: ed25519', panelStatus: 'CERTIFIED & SIGNED' },
+    ];
+    const i = this.state.stage;
+    const s = stages[i];
+    const fade = (hex, a) => {
+      // simple hex -> rgba
+      const c = hex.replace('#', '');
+      const r = parseInt(c.substring(0, 2), 16), g = parseInt(c.substring(2, 4), 16), b = parseInt(c.substring(4, 6), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    };
+    return {
+      chips: stages.map((st, idx) => ({
+        label: st.label, num: '0' + (idx + 1),
+        select: () => this.select(idx),
+        color: idx === i ? st.color : '#71717A',
+        border: idx === i ? fade(st.color, 0.5) : 'rgba(255,255,255,0.1)',
+        bg: idx === i ? fade(st.color, 0.08) : 'transparent',
+      })),
+      stageNum: '0' + (i + 1),
+      stageTitle: s.title, stageDesc: s.desc, stageIcon: s.icon,
+      stageColor: s.color, stageBorder: fade(s.color, 0.4), stageFill: fade(s.color, 0.1), stageShadow: fade(s.color, 0.14),
+      stageBullets: s.bullets.map(t => ({ text: t })),
+      stagePanelLabel: s.panelLabel, stagePanelBody: s.panelBody, stagePanelStatus: s.panelStatus,
+    };
+  }
+}
+</script>
+</body>
+</html>

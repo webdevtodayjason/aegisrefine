@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Ops console · human gate · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — everything else comes from app.css */
+  @keyframes ag-spin{to{transform:rotate(360deg)}}
+  @keyframes ag-ring{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+  .ops-head{display:flex;gap:20px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px}
+  .creds{min-width:300px;max-width:360px;padding:16px}
+  .creds .row{margin-bottom:12px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px}
+  .stat{padding:18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat.warn{border-color:rgba(245,158,11,0.25)}
+  .stat .h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted-2);margin-bottom:10px}
+  .stat .n{font-size:28px;font-weight:600;letter-spacing:-.01em}
+  .ops-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:22px;align-items:start;margin-bottom:22px}
+  @media(max-width:1080px){.ops-grid{grid-template-columns:1fr}}
+  .queue-wrap{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .queue-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted-2)}
+  .qrow{width:100%;text-align:left;display:flex;flex-direction:column;gap:8px;padding:15px 18px;border:0;border-bottom:1px solid rgba(255,255,255,0.05);border-left:3px solid transparent;background:transparent;cursor:pointer;transition:background .15s;font-family:inherit;color:var(--text)}
+  .qrow:hover{background:rgba(255,255,255,0.03)}
+  .qrow.sel{border-left-color:var(--amber);background:rgba(255,255,255,0.04)}
+  .qrow .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .qrow .job{font-family:var(--mono);font-size:12px;color:var(--text)}
+  .qrow .amt{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--amber)}
+  .qrow .desc{font-size:12.5px;color:var(--muted);line-height:1.45}
+  .qrow .meta{display:flex;align-items:center;justify-content:space-between}
+  .qempty{padding:34px 18px;text-align:center;color:var(--muted-2);font-size:13px}
+  .gate{position:relative;border-radius:14px;background:var(--panel);border:1.5px solid var(--gb,rgba(245,158,11,0.5));box-shadow:0 0 44px var(--gs,rgba(245,158,11,0.16));padding:26px;transition:border-color .4s,box-shadow .4s}
+  .gate .corner{position:absolute;width:16px;height:16px}
+  .gate .c1{top:9px;left:9px;border-top:2px solid var(--gb);border-left:2px solid var(--gb)}
+  .gate .c2{top:9px;right:9px;border-top:2px solid var(--gb);border-right:2px solid var(--gb)}
+  .gate .c3{bottom:9px;left:9px;border-bottom:2px solid var(--gb);border-left:2px solid var(--gb)}
+  .gate .c4{bottom:9px;right:9px;border-bottom:2px solid var(--gb);border-right:2px solid var(--gb)}
+  .gate-clear{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:42px 10px}
+  .emblem-wrap{position:relative;display:flex;align-items:center;justify-content:center;height:130px}
+  .ring{position:absolute;width:96px;height:96px;border-radius:50%;border:1px solid var(--gb);animation:ag-ring 2.4s ease-out infinite}
+  .emblem{width:80px;height:80px;border-radius:50%;background:var(--gf,rgba(245,158,11,0.09));border:2px solid var(--gb);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--gc,#F59E0B);box-shadow:0 0 30px var(--gs)}
+  .spinner{width:78px;height:78px;border-radius:50%;border:3px solid rgba(0,229,204,0.2);border-top-color:var(--teal);animation:ag-spin .8s linear infinite}
+  .spend-box{text-align:center;padding:18px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+  .spend-box .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--muted-2);margin-bottom:8px}
+  .spend-box .big{font-size:44px;font-weight:600;color:var(--gc,#F59E0B);line-height:1;letter-spacing:-.02em;transition:color .4s}
+  .kvstack{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .rat{padding:14px;border-radius:8px;background:var(--bg);border:1px solid var(--line);margin-bottom:18px}
+  .rat .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted-2);margin-bottom:7px}
+  .rat p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}
+  .gate-actions{display:flex;gap:10px}
+  .approve-btn{flex:2;display:flex;align-items:center;justify-content:center;gap:9px;font-family:var(--sans);font-size:14px;font-weight:600;color:#04130A;background:var(--green);border:0;padding:15px;border-radius:8px;cursor:pointer;box-shadow:0 0 24px rgba(34,197,94,0.4);transition:box-shadow .2s,transform .1s}
+  .approve-btn:hover{box-shadow:0 0 34px rgba(34,197,94,0.65)}
+  .approve-btn:active{transform:translateY(1px)}
+  .deny-btn{flex:1;font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--muted);background:transparent;border:1px solid var(--line-2);padding:15px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .deny-btn:hover{border-color:rgba(239,68,68,0.5);color:var(--red)}
+  .approve-btn:disabled,.deny-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .signed{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--muted-2)}
+  .resolved{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:var(--gf);border:1px solid var(--gb)}
+  .resolved .ico{font-size:16px;color:var(--gc)}
+  .resolved .txt{flex:1;font-family:var(--mono);font-size:11.5px;line-height:1.5;color:var(--gc)}
+  .executing{width:100%;text-align:center;font-family:var(--mono);font-size:12px;color:var(--teal);padding:15px;border:1px solid var(--teal-line);border-radius:8px;background:rgba(0,229,204,0.05)}
+  .alog{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+  .alog .t{font-family:var(--mono);font-size:11px;color:var(--muted-2);width:64px;flex-shrink:0}
+  .alog .d{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .alog .l{font-size:13px;flex:1}
+  .alog .a{font-family:var(--mono);font-size:10.5px;color:var(--muted-2)}
+  #toast{position:fixed;top:18px;right:18px;z-index:60;display:flex;flex-direction:column;gap:10px;max-width:380px}
+  .toast{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);box-shadow:0 12px 40px rgba(0,0,0,0.5);font-size:12.5px;line-height:1.5}
+  .toast.ok{border-color:rgba(34,197,94,0.5)} .toast.ok .i{color:var(--green)}
+  .toast.no{border-color:rgba(239,68,68,0.45)} .toast.no .i{color:var(--red)}
+  .toast .i{font-size:15px;flex-shrink:0;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <div class="ops-head">
+        <div style="max-width:560px">
+          <div class="eyebrow" style="margin-bottom:10px">// HUMAN APPROVAL GATE</div>
+          <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Spend proposals awaiting your decision</h1>
+          <p class="muted" style="font-size:14px;margin:0">Aegis-14B governs every job autonomously on DGX Spark — but it cannot move a dollar outward without you. This is the single human gate. Each decision is signed and recorded.</p>
+        </div>
+
+        <div class="creds card">
+          <div class="row">
+            <div class="label" style="margin-bottom:8px">Operator key · X-Admin-Key</div>
+            <input id="adminKey" value="dev-admin-key" autocomplete="off" spellcheck="false"/>
+          </div>
+          <div class="row">
+            <div class="label" style="margin-bottom:8px">Operator identity · recorded</div>
+            <input id="operator" value="ops@aegisrefine.com" autocomplete="off" spellcheck="false"/>
+          </div>
+          <button class="btn ghost" style="width:100%" onclick="refresh()">↻ Refresh queue</button>
+          <div class="mono muted2" style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:10px;line-height:1.5">
+            <span class="teal">⛉</span> Key never leaves this request. Outbound spend is a test stub — no real money moves yet.
+          </div>
+        </div>
+      </div>
+
+      <div id="banner"></div>
+
+      <div class="stats">
+        <div class="stat warn">
+          <div class="h">PENDING APPROVALS</div>
+          <div class="n amber" id="stPending">—</div>
+        </div>
+        <div class="stat">
+          <div class="h">PROPOSED SPEND · QUEUED</div>
+          <div class="n" id="stQueued">—</div>
+        </div>
+        <div class="stat">
+          <div class="h">AUTHORIZED · SESSION (TEST)</div>
+          <div class="n green" id="stAuth">$0.00</div>
+        </div>
+        <div class="stat">
+          <div class="h">REAL OUTBOUND · MOVED</div>
+          <div class="n" id="stReal" style="color:var(--muted-2)">$0.00</div>
+        </div>
+      </div>
+
+      <div class="ops-grid">
+        <!-- QUEUE -->
+        <div class="queue-wrap">
+          <div class="queue-head">
+            <span>SPEND PROPOSAL QUEUE</span>
+            <span class="mono" id="qcount" style="color:var(--amber)"></span>
+          </div>
+          <div id="queue"></div>
+        </div>
+
+        <!-- GATE -->
+        <div id="gate"></div>
+      </div>
+
+      <!-- LIVE AUDIT LOG -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="mono muted2" style="font-size:11px;letter-spacing:.14em">SYSTEM AUDIT LOG · LATEST</div>
+          <div class="mono muted2" style="font-size:10px;display:inline-flex;align-items:center;gap:7px"><span class="dot"></span> LIVE FEED</div>
+        </div>
+        <div id="auditlog"><div class="qempty" style="padding:18px 0">loading activity…</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("ops", "ops console");
+
+// ---- state -------------------------------------------------------------
+let tickets = [];        // live proposed SpendTickets
+let selectedId = null;   // currently selected ticket id
+let inflight = false;    // decision in progress
+let busyState = null;    // {id, kind:'approving'} while executing
+let sessionAuthorized = 0; // running $ total authorized this session (test)
+
+const KEY = () => document.getElementById("adminKey").value.trim();
+const OPER = () => document.getElementById("operator").value.trim() || "operator";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = n => "$" + Number(n || 0).toFixed(2);
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return iso || "—"; } };
+
+// theme matching the blueprint gate states
+const THEME = {
+  await:   { gc: "#F59E0B", gb: "rgba(245,158,11,0.5)",  gf: "rgba(245,158,11,0.09)", gs: "rgba(245,158,11,0.16)" },
+  exec:    { gc: "#00E5CC", gb: "rgba(0,229,204,0.6)",   gf: "rgba(0,229,204,0.08)",  gs: "rgba(0,229,204,0.25)" },
+  ok:      { gc: "#22C55E", gb: "rgba(34,197,94,0.6)",   gf: "rgba(34,197,94,0.1)",   gs: "rgba(34,197,94,0.28)" },
+  no:      { gc: "#ef4444", gb: "rgba(239,68,68,0.6)",   gf: "rgba(239,68,68,0.1)",   gs: "rgba(239,68,68,0.22)" },
+  clear:   { gc: "#00E5CC", gb: "rgba(0,229,204,0.35)",  gf: "rgba(0,229,204,0.05)",  gs: "rgba(0,229,204,0.12)" },
+};
+
+// ---- banners / toasts --------------------------------------------------
+function banner(html, kind) {
+  const b = document.getElementById("banner");
+  if (!html) { b.innerHTML = ""; return; }
+  const c = kind === "err" ? "rgba(239,68,68,0.4)" : "var(--teal-line)";
+  const col = kind === "err" ? "var(--red)" : "var(--teal)";
+  b.innerHTML = `<div class="rise" style="margin-bottom:18px;padding:13px 16px;border-radius:10px;border:1px solid ${c};background:#16161A;font-size:13px;color:${col};display:flex;gap:9px;align-items:center"><span>${kind === "err" ? "✗" : "⛉"}</span><span style="color:var(--text)">${html}</span></div>`;
+}
+function toast(msg, kind) {
+  const t = document.createElement("div");
+  t.className = "toast rise " + (kind === "no" ? "no" : "ok");
+  t.innerHTML = `<span class="i">${kind === "no" ? "✕" : "✓"}</span><span>${esc(msg)}</span>`;
+  document.getElementById("toast").appendChild(t);
+  setTimeout(() => { t.style.transition = "opacity .4s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 400); }, 7000);
+}
+
+// ---- data --------------------------------------------------------------
+async function refresh() {
+  if (!KEY()) { banner("Enter the operator key to load the gate.", "err"); return; }
+  try {
+    const data = await Aegis.tickets(KEY());
+    tickets = Array.isArray(data) ? data : [];
+    banner("");
+    if (selectedId == null || !tickets.some(t => t.id === selectedId))
+      selectedId = tickets.length ? tickets[0].id : null;
+    renderAll();
+  } catch (e) {
+    tickets = [];
+    selectedId = null;
+    banner(`Gate locked — ${esc(e.message || e)}. Check the operator key.`, "err");
+    renderAll();
+  }
+}
+
+async function loadActivity() {
+  try {
+    const feed = await Aegis.activity(14);
+    renderAudit(Array.isArray(feed) ? feed : []);
+  } catch (e) {
+    document.getElementById("auditlog").innerHTML = `<div class="qempty" style="padding:18px 0">activity feed unavailable — ${esc(e.message || e)}</div>`;
+  }
+}
+
+// ---- decisions (the gate) ---------------------------------------------
+async function approve(id) {
+  if (inflight) return;
+  const t = tickets.find(x => x.id === id); if (!t) return;
+  inflight = true; busyState = { id, kind: "approving" }; renderGate();
+  try {
+    // 1) human approves (identity recorded)  2) execute the authorized spend (test stub)
+    await Aegis.approve(id, KEY(), OPER());
+    await Aegis.execute(id, KEY());
+    sessionAuthorized += Number(t.amount || 0);
+    toast(`Ticket #${id} · ${money(t.amount)} spend authorized (test) — real outbound payment via @stripe/link-cli pending. No money has moved.`, "ok");
+  } catch (e) {
+    banner(`Approve failed — ${esc(e.message || e)}`, "err");
+  } finally {
+    inflight = false; busyState = null;
+    await refresh();          // ticket leaves the proposed queue
+    loadActivity();           // reflect the signed decision in the live feed
+  }
+}
+
+async function deny(id) {
+  if (inflight) return;
+  const t = tickets.find(x => x.id === id); if (!t) return;
+  inflight = true; renderGate();
+  try {
+    await Aegis.reject(id, KEY(), OPER());
+    toast(`Ticket #${id} · denied — zero dollars moved. Job continues with the local-only result.`, "no");
+  } catch (e) {
+    banner(`Deny failed — ${esc(e.message || e)}`, "err");
+  } finally {
+    inflight = false;
+    await refresh();
+    loadActivity();
+  }
+}
+
+function select(id) { selectedId = id; renderQueue(); renderGate(); }
+
+// ---- render ------------------------------------------------------------
+function renderAll() { renderStats(); renderQueue(); renderGate(); }
+
+function renderStats() {
+  const queued = tickets.reduce((a, t) => a + Number(t.amount || 0), 0);
+  document.getElementById("stPending").textContent = tickets.length;
+  document.getElementById("stQueued").textContent = money(queued);
+  document.getElementById("stAuth").textContent = money(sessionAuthorized);
+  document.getElementById("stReal").textContent = "$0.00";
+  document.getElementById("qcount").textContent = tickets.length ? tickets.length + " WAITING" : "";
+}
+
+function renderQueue() {
+  const q = document.getElementById("queue");
+  if (!tickets.length) {
+    q.innerHTML = `<div class="qempty">Queue clear — no spend awaiting a decision.<br><span class="muted2" style="font-size:12px">Process a job that proposes a spend to arm the gate.</span></div>`;
+    return;
+  }
+  q.innerHTML = tickets.map(t => `
+    <button class="qrow ${t.id === selectedId ? "sel" : ""}" onclick="select(${t.id})">
+      <div class="top">
+        <span class="job">JOB-${esc(t.job_id)} · #${esc(t.id)}</span>
+        <span class="amt">${money(t.amount)}</span>
+      </div>
+      <div class="desc">${esc(t.description || "External spend proposed by Aegis-14B")}</div>
+      <div class="meta">
+        <span class="pill warn"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--amber);margin-right:5px"></span>AWAITING GATE</span>
+        <span class="mono muted2" style="font-size:10.5px">${fmtTime(t.proposed_at)}</span>
+      </div>
+    </button>`).join("");
+}
+
+function renderGate() {
+  const g = document.getElementById("gate");
+  const t = tickets.find(x => x.id === selectedId);
+
+  // empty / clear state
+  if (!t) {
+    const th = THEME.clear;
+    g.className = "gate";
+    g.style.cssText = themeVars(th);
+    g.innerHTML = `
+      <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+      <div class="gate-clear">
+        <div class="emblem-wrap"><div class="ring"></div><div class="emblem">⛉</div></div>
+        <div style="font-size:16px;font-weight:600">Gate clear</div>
+        <p class="muted" style="font-size:13px;max-width:340px;margin:0">No spend is awaiting your decision. Aegis keeps governing jobs locally on DGX Spark; the gate arms only when it proposes outbound spend.</p>
+      </div>`;
+    return;
+  }
+
+  const busy = busyState && busyState.id === t.id;
+  const th = busy ? THEME.exec : THEME.await;
+  g.className = "gate";
+  g.style.cssText = themeVars(th);
+
+  const emblem = busy
+    ? `<div class="emblem-wrap"><div class="spinner"></div></div>`
+    : `<div class="emblem-wrap"><div class="ring"></div><div class="emblem">⛉</div></div>`;
+
+  const actions = busy
+    ? `<div class="executing">AUTHORIZING ${money(t.amount)} · RECORDING SIGNED DECISION…</div>`
+    : `<div class="gate-actions">
+         <button class="approve-btn" onclick="approve(${t.id})">✓ AUTHORIZE SPEND ${money(t.amount)} <span style="opacity:.7;font-weight:500">(test)</span></button>
+         <button class="deny-btn" onclick="deny(${t.id})">Deny</button>
+       </div>
+       <div class="signed"><span class="teal">⛉</span> Decision signed &amp; recorded as <span style="color:var(--text)">${esc(OPER())}</span> · outbound is a test stub — no real money moves</div>`;
+
+  g.innerHTML = `
+    <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <span style="width:38px;height:38px;border-radius:8px;background:var(--teal-dim);border:1px solid var(--teal-line);display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:16px">◭</span>
+        <div>
+          <div style="font-size:15px;font-weight:600">Aegis-14B</div>
+          <div class="mono muted2" style="font-size:10.5px">JOB-${esc(t.job_id)} · TICKET #${esc(t.id)} · DGX SPARK</div>
+        </div>
+      </div>
+      <span class="pill warn">${busy ? "EXECUTING" : "AWAITING GATE"}</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:center;margin-bottom:20px">
+      ${emblem}
+      <div class="spend-box">
+        <div class="lbl">PROPOSED SPEND</div>
+        <div class="big">${money(t.amount)}</div>
+        <div class="mono muted" style="font-size:11px;margin-top:8px">${esc(t.description || "External spend")}</div>
+      </div>
+    </div>
+
+    <div class="kvstack">
+      <div class="kv"><span class="k">Job</span><span class="v">JOB-${esc(t.job_id)}</span></div>
+      <div class="kv"><span class="k">Ticket</span><span class="v">#${esc(t.id)}</span></div>
+      <div class="kv"><span class="k">Proposed</span><span class="v">${fmtTime(t.proposed_at)}</span></div>
+      <div class="kv"><span class="k">Policy check</span><span class="v amber">⚠ REQUIRES HUMAN GATE</span></div>
+    </div>
+
+    <div class="rat">
+      <div class="lbl">AGENT RATIONALE</div>
+      <p>${esc(t.description || "Aegis-14B proposed an external spend to raise dataset quality. It is held here because outbound money requires a human signature.")}</p>
+    </div>
+
+    ${actions}`;
+}
+
+function renderAudit(feed) {
+  const el = document.getElementById("auditlog");
+  if (!feed.length) { el.innerHTML = `<div class="qempty" style="padding:18px 0">No activity yet.</div>`; return; }
+  const dotFor = (action, actor) => {
+    if (action === "spend_approved") return "#22C55E";
+    if (action === "spend_rejected") return "#ef4444";
+    if (action === "spend_proposed" || action === "spend_decision") return "#F59E0B";
+    if (action === "spend_executed") return "#F59E0B";
+    if (action === "aar_issued") return "#3A7BFF";
+    if (actor === "agent") return "#00E5CC";
+    if (actor === "human") return "#22C55E";
+    return "#A1A1AA";
+  };
+  el.innerHTML = feed.slice(0, 12).map(ev => {
+    const dot = dotFor(ev.action, ev.actor);
+    return `<div class="alog">
+      <span class="t">${fmtTime(ev.at)}</span>
+      <span class="d" style="background:${dot};box-shadow:0 0 7px ${dot}"></span>
+      <span class="l">${esc(ev.summary || ev.action)}</span>
+      <span class="a">${esc(ev.actor || "system")}</span>
+    </div>`;
+  }).join("");
+}
+
+function themeVars(th) { return `--gc:${th.gc};--gb:${th.gb};--gf:${th.gf};--gs:${th.gs}`; }
+
+// re-load when the operator changes the key
+document.getElementById("adminKey").addEventListener("change", refresh);
+
+// boot
+refresh();
+loadActivity();
+</script>
+</body>
+</html>

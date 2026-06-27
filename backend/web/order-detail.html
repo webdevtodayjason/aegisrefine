@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Job detail · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific bits not in the shared design system */
+  .step{display:flex;flex-direction:column;gap:8px}
+  .step .bar{height:3px;border-radius:3px;background:#2A2A30}
+  .step .row{display:flex;align-items:center;gap:7px}
+  .step .knob{width:16px;height:16px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--muted-3)}
+  .step .name{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted-3)}
+  .gate{position:relative;border-radius:14px;background:var(--panel);padding:24px;transition:all .4s}
+  .gate .corner{position:absolute;width:16px;height:16px}
+  .gate .c-tl{top:9px;left:9px;border-top:2px solid;border-left:2px solid}
+  .gate .c-tr{top:9px;right:9px;border-top:2px solid;border-right:2px solid}
+  .gate .c-bl{bottom:9px;left:9px;border-bottom:2px solid;border-left:2px solid}
+  .gate .c-br{bottom:9px;right:9px;border-bottom:2px solid;border-right:2px solid}
+  .emblem{position:relative;display:flex;align-items:center;justify-content:center;height:124px}
+  .emblem .ring{position:absolute;width:92px;height:92px;border-radius:50%;border:1px solid;animation:ag-ring 2.4s ease-out infinite}
+  .emblem .core{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;border:2px solid;transition:all .4s}
+  @keyframes ag-ring{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+  @keyframes ag-spin{to{transform:rotate(360deg)}}
+  .spinner{width:76px;height:76px;border-radius:50%;border:3px solid rgba(0,229,204,.2);border-top-color:var(--teal);animation:ag-spin .8s linear infinite}
+  .trail .ev{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .trail .ev:last-child{border-bottom:0}
+  .trail .t{font-family:var(--mono);font-size:11px;color:var(--muted-2);width:64px;flex-shrink:0}
+  .trail .d{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .trail .l{font-size:13px;flex:1}
+  .trail .a{font-family:var(--mono);font-size:10.5px;color:var(--muted-2)}
+  .deliv{display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;background:var(--panel-3);border:1px solid var(--line);transition:opacity .4s}
+  .deliv .ico{width:38px;height:38px;flex-shrink:0;border-radius:8px;background:rgba(0,229,204,.08);border:1px solid var(--teal-line);display:flex;align-items:center;justify-content:center;color:var(--teal)}
+  .meter{height:6px;border-radius:6px;background:#2A2A30;overflow:hidden}
+  .meter > i{display:block;height:100%;border-radius:6px}
+  @media(max-width:1040px){.grid2{grid-template-columns:1fr!important}.stepper{grid-template-columns:repeat(3,1fr)!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <!-- title row -->
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">// REFINEMENT JOB</div>
+          <h1 id="title" style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Loading job…</h1>
+          <div class="mono muted2" id="subtitle" style="font-size:12px">—</div>
+        </div>
+        <div id="statusBadge" class="mono" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--muted-2);padding:7px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel)">
+          <span class="dot" style="width:6px;height:6px"></span> LOADING
+        </div>
+      </div>
+
+      <!-- progress stepper -->
+      <div class="stepper" id="stepper" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:24px"></div>
+
+      <div class="grid2" style="display:grid;grid-template-columns:1.55fr 1fr;gap:24px;align-items:start">
+
+        <!-- LEFT column -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- RUN AEGIS-14B (governance) -->
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+              <div style="display:flex;align-items:center;gap:9px"><span class="teal">◎</span><span style="font-size:16px;font-weight:600">Run Aegis-14B governance</span></div>
+              <span class="pill teal">DGX SPARK · LIVE</span>
+            </div>
+            <p class="muted" style="font-size:13px;margin:0 0 18px">Feed a sample plus an edge-case doc. Aegis-14B triages, scores quality, and decides whether any external spend is worth proposing — under the human gate.</p>
+
+            <div class="label" style="margin-bottom:10px">Dataset sample</div>
+            <textarea id="sample" rows="5">{"ticket_id": 88213, "channel": "email", "subject": "Refund not received",
+ "body": "Hi - I was charged twice on 03/14 (card ****4242). Please refund $49.99. Phone: 555-0142.",
+ "agent_reply": "Apologies for the double charge. I've issued a $49.99 refund; allow 5-7 business days."}</textarea>
+
+            <div class="label" style="margin:16px 0 10px">Edge case / hard doc <span class="muted2" style="text-transform:none;letter-spacing:0">— what might force a spend</span></div>
+            <textarea id="hard" rows="3">[scanned attachment] Low-contrast handwritten fax: "acct mgr approved goodwill credit - see page 2". ~1,240 similar records are image-only PDFs with no extractable text.</textarea>
+
+            <button class="btn" id="runBtn" style="width:100%;margin-top:18px" onclick="runAegis()">⟁ &nbsp;Run Aegis-14B →</button>
+            <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Live inference · a spend proposal pauses for the human gate</div>
+            <div id="runOut"></div>
+          </div>
+
+          <!-- HUMAN APPROVAL GATE (rendered when a spend ticket exists) -->
+          <div id="gateWrap"></div>
+
+          <!-- analysis cards (triage / quality / spend) appear here after a run -->
+          <div id="analysis" style="display:flex;flex-direction:column;gap:20px"></div>
+
+          <!-- DELIVERABLES -->
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <h2 style="font-size:16px;font-weight:600;margin:0">Deliverables</h2>
+              <span class="mono" id="delivStatus" style="font-size:11px;color:var(--muted-2)">LOCKED UNTIL COMPLETE</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="deliv" id="delivData" style="opacity:.45">
+                <span class="ico">▤</span>
+                <div style="flex:1"><div style="font-size:14px;font-weight:500">Refined dataset</div><div class="mono muted2" id="delivDataMeta" style="font-size:11px">awaiting completion</div></div>
+                <span class="mono" id="delivDataChip" style="font-size:11px;color:var(--muted-3);padding:7px 13px;border-radius:6px;border:1px solid var(--line-2)">⛒ LOCKED</span>
+              </div>
+              <a class="deliv" id="delivCert" href="#" style="opacity:.45">
+                <span class="ico">⛉</span>
+                <div style="flex:1"><div style="font-size:14px;font-weight:500">Signed AAR certificate</div><div class="mono muted2" id="delivCertMeta" style="font-size:11px">awaiting completion</div></div>
+                <span class="mono" id="delivCertChip" style="font-size:11px;color:var(--muted-3);padding:7px 13px;border-radius:6px;border:1px solid var(--line-2)">⛒ LOCKED</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- ACTIVITY / AUDIT TRAIL -->
+          <div class="card">
+            <div class="label" style="letter-spacing:.14em;margin-bottom:14px">ACTIVITY · IMMUTABLE AUDIT TRAIL</div>
+            <div class="trail" id="trail"><div class="mono muted2" style="font-size:12px">Loading activity…</div></div>
+          </div>
+        </div>
+
+        <!-- RIGHT sidebar -->
+        <div style="display:flex;flex-direction:column;gap:18px;position:sticky;top:90px">
+          <div class="card">
+            <div class="label" style="letter-spacing:.14em;margin-bottom:14px">JOB DETAILS</div>
+            <div style="display:flex;flex-direction:column;gap:11px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;gap:10px"><span class="muted">Source data</span><span class="mono" id="jdSource" style="text-align:right;word-break:break-all;max-width:62%">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span class="muted">Status</span><span class="mono" id="jdStatus">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span class="muted">Complexity</span><span class="mono" id="jdComplexity">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span class="muted">Created</span><span class="mono" id="jdCreated">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span class="muted">Inference</span><span class="mono green">DGX Spark</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="label" style="letter-spacing:.14em;margin-bottom:14px">LEDGER</div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">Revenue (paid)</span><span class="mono green">+$20.00</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">Gated spend</span><span class="mono" id="ledSpend" style="color:var(--muted-2)">$0.00 (pending)</span></div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0 0;font-size:13.5px"><span style="font-weight:600">Net to date</span><span class="mono teal" id="ledNet" style="font-weight:600">+$20.00</span></div>
+          </div>
+
+          <div class="card glow">
+            <div class="label teal" style="letter-spacing:.14em;margin-bottom:14px">CONDUCTOR PIPELINE</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="dot" id="loopDot" style="width:9px;height:9px"></span>
+              <div><div class="mono muted2" style="font-size:10px;letter-spacing:.12em">CURRENT NODE</div><div id="loopStatus" style="font-size:13.5px;font-weight:500;color:var(--muted)">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("order-detail", "job detail");
+
+const JOB_ID = Aegis.jobParam();
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const money = n => "$" + (Number(n) || 0).toFixed(2);
+const num = n => Number(n).toLocaleString("en-US");
+const tokens = n => { n = Number(n) || 0; return n >= 1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"") + "M" : num(n); };
+const hhmmss = iso => { try { return new Date(iso).toLocaleTimeString("en-US",{hour12:false}); } catch { return "--:--:--"; } };
+const errBox = (el, e) => el.innerHTML = `<div class="err">✗ ${esc(e && e.message ? e.message : e)}</div>`;
+
+// gate / status theming -------------------------------------------------------
+const THEME = {
+  amber: { c:"#F59E0B", b:"rgba(245,158,11,0.5)", f:"rgba(245,158,11,0.09)", s:"rgba(245,158,11,0.16)", glyph:"⛉" },
+  teal:  { c:"#00E5CC", b:"rgba(0,229,204,0.6)",  f:"rgba(0,229,204,0.08)", s:"rgba(0,229,204,0.25)", glyph:"⛉" },
+  green: { c:"#22C55E", b:"rgba(34,197,94,0.6)",  f:"rgba(34,197,94,0.10)", s:"rgba(34,197,94,0.28)", glyph:"✓" },
+  red:   { c:"#ef4444", b:"rgba(239,68,68,0.6)",  f:"rgba(239,68,68,0.10)", s:"rgba(239,68,68,0.22)", glyph:"✕" },
+  grey:  { c:"#71717A", b:"rgba(255,255,255,0.10)", f:"rgba(255,255,255,0.03)", s:"rgba(0,0,0,0)", glyph:"⛉" },
+};
+
+if (!JOB_ID) {
+  $("title").textContent = "No job selected";
+  $("subtitle").innerHTML = 'Open a job from the <a class="teal" href="dashboard.html">dashboard</a> or <a class="teal" href="new-order.html">start a new order</a>.';
+  $("runBtn").disabled = true;
+} else {
+  load();
+}
+
+let JOB = null;
+
+async function load() {
+  try {
+    JOB = await Aegis.getJob(JOB_ID);
+    render(JOB);
+    loadActivity();
+  } catch (e) {
+    $("title").textContent = "Job not found";
+    $("subtitle").innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
+    $("runBtn").disabled = true;
+  }
+}
+
+// pick the most relevant spend ticket for the gate
+function pickTicket(job) {
+  const t = job.spend_tickets || [];
+  return t.find(x => x.status === "proposed")
+      || t.find(x => x.status === "executed")
+      || t.find(x => x.status === "approved")
+      || t.find(x => x.status === "rejected")
+      || null;
+}
+
+function render(job) {
+  const ticket = pickTicket(job);
+  const completed = job.status === "completed";
+  const cert = job.certificate;
+
+  // title + subtitle
+  $("title").textContent = "Refinement job #" + job.id;
+  const created = job.created_at ? new Date(job.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+  $("subtitle").textContent = `JOB-${String(job.id).padStart(5,"0")} · created ${created} · ChatML JSONL`;
+
+  // header status badge
+  let badge = { txt: (job.status||"pending").toUpperCase(), th: THEME.teal };
+  if (ticket && ticket.status === "proposed") badge = { txt: "AWAITING APPROVAL", th: THEME.amber };
+  else if (ticket && ticket.status === "rejected" && !completed) badge = { txt: "HALTED AT GATE", th: THEME.red };
+  else if (completed) badge = { txt: "COMPLETE", th: THEME.green };
+  else if (job.status === "failed") badge = { txt: "FAILED", th: THEME.red };
+  else if (job.status === "processing") badge = { txt: "PROCESSING", th: THEME.teal };
+  else badge = { txt: "PAID · READY", th: THEME.teal };
+  const b = $("statusBadge");
+  b.style.color = badge.th.c; b.style.borderColor = badge.th.b; b.style.background = badge.th.f;
+  b.innerHTML = `<span class="dot" style="width:6px;height:6px;background:${badge.th.c};box-shadow:0 0 6px ${badge.th.c}"></span> ${esc(badge.txt)}`;
+
+  renderStepper(job, ticket, cert, completed);
+  renderGate(job, ticket, completed, cert);
+  renderDeliverables(job, completed, cert);
+  renderSidebar(job, ticket, completed);
+}
+
+function renderStepper(job, ticket, cert, completed) {
+  const processed = (job.spend_tickets && job.spend_tickets.length) || job.complexity_score != null || ["processing","completed"].includes(job.status);
+  let gate = "pending";
+  if (ticket) {
+    if (ticket.status === "rejected") gate = "reject";
+    else if (ticket.status === "approved" || ticket.status === "executed") gate = "done";
+    else gate = "active"; // proposed
+  } else if (completed) gate = "done";
+
+  const steps = [
+    { label: "PAID",      st: "done" },
+    { label: "TRIAGE",    st: processed ? "done" : "pending" },
+    { label: "SCORED",    st: processed ? "done" : "pending" },
+    { label: "GATE",      st: gate },
+    { label: "REFINED",   st: completed ? "done" : "pending" },
+    { label: "CERTIFIED", st: cert ? "done" : "pending" },
+  ];
+  const skin = st => {
+    if (st === "done")   return { bar:"#22C55E", bg:"rgba(34,197,94,0.15)", bd:"rgba(34,197,94,0.5)", tx:"#22C55E", ic:"✓", lab:"var(--muted)" };
+    if (st === "active") return { bar:"#F59E0B", bg:"rgba(245,158,11,0.09)", bd:"rgba(245,158,11,0.5)", tx:"#F59E0B", ic:"●", lab:"#F59E0B" };
+    if (st === "reject") return { bar:"#ef4444", bg:"rgba(239,68,68,0.15)", bd:"rgba(239,68,68,0.5)", tx:"#ef4444", ic:"✕", lab:"#ef4444" };
+    return { bar:"#2A2A30", bg:"transparent", bd:"rgba(255,255,255,0.14)", tx:"#52525B", ic:"", lab:"#52525B" };
+  };
+  $("stepper").innerHTML = steps.map(s => {
+    const k = skin(s.st);
+    return `<div class="step"><div class="bar" style="background:${k.bar}"></div>
+      <div class="row"><span class="knob" style="color:${k.tx};background:${k.bg};border-color:${k.bd}">${k.ic}</span>
+      <span class="name" style="color:${k.lab}">${s.label}</span></div></div>`;
+  }).join("");
+}
+
+function gateThemeFor(ticket, completed) {
+  if (!ticket) return completed ? THEME.green : THEME.grey;
+  if (ticket.status === "proposed") return THEME.amber;
+  if (ticket.status === "rejected") return THEME.red;
+  if (ticket.status === "executed") return THEME.green;
+  if (ticket.status === "approved") return THEME.teal;
+  return THEME.grey;
+}
+
+function renderGate(job, ticket, completed, cert) {
+  const wrap = $("gateWrap");
+  if (!ticket) { wrap.innerHTML = ""; return; }
+  const th = gateThemeFor(ticket, completed);
+  const st = ticket.status;
+
+  let title = "Approval required", glyph = th.glyph, body = "", action = "";
+  if (st === "proposed") {
+    title = "Approval required";
+    body = `Aegis-14B proposed an external spend to recover locked records. Refinement is paused until a human approves the spend at the Ops console — nothing leaves the gate automatically.`;
+    action = `<a class="btn" href="ops.html" style="flex:2;text-decoration:none">⛉ &nbsp;Review at Ops console →</a>
+              <a class="btn ghost" href="ops.html" style="flex:1;text-decoration:none">Open gate</a>`;
+  } else if (st === "approved") {
+    title = "Approved at the gate";
+    body = `A human approved this spend at the Ops console. Execution is the next step — outbound payout is a test stub in this build.`;
+    action = `<div style="flex:1;text-align:center" class="mono teal">APPROVED BY ${esc(ticket.approved_by || "operator")} · AWAITING EXECUTION</div>`;
+  } else if (st === "executed") {
+    title = "Spend authorized (test)";
+    body = `The gate approved this spend and the run resumed. No real money moved — outbound payout is a test stub in this build.`;
+    action = `<div style="flex:1;text-align:center" class="mono green">${money(ticket.amount)} SPEND AUTHORIZED (TEST) · REFINEMENT RESUMED</div>`;
+  } else if (st === "rejected") {
+    title = "Proposal rejected";
+    body = `A human rejected the spend at the gate. The locked records were skipped, no money was spent, and the decision is recorded permanently in the audit trail.`;
+    action = `<div class="mono" style="flex:1;text-align:center;color:#ef4444">PROPOSAL REJECTED · NO SPEND · NO CHARGE</div>`;
+  }
+
+  const spinning = false;
+  wrap.innerHTML = `
+  <div class="gate" style="border:1.5px solid ${th.b};box-shadow:0 0 44px ${th.s}">
+    <span class="corner c-tl" style="border-color:${th.b}"></span>
+    <span class="corner c-tr" style="border-color:${th.b}"></span>
+    <span class="corner c-bl" style="border-color:${th.b}"></span>
+    <span class="corner c-br" style="border-color:${th.b}"></span>
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;color:${th.c};margin-bottom:18px">HUMAN APPROVAL GATE</div>
+    <div style="display:grid;grid-template-columns:132px 1fr;gap:22px;align-items:center">
+      <div class="emblem">
+        <div class="ring" style="border-color:${th.b}"></div>
+        <div class="core" style="background:${th.f};border-color:${th.b};color:${th.c};box-shadow:0 0 28px ${th.s}">${glyph}</div>
+      </div>
+      <div>
+        <div style="font-size:18px;font-weight:600;color:${th.c}">${esc(title)}</div>
+        <p class="muted" style="font-size:13.5px;margin:6px 0 14px;line-height:1.55">${esc(body)}</p>
+        <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+          <div class="kv"><span class="k">Proposed by</span><span class="v">Aegis-14B</span></div>
+          <div class="kv"><span class="k">Reason</span><span class="v">${esc(ticket.description || "external tool spend")}</span></div>
+          <div class="kv"><span class="k">Spend amount</span><span class="v amber">${money(ticket.amount)}</span></div>
+          <div class="kv"><span class="k">Ticket</span><span class="v">#${ticket.id} · ${esc(st).toUpperCase()}</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;align-items:center">${action}</div>
+    <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Outbound payout is a test stub · approve/reject happens at the Ops console (X-Admin-Key)</div>
+  </div>`;
+}
+
+function renderDeliverables(job, completed, cert) {
+  const ready = completed && !!cert;
+  $("delivStatus").textContent = ready ? "READY" : "LOCKED UNTIL COMPLETE";
+  $("delivStatus").style.color = ready ? "var(--green)" : "var(--muted-2)";
+
+  const data = $("delivData"), dataChip = $("delivDataChip");
+  data.style.opacity = completed ? "1" : ".45";
+  $("delivDataMeta").textContent = completed ? "refined · ChatML JSONL" : "awaiting completion";
+  if (completed) { dataChip.textContent = "↓ DOWNLOAD"; dataChip.style.color = "var(--teal)"; dataChip.style.borderColor = "var(--teal-line)"; }
+
+  const certEl = $("delivCert"), certChip = $("delivCertChip");
+  certEl.style.opacity = ready ? "1" : ".45";
+  if (ready) {
+    certEl.href = `certificate.html?job=${job.id}`;
+    $("delivCertMeta").textContent = `signed · cert #${cert.id}`;
+    certChip.textContent = "VIEW ↗"; certChip.style.color = "var(--teal)"; certChip.style.borderColor = "var(--teal-line)";
+  } else {
+    certEl.href = "#";
+    $("delivCertMeta").textContent = "awaiting completion";
+  }
+}
+
+function renderSidebar(job, ticket, completed) {
+  $("jdSource").textContent = job.input || "—";
+  $("jdStatus").textContent = (job.status || "pending");
+  $("jdComplexity").innerHTML = job.complexity_score != null
+    ? `<span class="amber">${(Number(job.complexity_score)).toFixed(2)}</span>` : "pending";
+  $("jdCreated").textContent = job.created_at ? new Date(job.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—";
+
+  // ledger
+  let spend = "$0.00 (pending)", spendColor = "var(--muted-2)", net = 20;
+  if (ticket) {
+    if (ticket.status === "executed") { spend = `−${money(ticket.amount)} authorized (test)`; spendColor = "var(--amber)"; net = 20 - Number(ticket.amount || 0); }
+    else if (ticket.status === "approved") { spend = `${money(ticket.amount)} approved (test)`; spendColor = "var(--amber)"; net = 20; }
+    else if (ticket.status === "rejected") { spend = "$0.00 (blocked)"; spendColor = "var(--green)"; net = 20; }
+    else { spend = `${money(ticket.amount)} (pending)`; spendColor = "var(--muted-2)"; net = 20; }
+  } else if (completed) { spend = "$0.00 (none needed)"; spendColor = "var(--green)"; }
+  $("ledSpend").textContent = spend; $("ledSpend").style.color = spendColor;
+  $("ledNet").textContent = "+" + money(net);
+
+  // conductor pipeline current node
+  let loop = "Paid · ready to triage", th = THEME.teal;
+  if (ticket && ticket.status === "proposed") { loop = "Human Gate · awaiting"; th = THEME.amber; }
+  else if (ticket && ticket.status === "approved") { loop = "Gate approved · executing"; th = THEME.teal; }
+  else if (ticket && ticket.status === "executed") { loop = "Spend authorized (test) · resumed"; th = THEME.green; }
+  else if (ticket && ticket.status === "rejected" && !completed) { loop = "Halted at gate"; th = THEME.red; }
+  else if (completed) { loop = "AAR · certified"; th = THEME.green; }
+  else if (job.status === "processing") { loop = "Triage + scoring"; th = THEME.teal; }
+  $("loopStatus").textContent = loop; $("loopStatus").style.color = th.c;
+  const ld = $("loopDot"); ld.style.background = th.c; ld.style.boxShadow = `0 0 8px ${th.c}`;
+}
+
+// ---- RUN AEGIS-14B -----------------------------------------------------------
+async function runAegis() {
+  const btn = $("runBtn"), out = $("runOut");
+  btn.disabled = true;
+  out.innerHTML = `<div class="mono teal" style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12.5px"><span class="spinner" style="width:18px;height:18px;border-width:2px"></span> Aegis-14B running live inference on DGX Spark… (a few seconds)</div>`;
+  try {
+    const sample = $("sample").value, hard = $("hard").value;
+    const r = await Aegis.process(JOB_ID, sample, hard);
+    out.innerHTML = "";
+    renderAnalysis(r);
+    // refresh job state so the gate / stepper / ledger reflect a freshly-armed ticket
+    JOB = await Aegis.getJob(JOB_ID);
+    render(JOB);
+    loadActivity();
+  } catch (e) {
+    errBox(out, e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function bar(label, val, max, color) {
+  const pct = Math.max(0, Math.min(100, (Number(val) / max) * 100));
+  return `<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px"><span class="muted">${label}</span><span class="mono" style="color:${color}">${val}</span></div>
+    <div class="meter"><i style="width:${pct}%;background:${color}"></i></div></div>`;
+}
+
+function renderAnalysis(r) {
+  const t = r.triage || {}, q = r.quality || {}, s = r.spend || {};
+  const recApprove = s.recommendation === "approve";
+  const recColor = recApprove ? "var(--amber)" : "var(--green)";
+  const recPill = recApprove ? "warn" : "ok";
+
+  const triageCard = `
+  <div class="card rise">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:9px"><span class="teal">⟁</span><h2 style="font-size:16px;font-weight:600;margin:0">Triage</h2></div>
+      <span class="pill ${t.can_run_locally ? "ok":"warn"}">${t.can_run_locally ? "RUNS LOCALLY" : "NEEDS CLOUD"}</span>
+    </div>
+    ${bar("Complexity", t.complexity ?? 0, 100, "#F59E0B")}
+    ${bar("Risk", t.risk ?? 0, 100, "#ef4444")}
+    ${bar("Noise level", t.noise_level ?? 0, 100, "#F59E0B")}
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:14px">
+      <div class="kv"><span class="k">Est. tokens</span><span class="v teal">${tokens(t.est_tokens)}</span></div>
+    </div>
+    ${Array.isArray(t.steps) && t.steps.length ? `<div style="margin-top:14px"><div class="label" style="margin-bottom:8px">PLANNED STEPS</div>${t.steps.map(x=>`<div style="display:flex;gap:9px;font-size:13px;padding:5px 0;color:var(--muted)"><span class="teal">›</span>${esc(x)}</div>`).join("")}</div>` : ""}
+  </div>`;
+
+  const qualityCard = `
+  <div class="card rise">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:9px"><span class="teal">◇</span><h2 style="font-size:16px;font-weight:600;margin:0">Quality</h2></div>
+      <span class="pill ${ (q.quality_score??0) >= 60 ? "ok" : "warn"}">SCORE ${q.quality_score ?? "—"}</span>
+    </div>
+    ${bar("Quality score", q.quality_score ?? 0, 100, (q.quality_score??0) >= 60 ? "#22C55E" : "#F59E0B")}
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:14px">
+      <div class="kv"><span class="k">Recommended format</span><span class="v teal">${esc(q.recommended_format || "chatml")}</span></div>
+      <div class="kv"><span class="k">Est. clean rows</span><span class="v">${q.est_clean_rows != null ? num(q.est_clean_rows) : "—"}</span></div>
+      <div class="kv"><span class="k">Noise level</span><span class="v amber">${q.noise_level ?? "—"}</span></div>
+    </div>
+    ${Array.isArray(q.issues) && q.issues.length ? `<div style="margin-top:14px"><div class="label" style="margin-bottom:8px">ISSUES FOUND</div>${q.issues.map(x=>`<div style="display:flex;gap:9px;font-size:13px;padding:5px 0;color:var(--muted)"><span class="amber">!</span>${esc(x)}</div>`).join("")}</div>` : ""}
+  </div>`;
+
+  const gain = s.expected_gain && typeof s.expected_gain === "object"
+    ? Object.entries(s.expected_gain).map(([k,v])=>`<div class="kv"><span class="k">${esc(k.replace(/_/g," "))}</span><span class="v green">${esc(v)}</span></div>`).join("")
+    : "";
+
+  const spendCard = `
+  <div class="card rise" style="border-color:${recApprove ? "rgba(245,158,11,0.35)" : "rgba(34,197,94,0.3)"}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:9px"><span style="color:${recColor}">$</span><h2 style="font-size:16px;font-weight:600;margin:0">Spend decision</h2></div>
+      <span class="pill ${recPill}">${recApprove ? "PROPOSE SPEND" : "NO SPEND NEEDED"}</span>
+    </div>
+    ${ s.tool || s.reason || s.est_cost_usd != null ? `
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      ${s.tool ? `<div class="kv"><span class="k">Tool</span><span class="v">${esc(s.tool)}</span></div>`:""}
+      ${s.reason ? `<div class="kv"><span class="k">Reason</span><span class="v" style="max-width:60%;text-align:right">${esc(s.reason)}</span></div>`:""}
+      ${s.est_cost_usd != null ? `<div class="kv"><span class="k">Est. cost</span><span class="v amber">${money(s.est_cost_usd)}</span></div>`:""}
+      <div class="kv"><span class="k">Recommendation</span><span class="v" style="color:${recColor}">${esc((s.recommendation||"").toUpperCase())}</span></div>
+      ${gain}
+    </div>` : `<p class="muted" style="font-size:13px;margin:0">Aegis-14B found nothing worth an external spend — the job can be refined locally on DGX Spark.</p>` }
+    ${s.rationale ? `<p class="muted" style="font-size:13px;margin:14px 0 0;line-height:1.55">${esc(s.rationale)}</p>`:""}
+    ${ r.spend_ticket_id ? `<div style="margin-top:16px;display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4)">
+        <span class="amber" style="font-size:16px">⛉</span>
+        <span class="mono amber" style="flex:1;font-size:12px">GATE ARMED · spend ticket #${r.spend_ticket_id} awaiting human approval</span>
+        <a class="btn ghost" href="ops.html" style="padding:8px 13px;font-size:12px">Review →</a>
+      </div>` : `<div class="mono muted2" style="margin-top:14px;font-size:11px"><span class="green">✓</span> No gate armed · no spend ticket created.</div>` }
+  </div>`;
+
+  $("analysis").innerHTML = triageCard + qualityCard + spendCard;
+}
+
+// ---- ACTIVITY ----------------------------------------------------------------
+const ACTION_COLOR = {
+  job_created:"#A1A1AA", triage:"#00E5CC", quality:"#00E5CC", quality_check:"#00E5CC",
+  spend_decision:"#00E5CC", spend_proposed:"#F59E0B", spend_approved:"#22C55E",
+  spend_rejected:"#ef4444", spend_executed:"#F59E0B", aar_issued:"#3A7BFF",
+  job_completed:"#22C55E",
+};
+async function loadActivity() {
+  const el = $("trail");
+  try {
+    const feed = await Aegis.activity(60);
+    const rows = (Array.isArray(feed) ? feed : []).filter(e => String(e.job_id) === String(JOB_ID));
+    if (!rows.length) { el.innerHTML = `<div class="mono muted2" style="font-size:12px">No activity recorded for this job yet.</div>`; return; }
+    // oldest-first reads like a trail
+    rows.sort((a,b)=> new Date(a.at) - new Date(b.at));
+    el.innerHTML = rows.map(e => {
+      const dot = ACTION_COLOR[e.action] || "#A1A1AA";
+      return `<div class="ev">
+        <span class="t">${hhmmss(e.at)}</span>
+        <span class="d" style="background:${dot};box-shadow:0 0 7px ${dot}"></span>
+        <span class="l">${esc(e.summary || e.action)}</span>
+        <span class="a">${esc(e.actor || "system")}</span>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    el.innerHTML = `<div class="err">✗ ${esc(e.message || e)}</div>`;
+  }
+}
+</script>
+</body>
+</html>

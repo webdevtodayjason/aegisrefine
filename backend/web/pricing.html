@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pricing · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific marketing styles (standalone — no app shell) */
+  html{scroll-behavior:smooth}
+  .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('assets/grid-texture.png');background-size:cover;opacity:.08}
+  .bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px 600px at 50% -8%, rgba(0,229,204,0.1), transparent 60%)}
+  .page{position:relative;z-index:1;min-height:100vh;overflow-x:hidden}
+
+  .nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px clamp(20px,5vw,64px);background:rgba(13,13,15,0.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .nav .logo{display:flex;align-items:center;gap:11px}
+  .nav .logo img{width:30px;height:30px;filter:drop-shadow(0 0 8px rgba(0,229,204,0.4))}
+  .nav .logo b{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:.16em}
+  .nav .links{display:flex;align-items:center;gap:26px;font-size:14px;color:var(--muted)}
+  .nav .links a{transition:color .15s}
+  .nav .links a:hover{color:var(--text)}
+  .nav .links a.cur{color:var(--teal)}
+  .nav .cta{font-size:13.5px;font-weight:600;color:#04100E;background:var(--teal);padding:9px 16px;border-radius:4px;box-shadow:0 0 18px rgba(0,229,204,0.35);transition:box-shadow .2s;white-space:nowrap}
+  .nav .cta:hover{box-shadow:0 0 26px rgba(0,229,204,0.55)}
+  .navwrap{display:flex;align-items:center;gap:30px}
+
+  .hero{text-align:center;max-width:760px;margin:0 auto;padding:clamp(48px,7vw,88px) clamp(20px,5vw,64px) 40px}
+  .hero h1{font-size:clamp(34px,5vw,58px);line-height:1.05;font-weight:500;letter-spacing:-.02em;margin:0 0 18px}
+  .hero p{font-size:clamp(16px,1.7vw,19px);line-height:1.6;color:var(--muted);margin:0}
+
+  .section{max-width:980px;margin:0 auto;padding:0 clamp(20px,5vw,64px) 40px}
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+  .plan{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:34px}
+  .plan.feat{position:relative;background:linear-gradient(180deg,rgba(0,229,204,0.06),#16161A);border:1.5px solid rgba(0,229,204,0.4);box-shadow:0 0 50px rgba(0,229,204,0.1)}
+  .plan .badge{position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--teal);padding:5px 11px;border-radius:100px;border:1px solid rgba(0,229,204,0.4);background:rgba(0,229,204,0.06)}
+  .plan h3{font-size:18px;font-weight:600;margin:0 0 6px}
+  .plan .sub{font-size:13.5px;color:var(--muted);margin:0 0 22px}
+  .plan .price{display:flex;align-items:baseline;gap:7px;margin-bottom:26px}
+  .plan .price .num{font-size:62px;font-weight:600;letter-spacing:-.03em;color:var(--teal)}
+  .plan .price .num.dim{font-size:46px;color:var(--muted)}
+  .plan .price .unit{font-size:15px;color:var(--muted)}
+  .plan .act{display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;padding:14px;border-radius:8px;margin-bottom:26px;transition:box-shadow .2s,border-color .2s}
+  .plan .act.primary{color:#04100E;background:var(--teal);box-shadow:0 0 24px rgba(0,229,204,0.4)}
+  .plan .act.primary:hover{box-shadow:0 0 34px rgba(0,229,204,0.6)}
+  .plan .act.sec{color:var(--text);background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-weight:500}
+  .plan .act.sec:hover{border-color:rgba(0,229,204,0.4)}
+  .plan .feats{display:flex;flex-direction:column;gap:13px}
+  .plan .feats .row{display:flex;gap:11px;font-size:13.5px;color:#D4D4D8}
+  .plan .feats .row.off{color:var(--muted)}
+  .plan .feats .ck{color:var(--teal)}
+  .plan .feats .ck.off{color:var(--muted-3)}
+
+  .spendbox{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:18px;padding:22px 26px;border-radius:14px;background:var(--panel);border:1px solid rgba(245,158,11,0.25)}
+  .spendbox .ic{width:46px;height:46px;flex-shrink:0;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:20px}
+  .spendbox .body{flex:1;min-width:240px}
+  .spendbox .body .t{font-size:15px;font-weight:600;margin-bottom:4px}
+  .spendbox .body p{font-size:13.5px;line-height:1.55;color:var(--muted);margin:0}
+  .spendbox .est{text-align:right}
+  .spendbox .est .lbl{font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .spendbox .est .val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--amber)}
+
+  .h2{font-size:clamp(22px,2.8vw,32px);font-weight:500;letter-spacing:-.015em;text-align:center;margin:0 0 32px}
+  .cmpwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .cmp{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.06)}
+  .cmp .hcell{background:var(--panel-3);padding:16px 18px;text-align:center}
+  .cmp .hcell .ht{font-size:13px;color:var(--muted)}
+  .cmp .hcell.aegis{background:rgba(0,229,204,0.06);border-top:2px solid var(--teal)}
+  .cmp .hcell.aegis .ht{font-weight:600;color:var(--teal)}
+  .cmp .cell{background:var(--panel);padding:15px 18px;font-size:13.5px;color:#D4D4D8}
+  .cmp .cell.mid{text-align:center;font-family:var(--mono);font-size:13px}
+  .cmp .cell.aegis{background:rgba(0,229,204,0.03);text-align:center;font-family:var(--mono);font-size:13px;color:var(--green)}
+
+  .faqs{max-width:760px;margin:0 auto;padding:clamp(20px,3vw,40px) clamp(20px,5vw,64px) clamp(48px,6vw,80px)}
+  .faqlist{display:flex;flex-direction:column;gap:10px}
+  .faq{border:1px solid var(--line);border-radius:11px;background:var(--panel);overflow:hidden}
+  .faq button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;text-align:left;padding:18px 20px;background:transparent;border:none;cursor:pointer;font-family:var(--sans)}
+  .faq button .q{font-size:15px;font-weight:500;color:var(--text)}
+  .faq button .pm{font-size:18px;color:var(--teal);flex-shrink:0;transition:transform .2s}
+  .faq.open button .pm{transform:rotate(45deg)}
+  .faq .a{display:none;padding:0 20px 18px;font-size:14px;line-height:1.6;color:var(--muted)}
+  .faq.open .a{display:block}
+
+  footer.site{border-top:1px solid var(--line)}
+  .footwrap{max-width:1240px;margin:0 auto;padding:clamp(48px,6vw,80px) clamp(20px,5vw,64px)}
+  .footcta{text-align:center;margin-bottom:60px}
+  .footcta h2{font-size:clamp(28px,4vw,44px);font-weight:500;letter-spacing:-.02em;margin:0 0 18px}
+  .footcta a{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;color:#04100E;background:var(--teal);padding:14px 26px;border-radius:6px;box-shadow:0 0 28px rgba(0,229,204,0.45);transition:box-shadow .2s}
+  .footcta a:hover{box-shadow:0 0 38px rgba(0,229,204,0.65)}
+  .footbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding-top:32px;border-top:1px solid var(--line)}
+  .footbar .logo{display:flex;align-items:center;gap:11px}
+  .footbar .logo img{width:26px;height:26px}
+  .footbar .logo b{font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:.16em}
+  .footbar .flinks{display:flex;flex-wrap:wrap;gap:22px;font-size:13px;color:var(--muted)}
+  .footbar .flinks a:hover{color:var(--text)}
+  .footbar .status{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;color:var(--muted-2);padding:7px 13px;border:1px solid var(--line-2);border-radius:5px}
+  .footbar .status .dot{animation:none}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="page">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a class="logo" href="dashboard.html">
+      <img src="assets/shield.svg" alt="Aegis">
+      <b>AEGIS<span class="teal">&nbsp;REFINE</span></b>
+    </a>
+    <div class="navwrap">
+      <div class="links">
+        <a href="#how">How it works</a>
+        <a href="#plans" class="cur">Pricing</a>
+        <a href="#faq">Docs</a>
+      </div>
+      <a class="cta" href="dashboard.html">Launch app →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow" style="margin-bottom:18px">// PRICING</div>
+    <h1>One flat fee. <span class="teal">Every dollar accounted for.</span></h1>
+    <p>$20 per job, on demand. External spends are always proposed, gated by your approval, and itemized on a signed certificate. No surprises, no auto-spend.</p>
+  </header>
+
+  <!-- PLANS -->
+  <section class="section" id="plans">
+    <div class="plans">
+      <div class="plan feat">
+        <div class="badge">ON-DEMAND</div>
+        <h3>Per Job</h3>
+        <p class="sub">One dataset, fully refined and certified.</p>
+        <div class="price"><span class="num">$20</span><span class="unit">flat / job</span></div>
+        <a class="act primary" href="new-order.html">Start a job →</a>
+        <div class="feats">
+          <div class="row"><span class="ck">✓</span> Clean ShareGPT / ChatML JSONL</div>
+          <div class="row"><span class="ck">✓</span> Signed audit certificate (JSON + PDF)</div>
+          <div class="row"><span class="ck">✓</span> Human gate on every external spend</div>
+          <div class="row"><span class="ck">✓</span> Local DGX Spark inference included</div>
+          <div class="row"><span class="ck">✓</span> PII masking &amp; deduplication</div>
+          <div class="row"><span class="ck">✓</span> Unlimited certificate re-downloads</div>
+        </div>
+      </div>
+      <div class="plan">
+        <h3>Team &amp; Volume</h3>
+        <p class="sub">For studios running many jobs.</p>
+        <div class="price"><span class="num dim">Custom</span></div>
+        <a class="act sec" href="#faq">Join the waitlist</a>
+        <div class="feats">
+          <div class="row off"><span class="ck off">○</span> Volume pricing &amp; shared spend budgets</div>
+          <div class="row off"><span class="ck off">○</span> Multi-user approval policies</div>
+          <div class="row off"><span class="ck off">○</span> API access &amp; webhooks</div>
+          <div class="row off"><span class="ck off">○</span> Curated dataset marketplace</div>
+          <div class="row off"><span class="ck off">○</span> Centralized audit dashboard &amp; SSO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- gated spend explainer -->
+    <div class="spendbox" id="how">
+      <span class="ic">⛉</span>
+      <div class="body">
+        <div class="t">How external spends work</div>
+        <p>Some jobs need paid APIs (OCR, enrichment). Aegis <span style="color:var(--text)">proposes</span> the spend with a reason — it never runs until you <span class="green">approve</span>. Each approved spend is <span class="amber">authorized under one human gate (test)</span> and itemized on your certificate.</p>
+      </div>
+      <div class="est">
+        <div class="lbl">TYPICAL EXTERNAL SPEND</div>
+        <div class="val">$0–$10</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="section">
+    <h2 class="h2">The trusted middle path</h2>
+    <div class="cmpwrap">
+      <div class="cmp">
+        <div class="hcell"></div>
+        <div class="hcell"><div class="ht">Manual cleaning</div></div>
+        <div class="hcell"><div class="ht">Unsupervised agent</div></div>
+        <div class="hcell aegis"><div class="ht">Aegis</div></div>
+        <div id="cmpRows" style="display:contents"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faqs" id="faq">
+    <h2 class="h2">Questions</h2>
+    <div class="faqlist" id="faqList"></div>
+  </section>
+
+  <!-- CTA + FOOTER -->
+  <footer class="site">
+    <div class="footwrap">
+      <div class="footcta">
+        <h2>Refine your data. <span class="teal">Keep the receipts.</span></h2>
+        <a href="new-order.html">Start a job — $20 flat →</a>
+      </div>
+      <div class="footbar">
+        <a class="logo" href="dashboard.html"><img src="assets/shield.svg" alt="Aegis"><b>AEGIS<span class="teal">&nbsp;REFINE</span></b></a>
+        <div class="flinks">
+          <a href="#how">How it works</a>
+          <a href="#plans">Pricing</a>
+          <a href="#faq">Docs</a>
+          <a href="dashboard.html">Launch app</a>
+        </div>
+        <div class="status"><span class="dot"></span> RUNNING ON NVIDIA DGX SPARK</div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// Comparison rows (ported from blueprint renderVals)
+const rows = [
+  { label: 'High-quality structured output', a: 'Varies',    aColor: 'var(--muted)', b: 'Sometimes', bColor: 'var(--muted)', c: '✓' },
+  { label: 'Speed at scale',                 a: 'Slow',      aColor: 'var(--red)',   b: 'Fast',      bColor: 'var(--green)', c: '✓ Fast' },
+  { label: 'Human control over spend',       a: 'Full',      aColor: 'var(--green)', b: 'None',      bColor: 'var(--red)',   c: '✓ Gated' },
+  { label: 'Signed audit trail',             a: '✕',         aColor: 'var(--red)',   b: '✕',         bColor: 'var(--red)',   c: '✓' },
+  { label: 'Cost',                           a: '$$$ labor', aColor: 'var(--muted)', b: 'Unbounded', bColor: 'var(--red)',   c: '$20 flat' },
+];
+document.getElementById('cmpRows').innerHTML = rows.map(r => `
+  <div class="cell">${r.label}</div>
+  <div class="cell mid" style="color:${r.aColor}">${r.a}</div>
+  <div class="cell mid" style="color:${r.bColor}">${r.b}</div>
+  <div class="cell aegis">${r.c}</div>
+`).join('');
+
+// FAQ accordion (ported from blueprint; honest spend wording)
+const faqs = [
+  { q: 'What does the $20 flat fee actually cover?', a: 'A complete refinement job: triage, scoring, local refinement on DGX Spark, PII masking, deduplication, your clean JSONL dataset, and a signed audit certificate. Local inference is included at no marginal cost.' },
+  { q: 'When would I be charged more than $20?', a: 'Only when the agent proposes a paid external service (like OCR or enrichment) AND you explicitly approve it. Approved spends are authorized under one human gate (outbound spend is a test stub today) and itemized on your certificate. Nothing runs without your approval.' },
+  { q: 'What happens if I reject a proposed spend?', a: 'The job continues without that step. The affected records are skipped or handled locally where possible, no external spend is authorized, and the rejection is permanently recorded in the audit log.' },
+  { q: 'What formats do you output?', a: 'ShareGPT and ChatML JSONL, ready for fine-tuning and agent training. Schema is validated before delivery.' },
+  { q: 'Is my data sent to third parties?', a: 'Bulk work runs locally on NVIDIA DGX Spark for data residency. External APIs are only ever called for spends you have explicitly approved.' },
+];
+const faqList = document.getElementById('faqList');
+faqList.innerHTML = faqs.map((f, i) => `
+  <div class="faq ${i === 0 ? 'open' : ''}" data-i="${i}">
+    <button type="button" onclick="toggleFaq(${i})">
+      <span class="q">${f.q}</span><span class="pm">+</span>
+    </button>
+    <div class="a">${f.a}</div>
+  </div>
+`).join('');
+function toggleFaq(i){
+  document.querySelectorAll('.faq').forEach(el => {
+    el.classList.toggle('open', +el.dataset.i === i ? !el.classList.contains('open') : false);
+  });
+}
+</script>
+</body>
+</html>

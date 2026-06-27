@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Marketplace · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .filters{display:flex;flex-wrap:wrap;gap:8px}
+  .filt{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:8px 15px;border-radius:7px;cursor:pointer;transition:all .15s;color:var(--muted-2);border:1px solid var(--line-2);background:transparent}
+  .filt:hover{color:var(--text)}
+  .filt.on{color:var(--teal);border-color:rgba(0,229,204,0.4);background:rgba(0,229,204,0.08)}
+  .mkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+  .dcard{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+  .dcard:hover{border-color:rgba(0,229,204,0.35);transform:translateY(-2px)}
+  .dcard .head{position:relative;height:92px;border-bottom:1px solid rgba(255,255,255,0.06);overflow:hidden}
+  .dcard .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,204,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,0.08) 1px,transparent 1px);background-size:22px 22px}
+  .dcard .tag{position:absolute;top:14px;left:16px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:4px 9px;border-radius:5px;background:rgba(13,13,15,0.6)}
+  .dcard .glyph{position:absolute;bottom:12px;right:16px;font-size:26px;opacity:.8}
+  .dcard .body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .dcard .name{font-size:15.5px;font-weight:600;margin-bottom:4px}
+  .dcard .desc{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+  .chip{font-family:var(--mono);font-size:10px;color:var(--muted);padding:4px 8px;border-radius:5px;background:var(--bg);border:1px solid var(--line)}
+  .chip.q{color:var(--teal);border-color:rgba(0,229,204,0.2)}
+  .cardfoot{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+  .price{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--teal)}
+  .addbtn{font-size:13px;font-weight:600;color:#04100E;background:var(--teal);padding:8px 14px;border:none;border-radius:7px;cursor:pointer;font-family:inherit;box-shadow:0 0 16px rgba(0,229,204,0.25);transition:box-shadow .2s}
+  .addbtn:hover{box-shadow:0 0 24px rgba(0,229,204,0.5)}
+  .empty{padding:40px 22px;text-align:center;border:1px dashed var(--line-2);border-radius:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;flex-direction:column;gap:24px">
+
+        <!-- page header -->
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// CURATED DATASETS</div>
+            <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Dataset marketplace</h1>
+            <p class="muted" style="font-size:14.5px;margin:0;max-width:620px">Pre-refined, ready-to-train datasets. Every listing ships with its own signed AAR certificate — same governance, zero wait.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <span class="mono amber" style="font-size:10px;padding:5px 11px;border-radius:6px;border:1px solid rgba(245,158,11,0.4);white-space:nowrap">PREVIEW · PHASE 2</span>
+            <span class="pill warn" style="white-space:nowrap">REPRESENTATIVE CATALOG · SAMPLE LISTINGS</span>
+          </div>
+        </div>
+
+        <!-- category filter -->
+        <div class="filters" id="filters"></div>
+
+        <!-- grid -->
+        <div class="mkgrid" id="grid"></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("marketplace", "marketplace");
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+// per-category brand tints (from the design blueprint)
+const TINT = {
+  Conversational: { a:"rgba(0,229,204,0.12)",  color:"#00E5CC", border:"rgba(0,229,204,0.3)" },
+  Code:           { a:"rgba(58,123,255,0.12)",  color:"#3A7BFF", border:"rgba(58,123,255,0.3)" },
+  Reasoning:      { a:"rgba(34,197,94,0.12)",   color:"#22C55E", border:"rgba(34,197,94,0.3)" },
+  Agentic:        { a:"rgba(245,158,11,0.12)",  color:"#F59E0B", border:"rgba(245,158,11,0.3)" },
+};
+
+// representative catalog — illustrative listings, not live inventory
+const DATASETS = [
+  { name:"Support Conversations", desc:"Multi-turn support tickets resolved into clean instruction/response pairs.", category:"Conversational", icon:"◳", format:"ChatML",  rows:"128K", quality:"94.7", price:"$40" },
+  { name:"Code Instructions",     desc:"Real-world coding tasks with verified, runnable solutions.",                 category:"Code",           icon:"⟨⟩", format:"ShareGPT", rows:"92K",  quality:"96.1", price:"$60" },
+  { name:"Reasoning Traces",      desc:"Step-by-step chains for math, logic, and planning problems.",               category:"Reasoning",      icon:"◈",  format:"ChatML",  rows:"64K",  quality:"95.3", price:"$80" },
+  { name:"Multi-turn Dialogue",   desc:"Long, coherent conversations across diverse everyday domains.",             category:"Conversational", icon:"◳",  format:"ShareGPT", rows:"210K", quality:"93.8", price:"$50" },
+  { name:"Function Calling",      desc:"Tool-use and structured function-call examples for agents.",                category:"Agentic",        icon:"⛭",  format:"ChatML",  rows:"48K",  quality:"97.0", price:"$70" },
+  { name:"RAG QA Pairs",          desc:"Grounded question/answer pairs with cited source passages.",                category:"Reasoning",      icon:"◈",  format:"ChatML",  rows:"156K", quality:"94.2", price:"$45" },
+  { name:"SQL Generation",        desc:"Natural-language prompts paired with schema-grounded, executable SQL.",      category:"Code",           icon:"⟨⟩", format:"ChatML",  rows:"74K",  quality:"95.8", price:"$55" },
+  { name:"Browser Agent Traces",  desc:"Step-logged web-navigation runs for training autonomous browser agents.",   category:"Agentic",        icon:"⛭",  format:"ShareGPT", rows:"36K",  quality:"96.4", price:"$90" },
+];
+
+const CATS = ["all", "Conversational", "Code", "Reasoning", "Agentic"];
+const LABELS = { all:"ALL", Conversational:"CONVERSATIONAL", Code:"CODE", Reasoning:"REASONING", Agentic:"AGENTIC" };
+let activeCat = "all";
+
+// CTA: representative listings route into the live New-order flow (no marketplace purchase endpoint exists)
+function order(){ window.location = "new-order.html"; }
+
+function renderFilters(){
+  document.getElementById("filters").innerHTML = CATS.map(c =>
+    `<button class="filt ${c === activeCat ? "on" : ""}" data-cat="${esc(c)}">${esc(LABELS[c])}</button>`
+  ).join("");
+  document.querySelectorAll(".filt").forEach(b =>
+    b.addEventListener("click", () => { activeCat = b.dataset.cat; renderFilters(); renderGrid(); })
+  );
+}
+
+function renderGrid(){
+  const list = DATASETS.filter(d => activeCat === "all" || d.category === activeCat);
+  const grid = document.getElementById("grid");
+  if (!list.length){ grid.innerHTML = `<div class="empty">No datasets in this category yet.</div>`; return; }
+  grid.innerHTML = list.map(d => {
+    const t = TINT[d.category] || TINT.Conversational;
+    return `<div class="dcard">
+      <div class="head" style="background:linear-gradient(135deg,${t.a},#0D0D0F)">
+        <div class="grid-bg"></div>
+        <span class="tag" style="color:${t.color};border:1px solid ${t.border}">${esc(d.category)}</span>
+        <span class="glyph" style="color:${t.color}">${esc(d.icon)}</span>
+      </div>
+      <div class="body">
+        <div>
+          <div class="name">${esc(d.name)}</div>
+          <div class="desc">${esc(d.desc)}</div>
+        </div>
+        <div class="chips">
+          <span class="chip">${esc(d.format)}</span>
+          <span class="chip">${esc(d.rows)} rows</span>
+          <span class="chip q">Q ${esc(d.quality)}</span>
+        </div>
+        <div class="cardfoot">
+          <span class="price">${esc(d.price)}</span>
+          <button class="addbtn" onclick="order()">Order →</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+renderFilters();
+renderGrid();
+</script>
+</body>
+</html>

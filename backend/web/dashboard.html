@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+  .stat{padding:20px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat .num{font-size:30px;font-weight:600;letter-spacing:-.02em}
+  .stat .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .split{display:grid;grid-template-columns:1.7fr 1fr;gap:24px;align-items:start}
+  .panel{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .panel .ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .thead,.jrow{display:grid;grid-template-columns:1.7fr 1fr .9fr .8fr .8fr 70px;gap:12px;align-items:center}
+  .thead{padding:11px 22px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted-2)}
+  .jrow{padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+  .jrow:hover{background:rgba(255,255,255,.02)}
+  .jrow:last-child{border-bottom:0}
+  .ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbadge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:4px 9px;border-radius:5px}
+  .sbadge i{width:5px;height:5px;border-radius:50%;display:inline-block}
+  .attn{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:12px;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(90deg,rgba(245,158,11,0.08),rgba(245,158,11,0.02));transition:border-color .2s}
+  .attn:hover{border-color:rgba(245,158,11,0.6)}
+  .attn .ico{width:40px;height:40px;flex:0 0 auto;border-radius:9px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:18px;animation:ag-pulse 2s infinite}
+  .tick{display:flex;gap:11px;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .tick:last-child{border-bottom:0}
+  .tick .td{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:0 0 auto}
+  .tick .ts{font-family:var(--mono);font-size:10px;color:var(--muted-3);flex:0 0 auto;margin-left:auto}
+  .feedwrap{max-height:520px;overflow:auto}
+  @media (max-width:900px){.split{grid-template-columns:1fr}.thead,.jrow{grid-template-columns:1.5fr .9fr 70px}.thead .hc-cx,.thead .hc-cost,.thead .hc-date,.jrow .c-cx,.jrow .c-cost,.jrow .c-date{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;flex-direction:column;gap:24px">
+
+        <!-- page header -->
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// WELCOME BACK</div>
+            <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Your refinery</h1>
+            <p class="muted" style="font-size:14px;margin:0">Aegis-14B triages every job on DGX Spark · external spend pauses at one human gate · each finish ships a signed AAR.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="sbadge mono" id="health" style="color:var(--muted-2);border:1px solid var(--line-2)"><i style="background:var(--muted-3)"></i> CHECKING…</span>
+            <a class="btn" href="new-order.html">＋ New order</a>
+          </div>
+        </div>
+
+        <!-- attention banner (spend proposals awaiting the human gate) -->
+        <div id="attention"></div>
+
+        <!-- summary stats (computed from live data) -->
+        <div class="statgrid" id="stats">
+          <div class="stat"><div class="label" style="margin-bottom:12px">Loading…</div><div class="num muted2">—</div></div>
+        </div>
+
+        <!-- jobs + live ticker -->
+        <div class="split">
+          <div class="panel">
+            <div class="ph">
+              <h2 style="font-size:16px;font-weight:600;margin:0">Jobs &amp; orders</h2>
+              <span class="mono muted2" id="jobsmeta" style="font-size:11px"></span>
+            </div>
+            <div class="thead">
+              <div>JOB</div><div>STATUS</div><div class="hc-cx">COMPLEXITY</div><div class="hc-cost">EST. COST</div><div class="hc-date">CREATED</div><div></div>
+            </div>
+            <div id="jobs">
+              <div class="muted mono" style="padding:22px;font-size:12px">Loading jobs…</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="ph">
+              <h2 style="font-size:16px;font-weight:600;margin:0">Live activity</h2>
+              <span class="sbadge mono" style="color:var(--teal);border:1px solid var(--teal-line);background:var(--teal-dim)"><span class="dot"></span> STREAM</span>
+            </div>
+            <div class="feedwrap" id="feed">
+              <div style="padding:18px" class="muted mono">Connecting…</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("dashboard", "dashboard");
+
+// ---------- helpers ----------
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const fmtDate = s => { if (!s) return "—"; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
+const relTime = s => { const d = new Date(s); if (isNaN(d)) return ""; let x = (Date.now()-d)/1000; if (x<0) x=0;
+  if (x<60) return Math.floor(x)+"s"; if (x<3600) return Math.floor(x/60)+"m"; if (x<86400) return Math.floor(x/3600)+"h"; return Math.floor(x/86400)+"d"; };
+const money = n => "$" + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// status -> [label, color, borderRGBA, bgRGBA]; unknown statuses fall back gracefully
+const STATUS = {
+  pending:           ["QUEUED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  paid:              ["PAID","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  queued:            ["QUEUED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  triage:            ["TRIAGE","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  triaged:           ["TRIAGED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  processing:        ["PROCESSING","#00E5CC","rgba(0,229,204,0.4)","rgba(0,229,204,0.08)"],
+  refining:          ["REFINING","#00E5CC","rgba(0,229,204,0.4)","rgba(0,229,204,0.08)"],
+  awaiting_approval: ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  awaiting_gate:     ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  gated:             ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  complete:          ["COMPLETE","#22C55E","rgba(34,197,94,0.4)","rgba(34,197,94,0.08)"],
+  completed:         ["COMPLETE","#22C55E","rgba(34,197,94,0.4)","rgba(34,197,94,0.08)"],
+  rejected:          ["HALTED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+  halted:            ["HALTED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+  failed:            ["FAILED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+};
+const theme = s => STATUS[String(s||"").toLowerCase()] || [String(s||"UNKNOWN").toUpperCase(),"#A1A1AA","rgba(255,255,255,0.15)","rgba(255,255,255,0.04)"];
+const DONE = new Set(["complete","completed","rejected","halted","failed"]);
+const isDone   = s => ["complete","completed"].includes(String(s||"").toLowerCase());
+const isActive = s => !DONE.has(String(s||"").toLowerCase());
+
+function complexity(n){
+  const v = Number(n);
+  if (isNaN(v)) return ["—","#A1A1AA"];
+  if (v >= 66) return [v + " · High","#F59E0B"];
+  if (v >= 33) return [v + " · Med","#00E5CC"];
+  return [v + " · Low","#A1A1AA"];
+}
+
+// ---------- renderers ----------
+function renderStats(jobs, activity){
+  const active    = jobs.filter(j => isActive(j.status)).length;
+  const delivered = jobs.filter(j => isDone(j.status)).length;
+  const total     = jobs.length;
+  const billed    = total * 20; // $20 flat per order; a Job exists only post-checkout
+  // outbound spend is a TEST STUB — count authorizations, sum stubbed amounts, label honestly
+  let approvals = 0, spendSum = 0;
+  for (const a of activity){
+    if (a.action === "spend_approved") approvals++;
+    if (a.action === "spend_executed" && a.details && typeof a.details.amount === "number") spendSum += a.details.amount;
+  }
+  const cards = [
+    ["ACTIVE JOBS", String(active), active ? "in triage / refining / at gate" : "nothing running", "var(--teal)"],
+    ["DATASETS DELIVERED", String(delivered), delivered ? "signed AAR issued" : "none yet", "var(--text)"],
+    ["GROSS BILLED", money(billed), total + " orders × $20 flat · Stripe test", "var(--text)"],
+    ["SPEND AUTHORIZED (test)", money(spendSum), approvals + " approval" + (approvals===1?"":"s") + " · outbound is a stub", "var(--amber)"],
+  ];
+  document.getElementById("stats").innerHTML = cards.map(([k,v,sub,col]) =>
+    `<div class="stat rise"><div class="label" style="margin-bottom:12px">${k}</div>`+
+    `<div class="num" style="color:${col}">${esc(v)}</div>`+
+    `<div class="sub">${esc(sub)}</div></div>`
+  ).join("");
+}
+
+function renderAttention(activity){
+  // newest-first feed: for each job, the newest spend_* action; if it's a proposal, it's still awaiting the gate
+  const seen = {}; const awaiting = [];
+  for (const a of activity){
+    if (!a.action || a.action.indexOf("spend_") !== 0) continue;
+    if (a.job_id in seen) continue;
+    seen[a.job_id] = a.action;
+    if (a.action === "spend_proposed") awaiting.push(a);
+  }
+  const el = document.getElementById("attention");
+  if (!awaiting.length){ el.innerHTML = ""; return; }
+  const n = awaiting.length, top = awaiting[0];
+  const amt = top.details && typeof top.details.amount === "number" ? money(top.details.amount) : null;
+  el.innerHTML =
+    `<a class="attn" href="ops.html">`+
+      `<span class="ico">⛉</span>`+
+      `<div style="flex:1">`+
+        `<div style="font-size:15px;font-weight:600">${n} spend proposal${n===1?"":"s"} awaiting your approval</div>`+
+        `<div style="font-size:13px" class="muted">Job <span class="mono amber">#${esc(top.job_id)}</span> · Aegis proposes`+
+          (amt ? ` <span class="mono amber">${amt}</span>` : "") + ` — review at the human gate</div>`+
+      `</div>`+
+      `<span class="mono amber" style="font-size:12px">Review →</span>`+
+    `</a>`;
+}
+
+function renderJobs(jobs){
+  const meta = document.getElementById("jobsmeta");
+  const box  = document.getElementById("jobs");
+  if (!jobs.length){
+    meta.textContent = "";
+    box.innerHTML = `<div style="padding:30px 22px;text-align:center">`+
+      `<div class="muted" style="font-size:14px;margin-bottom:14px">No jobs yet — start your first refinement.</div>`+
+      `<a class="btn ghost" href="new-order.html">＋ New order</a></div>`;
+    return;
+  }
+  meta.textContent = jobs.length + " total";
+  box.innerHTML = jobs.map(j => {
+    const [lbl,col,bd,bg] = theme(j.status);
+    const [cx,cxCol] = complexity(j.complexity_score);
+    const cost = (j.estimated_cost == null || j.estimated_cost === "") ? "—" : (String(j.estimated_cost).startsWith("$") ? esc(j.estimated_cost) : money(j.estimated_cost));
+    const name = esc(j.input || "Refinement job");
+    return `<a class="jrow" href="order-detail.html?job=${encodeURIComponent(j.id)}">`+
+      `<div style="min-width:0"><div class="ellip" style="font-size:14px;font-weight:500">${name}</div>`+
+        `<div class="mono muted2" style="font-size:10.5px">JOB-${esc(j.id)}</div></div>`+
+      `<div><span class="sbadge" style="color:${col};border:1px solid ${bd};background:${bg}"><i style="background:${col}"></i>${esc(lbl)}</span></div>`+
+      `<div class="mono c-cx" style="font-size:12.5px;color:${cxCol}">${esc(cx)}</div>`+
+      `<div class="mono c-cost" style="font-size:12.5px;color:var(--muted)">${cost}</div>`+
+      `<div class="mono c-date" style="font-size:11.5px;color:var(--muted-2)">${fmtDate(j.created_at)}</div>`+
+      `<div class="mono" style="text-align:right;font-size:11.5px;color:var(--teal)">View →</div>`+
+    `</a>`;
+  }).join("");
+}
+
+// activity action -> dot color
+const ACT_COLOR = {
+  job_created:"#3A7BFF", triage:"#3A7BFF", quality:"#00E5CC",
+  spend_decision:"#A1A1AA", spend_proposed:"#F59E0B", spend_approved:"#F59E0B",
+  spend_executed:"#F59E0B", spend_rejected:"#ef4444", aar_issued:"#22C55E",
+};
+function renderFeed(activity){
+  const feed = document.getElementById("feed");
+  if (!activity.length){ feed.innerHTML = `<div style="padding:18px" class="muted mono">No activity yet.</div>`; return; }
+  feed.innerHTML = activity.slice(0,40).map(a => {
+    const col = ACT_COLOR[a.action] || "#A1A1AA";
+    const summary = a.summary || (a.action||"event").replace(/_/g," ");
+    return `<div class="tick">`+
+      `<span class="td" style="background:${col};box-shadow:0 0 6px ${col}"></span>`+
+      `<div style="min-width:0;flex:1">`+
+        `<div style="font-size:13px">${esc(summary)}</div>`+
+        `<div class="mono muted2" style="font-size:10px;margin-top:2px">${esc((a.action||"").replace(/_/g,"·"))}${a.job_id!=null?" · job #"+esc(a.job_id):""}</div>`+
+      `</div>`+
+      `<span class="ts">${relTime(a.at)}</span>`+
+    `</div>`;
+  }).join("");
+}
+
+// ---------- data flow ----------
+let lastJobs = [], lastActivity = [];
+
+async function loadJobs(){
+  try { lastJobs = await Aegis.listJobs(50) || []; renderJobs(lastJobs); }
+  catch(e){ document.getElementById("jobs").innerHTML = `<div class="err" style="padding:22px">✗ Could not load jobs: ${esc(e.message||e)}</div>`; }
+}
+async function loadActivity(){
+  try { lastActivity = await Aegis.activity(50) || []; renderFeed(lastActivity); renderAttention(lastActivity); }
+  catch(e){ document.getElementById("feed").innerHTML = `<div class="err" style="padding:18px">✗ ${esc(e.message||e)}</div>`; }
+}
+function refreshStats(){ renderStats(lastJobs, lastActivity); }
+
+async function health(){
+  const el = document.getElementById("health");
+  try {
+    const r = await fetch("/health"); const ok = r.ok && ((await r.json())||{}).status === "healthy";
+    el.innerHTML = ok ? `<i style="background:var(--green)"></i> ALL SYSTEMS OPERATIONAL`
+                      : `<i style="background:var(--amber)"></i> DEGRADED`;
+    el.style.color = ok ? "var(--green)" : "var(--amber)";
+    el.style.border = "1px solid " + (ok ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)");
+  } catch {
+    el.innerHTML = `<i style="background:var(--red)"></i> OFFLINE`;
+    el.style.color = "var(--red)"; el.style.border = "1px solid rgba(239,68,68,0.3)";
+  }
+}
+
+async function boot(){
+  await Promise.all([loadJobs(), loadActivity(), health()]);
+  refreshStats();
+  // live ticker + gate banner poll
+  setInterval(async () => { await loadActivity(); refreshStats(); }, 5000);
+  // jobs/table refresh on a slower cadence
+  setInterval(async () => { await loadJobs(); refreshStats(); }, 20000);
+  setInterval(health, 30000);
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Job queue · Aegis Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .stat{padding:16px 18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat.warn{border-color:rgba(245,158,11,0.25)}
+  .stat .h{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2);margin-bottom:8px}
+  .stat .n{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+  .chips{display:flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:7px 13px;border-radius:5px;border:0;cursor:pointer;transition:all .15s;color:var(--muted-2);background:transparent}
+  .chip:hover{color:var(--text)}
+  .chip.on{color:var(--teal);background:var(--teal-dim)}
+  .search{display:flex;align-items:center;gap:9px;padding:8px 13px;border-radius:8px;background:var(--panel);border:1px solid var(--line-2);min-width:250px}
+  .search input{background:transparent;border:0;border-radius:0;padding:0;font-size:13px}
+  .search input:focus{border:0}
+  .qtable{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .thead,.jrow{display:grid;grid-template-columns:1.6fr 1fr .9fr .9fr .8fr .8fr;gap:12px;align-items:center}
+  .thead{padding:12px 22px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2)}
+  .jrow{padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+  .jrow:hover{background:rgba(255,255,255,.02)}
+  .jrow:last-child{border-bottom:0}
+  .ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbadge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:5px}
+  .sbadge i{width:5px;height:5px;border-radius:50%;flex:0 0 auto}
+  .foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:13px 22px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--muted-2)}
+  @media(max-width:900px){
+    .thead,.jrow{grid-template-columns:1.5fr 1fr .9fr}
+    .h-agent,.h-rev,.h-created,.c-agent,.c-rev,.c-created{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;flex-direction:column;gap:22px">
+
+        <!-- page header -->
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// ALL CUSTOMER JOBS</div>
+            <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Job queue</h1>
+            <p class="muted" style="font-size:14px;margin:0">Every refinement job across all customers — governed by Aegis-14B on DGX Spark. Live from the backend.</p>
+          </div>
+          <span class="sbadge mono" id="livecount" style="color:var(--muted-2);border:1px solid var(--line-2);padding:7px 12px">
+            <i style="background:var(--muted-3)"></i> LOADING…
+          </span>
+        </div>
+
+        <!-- summary stats (computed from live data) -->
+        <div class="statgrid" id="stats">
+          <div class="stat"><div class="h">QUEUED</div><div class="n muted2">—</div></div>
+          <div class="stat"><div class="h">REFINING</div><div class="n muted2">—</div></div>
+          <div class="stat warn"><div class="h">AWAITING GATE</div><div class="n muted2">—</div></div>
+          <div class="stat"><div class="h">COMPLETED</div><div class="n muted2">—</div></div>
+          <div class="stat"><div class="h">TOTAL JOBS</div><div class="n muted2">—</div></div>
+        </div>
+
+        <!-- controls -->
+        <div class="controls">
+          <div class="chips" id="chips"></div>
+          <div class="search">
+            <span class="muted2">⌕</span>
+            <input id="q" placeholder="Search job ID or input…" autocomplete="off" spellcheck="false"/>
+          </div>
+        </div>
+
+        <!-- table -->
+        <div class="qtable">
+          <div class="thead">
+            <div>JOB</div>
+            <div>STATUS</div>
+            <div>COMPLEXITY</div>
+            <div class="h-agent">AGENT</div>
+            <div class="h-rev">REVENUE</div>
+            <div class="h-created">CREATED</div>
+          </div>
+          <div id="rows">
+            <div class="mono muted" style="padding:24px;font-size:12px">Loading jobs…</div>
+          </div>
+          <div class="foot">
+            <span class="teal">⛉</span>
+            <span>Revenue is a $20 flat Stripe <b>test</b> charge per order · outbound spend runs through the human gate and is a test stub — no real money moves.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("job-queue", "job queue");
+
+// ---------- helpers ----------
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const fmtDate = s => { if (!s) return "—"; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
+
+// status -> [label, color, borderRGBA, bgRGBA]; mirrors dashboard.html so badges read identically
+const STATUS = {
+  pending:           ["QUEUED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  paid:              ["PAID","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  queued:            ["QUEUED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  triage:            ["TRIAGE","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  triaged:           ["TRIAGED","#3A7BFF","rgba(58,123,255,0.4)","rgba(58,123,255,0.08)"],
+  processing:        ["REFINING","#00E5CC","rgba(0,229,204,0.4)","rgba(0,229,204,0.08)"],
+  refining:          ["REFINING","#00E5CC","rgba(0,229,204,0.4)","rgba(0,229,204,0.08)"],
+  awaiting_approval: ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  awaiting_gate:     ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  gated:             ["AWAITING GATE","#F59E0B","rgba(245,158,11,0.4)","rgba(245,158,11,0.08)"],
+  complete:          ["COMPLETE","#22C55E","rgba(34,197,94,0.4)","rgba(34,197,94,0.08)"],
+  completed:         ["COMPLETE","#22C55E","rgba(34,197,94,0.4)","rgba(34,197,94,0.08)"],
+  rejected:          ["HALTED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+  halted:            ["HALTED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+  failed:            ["FAILED","#ef4444","rgba(239,68,68,0.4)","rgba(239,68,68,0.08)"],
+};
+const theme = s => STATUS[String(s||"").toLowerCase()] || [String(s||"UNKNOWN").toUpperCase(),"#A1A1AA","rgba(255,255,255,0.15)","rgba(255,255,255,0.04)"];
+
+// status -> filter group (matches the chips below)
+const GROUP = {
+  pending:"queued", paid:"queued", queued:"queued", triage:"queued", triaged:"queued",
+  processing:"refining", refining:"refining",
+  awaiting_approval:"gated", awaiting_gate:"gated", gated:"gated",
+  complete:"done", completed:"done", rejected:"done", halted:"done", failed:"done",
+};
+const groupOf = s => GROUP[String(s||"").toLowerCase()] || "other";
+
+function complexity(n){
+  const v = Number(n);
+  if (isNaN(v)) return ["—","#A1A1AA"];
+  if (v >= 66) return [v + " · High","#F59E0B"];
+  if (v >= 33) return [v + " · Med","#00E5CC"];
+  return [v + " · Low","#A1A1AA"];
+}
+
+// ---------- state ----------
+let lastJobs = [];
+let filter = "all";
+let query = "";
+
+const CHIPS = [
+  { key:"all",      label:"ALL" },
+  { key:"queued",   label:"QUEUED" },
+  { key:"refining", label:"REFINING" },
+  { key:"gated",    label:"GATED" },
+  { key:"done",     label:"DONE" },
+];
+
+// ---------- renderers ----------
+function renderChips(){
+  document.getElementById("chips").innerHTML = CHIPS.map(c =>
+    `<button class="chip ${c.key===filter?"on":""}" onclick="setFilter('${c.key}')">${c.label}</button>`
+  ).join("");
+}
+
+function renderStats(jobs){
+  const c = { queued:0, refining:0, gated:0, done:0 };
+  for (const j of jobs){ const g = groupOf(j.status); if (g in c) c[g]++; }
+  const cards = [
+    ["QUEUED",        String(c.queued),   "#3A7BFF", false],
+    ["REFINING",      String(c.refining), "#00E5CC", false],
+    ["AWAITING GATE", String(c.gated),    "#F59E0B", true ],
+    ["COMPLETED",     String(c.done),     "#22C55E", false],
+    ["TOTAL JOBS",    String(jobs.length),"var(--text)", false],
+  ];
+  document.getElementById("stats").innerHTML = cards.map(([h,n,col,warn]) =>
+    `<div class="stat${warn?" warn":""} rise"><div class="h">${h}</div><div class="n" style="color:${col}">${n}</div></div>`
+  ).join("");
+
+  // live count chip in header
+  const active = c.queued + c.refining + c.gated;
+  const el = document.getElementById("livecount");
+  el.style.color = "var(--muted)"; el.style.border = "1px solid var(--line-2)";
+  el.innerHTML = `<i style="background:var(--green);box-shadow:0 0 6px var(--green)"></i> ${active} ACTIVE · ${c.gated} GATED`;
+}
+
+function visibleJobs(){
+  const q = query.trim().toLowerCase();
+  return lastJobs.filter(j => {
+    if (filter !== "all" && groupOf(j.status) !== filter) return false;
+    if (!q) return true;
+    return String(j.id).includes(q) || String(j.input||"").toLowerCase().includes(q);
+  });
+}
+
+function renderRows(){
+  const box = document.getElementById("rows");
+  const jobs = visibleJobs();
+
+  if (!lastJobs.length){
+    box.innerHTML = `<div style="padding:34px 22px;text-align:center" class="muted">No jobs in the queue yet — a Job is created once a customer checks out.</div>`;
+    return;
+  }
+  if (!jobs.length){
+    box.innerHTML = `<div style="padding:34px 22px;text-align:center" class="muted">No jobs match this filter${query?` / “${esc(query)}”`:""}.</div>`;
+    return;
+  }
+
+  box.innerHTML = jobs.map(j => {
+    const [lbl,col,bd,bg] = theme(j.status);
+    const [cx,cxCol] = complexity(j.complexity_score);
+    // Aegis-14B is the only governing model; it owns any job past the queue. Untriaged queue jobs show "—".
+    const triaged = j.complexity_score != null || groupOf(j.status) !== "queued";
+    const agent = triaged ? "Aegis-14B" : "—";
+    const name = esc(j.input || "Refinement job");
+    return `<a class="jrow" href="order-detail.html?job=${encodeURIComponent(j.id)}">`+
+      `<div style="min-width:0"><div class="ellip" style="font-size:13.5px;font-weight:500">${name}</div>`+
+        `<div class="mono muted2" style="font-size:10.5px">JOB-${String(j.id).padStart(5,"0")}</div></div>`+
+      `<div><span class="sbadge" style="color:${col};border:1px solid ${bd};background:${bg}"><i style="background:${col}"></i>${esc(lbl)}</span></div>`+
+      `<div class="mono" style="font-size:12px;color:${cxCol}">${esc(cx)}</div>`+
+      `<div class="mono c-agent" style="font-size:11.5px;color:${triaged?"var(--teal)":"var(--muted-3)"}">${agent}</div>`+
+      `<div class="mono c-rev" style="font-size:12px;color:var(--green)" title="Stripe test · $20 flat per order">$20.00</div>`+
+      `<div class="mono c-created" style="font-size:11.5px;color:var(--muted-2)">${fmtDate(j.created_at)}</div>`+
+    `</a>`;
+  }).join("");
+}
+
+// ---------- interactions ----------
+window.setFilter = function(k){ filter = k; renderChips(); renderRows(); };
+document.getElementById("q").addEventListener("input", e => { query = e.target.value; renderRows(); });
+
+// ---------- data flow ----------
+async function loadJobs(){
+  try {
+    lastJobs = await Aegis.listJobs(200) || [];
+    renderStats(lastJobs);
+    renderRows();
+  } catch(e){
+    document.getElementById("rows").innerHTML = `<div class="err" style="padding:22px">✗ Could not load jobs: ${esc(e.message||e)}</div>`;
+    const el = document.getElementById("livecount");
+    el.style.color = "var(--red)"; el.style.border = "1px solid rgba(239,68,68,0.3)";
+    el.innerHTML = `<i style="background:var(--red)"></i> BACKEND OFFLINE`;
+  }
+}
+
+function boot(){
+  renderChips();
+  loadJobs();
+  setInterval(loadJobs, 15000); // keep the ops queue fresh
+}
+boot();
+</script>
+</body>
+</html>

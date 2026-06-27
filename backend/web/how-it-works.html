@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>How it works · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific marketing styles (app.css holds the design system) */
+  .mk-bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('assets/grid-texture.png');background-size:cover;opacity:.08}
+  .mk-bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px 600px at 70% -8%,rgba(0,229,204,0.1),transparent 60%)}
+  .mk-wrap{position:relative;z-index:1}
+  .mk-nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px clamp(20px,5vw,64px);background:rgba(13,13,15,0.72);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.07)}
+  .mk-brand{display:flex;align-items:center;gap:11px}
+  .mk-brand img{width:30px;height:30px;filter:drop-shadow(0 0 8px rgba(0,229,204,0.4))}
+  .mk-brand b{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:.16em}
+  .mk-navlinks{display:flex;align-items:center;gap:26px;font-size:14px;color:var(--muted)}
+  .mk-navlinks a{transition:color .15s}
+  .mk-navlinks a:hover{color:var(--text)}
+  .mk-navlinks a.on{color:var(--teal)}
+  .mk-launch{font-size:13.5px;font-weight:500;color:#04100E;background:var(--teal);padding:9px 16px;border-radius:4px;box-shadow:0 0 18px rgba(0,229,204,0.35);transition:box-shadow .2s;white-space:nowrap}
+  .mk-launch:hover{box-shadow:0 0 26px rgba(0,229,204,0.55)}
+  .mk-section{max-width:1100px;margin:0 auto;padding:clamp(24px,4vw,56px) clamp(20px,5vw,64px)}
+  .mk-chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:9px 15px;border-radius:7px;cursor:pointer;transition:all .15s;background:transparent}
+  .mk-two{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch}
+  .mk-gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .mk-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:16px;align-items:center}
+  .mk-flow-arrow{font-size:22px;color:var(--muted-3);text-align:center}
+  .mk-cta-green{display:inline-flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600;color:#04130A;background:var(--green);padding:13px 22px;border-radius:7px;box-shadow:0 0 24px rgba(34,197,94,0.35);transition:box-shadow .2s}
+  .mk-cta-green:hover{box-shadow:0 0 34px rgba(34,197,94,0.6)}
+  .mk-foot-links{display:flex;flex-wrap:wrap;gap:22px;font-size:13px;color:var(--muted)}
+  .mk-foot-links a:hover{color:var(--text)}
+  @media (max-width:820px){
+    .mk-two{grid-template-columns:1fr}
+    .mk-gate-grid{grid-template-columns:1fr;gap:26px}
+    .mk-flow{grid-template-columns:1fr;gap:12px}
+    .mk-flow-arrow{transform:rotate(90deg)}
+    .mk-navlinks{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="mk-bg-grid"></div>
+<div class="mk-bg-glow"></div>
+<div class="mk-wrap">
+
+  <!-- NAV -->
+  <nav class="mk-nav">
+    <a class="mk-brand" href="index.html">
+      <img src="assets/shield.svg" alt="Aegis">
+      <b>AEGIS<span class="teal">&nbsp;REFINE</span></b>
+    </a>
+    <div style="display:flex;align-items:center;gap:30px">
+      <div class="mk-navlinks">
+        <a class="on" href="how-it-works.html">How it works</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="docs.html">Docs</a>
+      </div>
+      <a class="mk-launch" href="dashboard.html">Launch app →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header style="text-align:center;max-width:800px;margin:0 auto;padding:clamp(48px,7vw,88px) clamp(20px,5vw,64px) 44px">
+    <div class="eyebrow" style="margin-bottom:18px">// HOW IT WORKS</div>
+    <h1 style="font-size:clamp(34px,5vw,58px);line-height:1.05;font-weight:500;letter-spacing:-.02em;margin:0 0 18px">Every consequential action passes through <span class="teal">Aegis-14B.</span></h1>
+    <p class="muted" style="font-size:clamp(16px,1.7vw,19px);line-height:1.6;margin:0">Triage, scoring, routing, spend proposal, human approval, and a permanent signed audit trail. Six stages — and a human gate on every dollar.</p>
+  </header>
+
+  <!-- INTERACTIVE LOOP -->
+  <section style="max-width:1100px;margin:0 auto;padding:0 clamp(20px,5vw,64px) clamp(40px,5vw,64px)">
+    <div id="chips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px"></div>
+    <div id="stageDetail"></div>
+  </section>
+
+  <!-- HUMAN GATE SPOTLIGHT -->
+  <section class="mk-section">
+    <div class="mk-gate-grid">
+      <div>
+        <div class="mono" style="font-size:12px;letter-spacing:.2em;color:var(--green);margin-bottom:16px">// THE MONEY MOMENT</div>
+        <h2 style="font-size:clamp(26px,3.4vw,40px);line-height:1.14;font-weight:500;letter-spacing:-.015em;margin:0 0 16px">A human gate on every dollar.</h2>
+        <p class="muted" style="font-size:15px;line-height:1.65;margin:0 0 22px">When the agent wants to spend on an external service, it stops and proposes. Nothing is authorized until a human reviews the reason, the amount, and the policy check — then approves. Approve, and the spend is authorized (test stub today). Reject, and the job continues with no spend and no charge.</p>
+        <a class="mk-cta-green" href="ops.html">Open the live gate →</a>
+      </div>
+      <div style="position:relative;border-radius:14px;background:var(--panel);border:1.5px solid rgba(34,197,94,0.4);box-shadow:0 0 44px rgba(34,197,94,0.14);padding:28px;text-align:center">
+        <div style="position:absolute;top:9px;left:9px;width:16px;height:16px;border-top:2px solid rgba(34,197,94,0.6);border-left:2px solid rgba(34,197,94,0.6)"></div>
+        <div style="position:absolute;top:9px;right:9px;width:16px;height:16px;border-top:2px solid rgba(34,197,94,0.6);border-right:2px solid rgba(34,197,94,0.6)"></div>
+        <div style="position:absolute;bottom:9px;left:9px;width:16px;height:16px;border-bottom:2px solid rgba(34,197,94,0.6);border-left:2px solid rgba(34,197,94,0.6)"></div>
+        <div style="position:absolute;bottom:9px;right:9px;width:16px;height:16px;border-bottom:2px solid rgba(34,197,94,0.6);border-right:2px solid rgba(34,197,94,0.6)"></div>
+        <div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--green);margin-bottom:18px">HUMAN APPROVAL GATE</div>
+        <div style="width:76px;height:76px;margin:0 auto 14px;border-radius:50%;background:rgba(34,197,94,0.1);border:2px solid rgba(34,197,94,0.6);display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--green)">⛉</div>
+        <div class="mono muted2" style="font-size:11px">PROPOSED SPEND</div>
+        <div class="amber" style="font-size:38px;font-weight:600;margin:4px 0 16px">$4.00</div>
+        <div style="display:flex;gap:10px">
+          <div class="mono" style="flex:2;font-size:12px;font-weight:600;color:#04130A;background:var(--green);padding:12px;border-radius:7px">✓ APPROVE</div>
+          <div class="mono muted" style="flex:1;font-size:12px;border:1px solid rgba(255,255,255,0.14);padding:12px;border-radius:7px">REJECT</div>
+        </div>
+        <div class="mono green" style="font-size:10px;letter-spacing:.06em;margin-top:12px">APPROVE → SPEND AUTHORIZED (TEST)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MONEY FLOW -->
+  <section class="mk-section">
+    <h2 style="font-size:clamp(22px,2.8vw,32px);font-weight:500;letter-spacing:-.015em;text-align:center;margin:0 0 32px">Real revenue in, governed spend out</h2>
+    <div class="mk-flow">
+      <div class="card" style="text-align:center;border-color:rgba(34,197,94,0.3)">
+        <div class="green" style="font-size:30px;margin-bottom:10px">$</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px">Customer pays</div>
+        <p class="muted" style="font-size:13px;margin:0">$20 flat via Stripe Checkout starts the job.</p>
+      </div>
+      <div class="mk-flow-arrow">→</div>
+      <div class="card" style="text-align:center;border-color:var(--teal-line)">
+        <div class="teal" style="font-size:30px;margin-bottom:10px">⌁</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px">Aegis earns &amp; works</div>
+        <p class="muted" style="font-size:13px;margin:0">Refines locally on DGX Spark; proposes spends only when justified.</p>
+      </div>
+      <div class="mk-flow-arrow">→</div>
+      <div class="card" style="text-align:center;border-color:rgba(245,158,11,0.3)">
+        <div class="amber" style="font-size:30px;margin-bottom:10px">⛉</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px">You approve spend</div>
+        <p class="muted" style="font-size:13px;margin:0">Gated outbound spend is authorized only on approval — execution is a test stub today.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NVIDIA -->
+  <section class="mk-section">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:22px;padding:30px;border-radius:16px;background:linear-gradient(135deg,rgba(58,123,255,0.06),#16161A);border:1px solid rgba(58,123,255,0.25)">
+      <span style="width:56px;height:56px;flex-shrink:0;border-radius:12px;background:rgba(58,123,255,0.1);border:1px solid rgba(58,123,255,0.4);display:flex;align-items:center;justify-content:center;color:#3A7BFF;font-size:24px">▰</span>
+      <div style="flex:1;min-width:280px">
+        <h3 style="font-size:20px;font-weight:600;margin:0 0 8px">Bulk work runs on NVIDIA DGX Spark</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">The custom Aegis-14B model governs every job from local inference — fast, private, zero-marginal-cost refinement with strong data residency. External APIs are reserved for the rare cases that justify them, and only when you approve.</p>
+      </div>
+      <div class="mono" style="font-size:11px;color:#3A7BFF;letter-spacing:.08em">LOCAL-FIRST · SPARK 1</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid rgba(255,255,255,0.06)">
+    <div style="max-width:1240px;margin:0 auto;padding:clamp(48px,6vw,80px) clamp(20px,5vw,64px)">
+      <div style="text-align:center;margin-bottom:60px">
+        <h2 style="font-size:clamp(28px,4vw,44px);font-weight:500;letter-spacing:-.02em;margin:0 0 18px">See the gate in action.</h2>
+        <a class="btn" href="new-order.html" style="text-decoration:none">Start a refinement job →</a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.07)">
+        <a class="mk-brand" href="index.html"><img src="assets/shield.svg" alt="Aegis" style="width:26px;height:26px"><b style="font-size:14px">AEGIS<span class="teal">&nbsp;REFINE</span></b></a>
+        <div class="mk-foot-links">
+          <a href="how-it-works.html">How it works</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="docs.html">Docs</a>
+          <a href="dashboard.html">Launch app</a>
+        </div>
+        <div class="mono muted2" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;padding:7px 13px;border:1px solid rgba(255,255,255,0.1);border-radius:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> RUNNING ON NVIDIA DGX SPARK</div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// Interactive six-stage governance loop — design + behavior from the blueprint, honest spend language.
+const STAGES = [
+  { label:'TRIAGE', icon:'⊹', color:'#3A7BFF', title:'Triage',
+    desc:'Incoming data is inspected and classified. Aegis-14B identifies formats, detects the domain, and flags obvious noise before any work begins.',
+    bullets:['Detects source types (Discord, PDF, HTML, JSON)','Flags malformed and empty records','Routes to the right refinement track'],
+    panelLabel:'AEGIS-14B · TRIAGE NODE', panelStatus:'CLASSIFIED',
+    panelBody:'> classify(input.zip)\n  formats: [html, json, pdf]\n  domain: support_tickets\n  noise_estimate: 41%' },
+  { label:'SCORE', icon:'◷', color:'#3A7BFF', title:'Score',
+    desc:'Each job gets a complexity score that drives the cost estimate and the refinement plan. Higher complexity means more careful routing.',
+    bullets:['Estimates clean-row yield','Predicts likely external spend','Sets the approval-threshold context'],
+    panelLabel:'AEGIS-14B · SCORE NODE', panelStatus:'SCORED',
+    panelBody:'> score(job)\n  complexity: 0.82 (HIGH)\n  est_clean_rows: 128,540\n  est_external_spend: ~$4.00' },
+  { label:'ROUTE', icon:'⇄', color:'#00E5CC', title:'Route',
+    desc:'Aegis-14B decides what runs locally versus what needs an external service. The default is always local-first on DGX Spark.',
+    bullets:['98% of work routed to local Spark inference','External calls isolated and minimized','Data residency preserved by default'],
+    panelLabel:'AEGIS-14B · ROUTE NODE', panelStatus:'ROUTED',
+    panelBody:'> route(tasks)\n  local (Spark): 98%\n  external (gated): 2%\n  residency: preserved' },
+  { label:'PROPOSE', icon:'✎', color:'#F59E0B', title:'Propose',
+    desc:'When an external paid step is needed, the agent creates a spend ticket — an explicit proposal with an amount, a reason, and a policy check.',
+    bullets:['Generates a spend ticket with rationale','Runs a policy check before surfacing','Never executes on its own'],
+    panelLabel:'AEGIS-14B · PROPOSE NODE', panelStatus:'AWAITING GATE',
+    panelBody:'> propose_spend()\n  amount: $4.00\n  reason: OCR · 1,240 PDFs\n  policy_check: PASS' },
+  { label:'HUMAN GATE', icon:'⛉', color:'#22C55E', title:'Human Gate',
+    desc:'The proposal pauses for a human. You see the amount, the reason, and the policy result, then approve or reject. This is the heart of governed autonomy.',
+    bullets:['No external spend moves without approval','Approve → spend authorized (test stub)','Reject → continue, no spend, no charge'],
+    panelLabel:'HUMAN · APPROVAL GATE', panelStatus:'APPROVED BY HUMAN',
+    panelBody:'> await_human()\n  proposed: $4.00\n  decision: APPROVE\n  actor: operator@aegisrefine.com' },
+  { label:'AAR', icon:'⌁', color:'#00E5CC', title:'AAR + Certificate',
+    desc:'After the job, Aegis generates an After Action Report and a signed audit certificate recording revenue, authorized spend, every decision, and every approval.',
+    bullets:['Immutable record of all actions','Signed certificate (JSON + PDF)','The deliverable customers actually pay for'],
+    panelLabel:'AEGIS-14B · AAR NODE', panelStatus:'CERTIFIED & SIGNED',
+    panelBody:'> generate_cert()\n  revenue: $20.00\n  authorized_spend: $4.00 (test)\n  approvals: 1/1\n  signed: ed25519' },
+];
+
+let active = 4; // Human Gate, matching the blueprint default
+const fade = (hex, a) => {
+  const c = hex.replace('#','');
+  return `rgba(${parseInt(c.slice(0,2),16)},${parseInt(c.slice(2,4),16)},${parseInt(c.slice(4,6),16)},${a})`;
+};
+
+function renderChips(){
+  const el = document.getElementById('chips');
+  el.innerHTML = STAGES.map((s,i)=>{
+    const on = i===active;
+    const color = on ? s.color : '#71717A';
+    const border = on ? fade(s.color,0.5) : 'rgba(255,255,255,0.1)';
+    const bg = on ? fade(s.color,0.08) : 'transparent';
+    return `<button class="mk-chip" onclick="select(${i})" style="color:${color};border:1px solid ${border};background:${bg}"><span style="opacity:.7">0${i+1}</span> ${s.label}</button>`;
+  }).join('');
+}
+
+function renderDetail(){
+  const s = STAGES[active];
+  const bullets = s.bullets.map(t=>`<div style="display:flex;gap:11px;font-size:13.5px;color:#D4D4D8"><span style="color:${s.color};flex-shrink:0">▹</span> ${t}</div>`).join('');
+  document.getElementById('stageDetail').className = 'mk-two rise';
+  document.getElementById('stageDetail').style.cssText = `border-radius:16px;background:var(--panel);border:1px solid ${fade(s.color,0.4)};box-shadow:0 0 50px ${fade(s.color,0.14)};overflow:hidden;transition:all .3s`;
+  document.getElementById('stageDetail').innerHTML = `
+    <div style="padding:clamp(28px,3.5vw,44px)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <span style="width:48px;height:48px;border-radius:11px;background:${fade(s.color,0.1)};border:1px solid ${fade(s.color,0.4)};display:flex;align-items:center;justify-content:center;font-size:22px;color:${s.color}">${s.icon}</span>
+        <div>
+          <div class="mono" style="font-size:11px;letter-spacing:.14em;color:${s.color}">STAGE 0${active+1} / 6</div>
+          <div style="font-size:22px;font-weight:600">${s.title}</div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:15px;line-height:1.65;margin:0 0 22px">${s.desc}</p>
+      <div style="display:flex;flex-direction:column;gap:11px">${bullets}</div>
+    </div>
+    <div style="position:relative;background:linear-gradient(135deg,#121417,#0D0D0F);border-left:1px solid rgba(255,255,255,0.06);padding:clamp(24px,3vw,40px);display:flex;flex-direction:column;justify-content:center;gap:14px">
+      <div class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">${s.panelLabel}</div>
+      <div class="mono muted" style="font-size:13px;line-height:1.8;padding:18px;border-radius:10px;background:#0D0D0F;border:1px solid rgba(255,255,255,0.06);white-space:pre-wrap">${s.panelBody}</div>
+      <div class="mono" style="display:flex;align-items:center;gap:9px;font-size:11px;color:${s.color}"><span style="width:7px;height:7px;border-radius:50%;background:${s.color};box-shadow:0 0 8px ${s.color};animation:ag-pulse 1.6s infinite"></span> ${s.panelStatus}</div>
+    </div>`;
+}
+
+function select(i){ active = i; renderChips(); renderDetail(); }
+renderChips(); renderDetail();
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Aegis — autonomous dataset refinery</title>
+<style>
+  :root{
+    --bg:#070e11; --panel:#0c171a; --panel2:#06181b; --line:#143438;
+    --teal:#18b3b3; --aqua:#66f9f1; --text:#cfe9e6; --muted:#6a9390; --warn:#f2b705; --bad:#e85d5d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#0d2226,transparent),var(--bg);
+       color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  a{color:var(--aqua)}
+  header{display:flex;align-items:center;gap:16px;padding:20px 28px;border-bottom:1px solid var(--line)}
+  header img{width:44px;height:44px}
+  header h1{font-size:20px;margin:0;letter-spacing:.18em}
+  header .tag{color:var(--muted);font-size:12px;letter-spacing:.04em}
+  .wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;padding:20px 28px;max-width:1300px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+        border-radius:12px;padding:18px 20px;margin-bottom:18px}
+  .card h2{font-size:12px;letter-spacing:.16em;color:var(--teal);margin:0 0 12px;text-transform:uppercase}
+  .step{color:var(--muted);font-weight:700;margin-right:6px}
+  label{display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;margin:10px 0 4px}
+  input,textarea{width:100%;background:#03090b;border:1px solid var(--line);color:var(--text);
+        border-radius:8px;padding:9px 11px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+  textarea{resize:vertical;min-height:54px}
+  button{background:var(--teal);color:#02100f;border:0;border-radius:8px;padding:9px 16px;font-weight:700;
+        cursor:pointer;letter-spacing:.02em;margin:10px 8px 0 0}
+  button.ghost{background:transparent;color:var(--aqua);border:1px solid var(--teal)}
+  button.bad{background:var(--bad);color:#1a0606}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .kv b{color:var(--muted);font-weight:500}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.05em}
+  .pill.ok{background:#0c2a22;color:#5af2b0;border:1px solid #1c6b4f}
+  .pill.warn{background:#2a2207;color:var(--warn);border:1px solid #6b5a1c}
+  .pill.bad{background:#2a0c0c;color:var(--bad);border:1px solid #6b1c1c}
+  .muted{color:var(--muted)} .mono{font-family:ui-monospace,Menlo,monospace}
+  .feed{max-height:78vh;overflow:auto}
+  .ev{border-left:2px solid var(--line);padding:7px 0 7px 12px;margin:2px 0}
+  .ev.agent{border-color:var(--teal)} .ev.human{border-color:var(--aqua)} .ev.system{border-color:#3a5a5a}
+  .ev .t{font-size:10px;color:var(--muted)} .ev .s{font-size:13px}
+  .ev .d{font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  .err{color:var(--bad);font-size:12px;margin-top:6px;white-space:pre-wrap}
+  pre{background:#03090b;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:11px;color:#9fd6d0}
+</style>
+</head>
+<body>
+<header>
+  <img src="/brand-assets/Aegis%20Refine%20-%20Shield%20Icon_SVG.svg" alt="Aegis"/>
+  <div>
+    <h1>A E G I S</h1>
+    <div class="tag">autonomous dataset refinery · governed by <b>Aegis-14B</b> on NVIDIA DGX Spark · earns &amp; spends real money under one human gate</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="flow">
+    <!-- EARN -->
+    <div class="card">
+      <h2><span class="step">1</span> Earn — a customer pays</h2>
+      <label>Dataset URL (https)</label>
+      <input id="dataset" value="https://data.example.com/discord-export.json"/>
+      <label>Customer email</label>
+      <input id="email" value="judge@aegisrefine.com"/>
+      <div class="row">
+        <button onclick="openCheckout()">Open Stripe Checkout</button>
+        <button class="ghost" onclick="simulatePaid()">Simulate paid → start job (dev)</button>
+      </div>
+      <div id="earnOut"></div>
+    </div>
+
+    <!-- OPERATE -->
+    <div class="card">
+      <h2><span class="step">2</span> Operate — Aegis-14B governs (live)</h2>
+      <label>Dataset sample</label>
+      <textarea id="sample">240k Discord messages from a gaming guild: emojis, bot command spam, @role mentions, some PII in DMs, interleaved threads. Target: clean ShareGPT.</textarea>
+      <label>Edge case it may hit mid-job</label>
+      <textarea id="hard">4,000 scanned pages of handwritten cursive clinical notes; local OCR cannot read cursive — recovering the text needs a cloud handwriting/vision API.</textarea>
+      <button id="processBtn" onclick="runProcess()" disabled>Run Aegis-14B</button>
+      <div id="opOut"></div>
+    </div>
+
+    <!-- GATE -->
+    <div class="card" id="gateCard" style="display:none">
+      <h2><span class="step">3</span> Human gate — your one yes/no</h2>
+      <div id="gateProposal"></div>
+      <label>Operator key (X-Admin-Key)</label>
+      <input id="adminKey" value="dev-admin-key"/>
+      <div class="row">
+        <button onclick="decide('approve')">Approve spend</button>
+        <button class="bad" onclick="decide('reject')">Deny</button>
+      </div>
+      <div id="gateOut"></div>
+    </div>
+
+    <!-- PROVE -->
+    <div class="card" id="proveCard" style="display:none">
+      <h2><span class="step">4</span> Prove — signed certificate</h2>
+      <button id="completeBtn" onclick="complete()">Complete job &amp; issue AAR</button>
+      <div id="proveOut"></div>
+    </div>
+  </div>
+
+  <!-- LIVE FEED -->
+  <div class="card">
+    <h2>Live activity <span class="muted" style="text-transform:none;letter-spacing:0">— watch it work</span></h2>
+    <div id="feed" class="feed"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const state = { jobId:null, ticketId:null };
+async function api(method, path, body, headers){
+  const opt = { method, headers: Object.assign({"Content-Type":"application/json"}, headers||{}) };
+  if (body !== undefined) opt.body = JSON.stringify(body);
+  const r = await fetch(path, opt);
+  const txt = await r.text(); let data; try{ data = JSON.parse(txt) }catch{ data = txt }
+  if (!r.ok) throw new Error(typeof data==="object" ? JSON.stringify(data) : data);
+  return data;
+}
+const err = (el,e)=> $(el).innerHTML = `<div class="err">✗ ${e.message||e}</div>`;
+
+async function openCheckout(){
+  try{
+    const d = await api("POST","/jobs/",{dataset_url:$("dataset").value, email:$("email").value});
+    $("earnOut").innerHTML = `<p class="muted">Real Stripe test checkout — pay with card 4242 4242 4242 4242:</p><a href="${d.checkout_url}" target="_blank">${d.checkout_url.slice(0,72)}…</a>`;
+  }catch(e){ err("earnOut",e) }
+}
+async function simulatePaid(){
+  try{
+    const d = await api("POST","/dev/simulate-payment",{dataset_url:$("dataset").value, email:$("email").value});
+    state.jobId = d.job_id;
+    $("earnOut").innerHTML = `<p>✓ Paid — <b>job #${d.job_id}</b> created (status: ${d.status}).</p>`;
+    $("processBtn").disabled = false;
+  }catch(e){ err("earnOut",e) }
+}
+async function runProcess(){
+  if(!state.jobId) return err("opOut",{message:"create a job first"});
+  $("opOut").innerHTML = `<p class="muted">Aegis-14B is reasoning over the dataset…</p>`;
+  try{
+    const s = await api("POST",`/jobs/${state.jobId}/process`,{sample:$("sample").value, hard_doc:$("hard").value});
+    const card = (title,obj)=>`<div class="card" style="margin:10px 0"><b class="muted">${title}</b><div class="kv">`+
+      Object.entries(obj).map(([k,v])=>`<b>${k}</b><span>${typeof v==="object"?JSON.stringify(v):v}</span>`).join("")+`</div></div>`;
+    $("opOut").innerHTML = card("triage", s.triage) + card("quality", s.quality) + card("spend", s.spend);
+    if (s.spend_ticket_id){
+      state.ticketId = s.spend_ticket_id;
+      $("gateProposal").innerHTML = `<p>Agent wants to buy <b>${s.spend.tool}</b> for <b>$${s.spend.est_cost_usd}</b>.</p>`+
+        `<p class="muted">"${s.spend.rationale||s.spend.reason||""}"</p>`+
+        `<span class="pill warn">PAUSED — awaiting your approval</span>`;
+      $("gateCard").style.display = "block";
+    } else {
+      $("opOut").innerHTML += `<p><span class="pill ok">kept local</span> conservative — no external spend needed.</p>`;
+      $("proveCard").style.display = "block";
+    }
+  }catch(e){ err("opOut",e) }
+}
+async function decide(action){
+  try{
+    const d = await api("POST",`/admin/gate/${state.ticketId}/${action}`, undefined,
+                        {"X-Admin-Key":$("adminKey").value, "X-Admin-User":$("email").value});
+    if (action==="approve"){
+      await api("POST",`/admin/gate/${state.ticketId}/execute`, undefined, {"X-Admin-Key":$("adminKey").value}).catch(()=>{});
+      $("gateOut").innerHTML = `<span class="pill ok">approved by ${d.approved_by} — spend authorized</span>`+
+        `<p class="muted">↳ outbound payment via <b>@stripe/link-cli</b> (test) — wired, pending auth. <b>No real money has moved yet.</b></p>`;
+    } else {
+      $("gateOut").innerHTML = `<span class="pill bad">denied — zero dollars moved</span>`;
+    }
+    $("proveCard").style.display = "block";
+  }catch(e){ err("gateOut",e) }
+}
+async function complete(){
+  try{
+    await api("POST",`/jobs/${state.jobId}/complete`,{output:'{"messages":[{"role":"user","content":"clean row"}]}\\n'.repeat(40)});
+    const cert = await api("GET",`/jobs/${state.jobId}/aar`);
+    $("proveOut").innerHTML =
+      `<div class="kv"><b>subject</b><span>${cert.subject}</span><b>verifier</b><span>${cert.verifier.id}</span>`+
+      `<b>response_sha256</b><span class="mono">${cert.checks[0].response_sha256}</span>`+
+      `<b>sig (Ed25519)</b><span class="mono">${cert.sig.value.slice(0,44)}…</span></div>`+
+      `<button class="ghost" onclick="verify()">Verify with the public zero-dep verifier</button><div id="verifyOut"></div>`;
+  }catch(e){ err("proveOut",e) }
+}
+async function verify(){
+  try{
+    const v = await api("GET",`/jobs/${state.jobId}/verify`);
+    $("verifyOut").innerHTML = `<p><span class="pill ${v.ok?'ok':'bad'}">conformance: ${v.level}${v.ok?' ✓':' ✗'}</span> `+
+      `<span class="muted">checkable by anyone, owned by no vendor</span></p><pre>${v.output}</pre>`;
+  }catch(e){ err("verifyOut",e) }
+}
+async function pollFeed(){
+  try{
+    const rows = await api("GET","/activity?limit=40");
+    $("feed").innerHTML = rows.map(r=>`<div class="ev ${r.actor}"><div class="t">${(r.at||'').replace('T',' ')} · ${r.actor}</div>`+
+      `<div class="s">${r.summary}</div><div class="d">${Object.entries(r.details).map(([k,v])=>k+'='+v).join('  ')}</div></div>`).join("");
+  }catch(e){}
+  setTimeout(pollFeed, 2500);
+}
+pollFeed();
+</script>
+</body>
+</html>

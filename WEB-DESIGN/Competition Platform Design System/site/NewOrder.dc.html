@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  textarea { font-family: 'Space Grotesk', sans-serif; }
+  textarea::placeholder { color: #52525B; }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px; background: #2A2A30; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00E5CC; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,204,0.6); }
+  @keyframes ag-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+  @keyframes ag-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">WORKSPACE</div>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▦</span> Dashboard</a>
+    <a href="NewOrder.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">＋</span> New order</a>
+    <a href="OrderDetail.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▤</span> Datasets</a>
+    <a href="Marketplace.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Marketplace</a>
+    <a href="Certificate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⛉</span> Certificates</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">ACCOUNT</div>
+    <a href="Billing.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">$</span> Billing</a>
+    <a href="Settings.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⚙</span> Settings</a>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◎</span> Ops console</a>
+    <div style="margin-top: auto; padding: 14px; border-radius: 10px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 6px;">CREDITS BALANCE</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; color: #00E5CC;">$142.75</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">aegis / <span style="color: #F2F2F5;">new order</span></div>
+      <a href="Dashboard.dc.html" style="font-size: 13px; color: #A1A1AA;" style-hover="color: #F2F2F5;">✕ Cancel</a>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; align-items: start;">
+
+      <!-- LEFT: form -->
+      <div style="display: flex; flex-direction: column; gap: 22px;">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #00E5CC; margin-bottom: 10px;">// NEW REFINEMENT JOB</div>
+          <h1 style="font-size: 26px; font-weight: 500; letter-spacing: -0.015em; margin: 0 0 6px;">Upload &amp; describe your data</h1>
+          <p style="font-size: 14px; color: #A1A1AA; margin: 0;">Drop a ZIP of raw data, tell Aegis what you need, and Conductor will triage it before anything runs.</p>
+        </div>
+
+        <!-- upload -->
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">SOURCE DATA</div>
+          <sc-if value="{{ hasFile }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 11px; background: #16161A; border: 1px solid rgba(0,229,204,0.3);">
+              <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 9px; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.3); display: flex; align-items: center; justify-content: center; color: #00E5CC; font-size: 18px;">▤</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 14px; font-weight: 500;">discord_export.zip</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">240 MB · 1,240 files · raw HTML, JSON, PDF</div>
+              </div>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #22C55E; padding: 4px 9px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3);">✓ READY</span>
+              <button onClick="{{ removeFile }}" style="background: transparent; border: none; color: #71717A; cursor: pointer; font-size: 15px;" style-hover="color: #ef4444;">✕</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noFile }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ addFile }}" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 38px; border-radius: 11px; background: #16161A; border: 1px dashed rgba(255,255,255,0.18); cursor: pointer; transition: border-color .2s; font-family: inherit;" style-hover="border-color: rgba(0,229,204,0.5);">
+              <span style="font-size: 24px; color: #00E5CC;">⤓</span>
+              <span style="font-size: 14px; font-weight: 500; color: #F2F2F5;">Drop a .zip or click to upload</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">Discord logs · PDFs · scraped HTML · raw JSON</span>
+            </button>
+          </sc-if>
+        </div>
+
+        <!-- output format -->
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">OUTPUT FORMAT</div>
+          <div style="display: flex; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; max-width: 360px;">
+            <button onClick="{{ pickChatML }}" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ chatmlColor }}; background: {{ chatmlBg }};">ChatML JSONL</button>
+            <button onClick="{{ pickShareGPT }}" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ sharegptColor }}; background: {{ sharegptBg }};">ShareGPT</button>
+          </div>
+        </div>
+
+        <!-- spec -->
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">REFINEMENT SPEC</div>
+          <textarea rows="4" style="width: 100%; font-size: 14px; line-height: 1.6; color: #F2F2F5; background: #16161A; border: 1px solid rgba(255,255,255,0.1); border-radius: 11px; padding: 14px 16px; outline: none; resize: vertical; transition: border-color .15s;" style-focus="border-color: rgba(0,229,204,0.6);">Convert support tickets into clean instruction/response pairs. Mask all PII, drop duplicates, normalize timestamps, and keep only English. Target high signal for fine-tuning a support agent.</textarea>
+        </div>
+
+        <!-- spend policy -->
+        <div style="padding: 20px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 6px;"><span style="color: #00E5CC;">⛉</span><span style="font-size: 15px; font-weight: 600;">Spend policy</span></div>
+          <p style="font-size: 13px; color: #A1A1AA; margin: 0 0 18px;">Aegis may propose small external spends (OCR, enrichment). Set the threshold above which a human must approve.</p>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">REQUIRE APPROVAL ABOVE</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 600; color: #F59E0B;">{{ thresholdLabel }}</span>
+          </div>
+          <input type="range" min="0" max="25" step="1" value="{{ threshold }}" onInput="{{ onThreshold }}" style="width: 100%;">
+          <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #52525B; margin-top: 6px;"><span>$0 · gate everything</span><span>$25</span></div>
+          <div style="margin-top: 14px; font-size: 12.5px; color: #A1A1AA;">{{ thresholdNote }}</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: triage + summary (sticky) -->
+      <div style="position: sticky; top: 90px; display: flex; flex-direction: column; gap: 18px;">
+        <!-- triage preview -->
+        <div style="padding: 22px; border-radius: 14px; background: linear-gradient(180deg, rgba(0,229,204,0.05), #16161A); border: 1px solid rgba(0,229,204,0.22);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #00E5CC;">CONDUCTOR TRIAGE PREVIEW</div>
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #00E5CC; box-shadow: 0 0 8px #00E5CC; animation: ag-pulse 1.6s infinite;"></span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A1A1AA; padding: 5px 9px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Triage</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A1A1AA; padding: 5px 9px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Score</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A1A1AA; padding: 5px 9px; border-radius: 5px; border: 1px solid rgba(0,229,204,0.3); background: rgba(0,229,204,0.06);">→ Estimate</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); border-radius: 9px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; padding: 11px 14px; background: #121316; font-size: 13px;"><span style="color: #71717A;">Complexity score</span><span style="font-family: 'JetBrains Mono', monospace; color: #F59E0B;">HIGH · 0.82</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 11px 14px; background: #121316; font-size: 13px;"><span style="color: #71717A;">Est. clean rows</span><span style="font-family: 'JetBrains Mono', monospace;">~128,540</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 11px 14px; background: #121316; font-size: 13px;"><span style="color: #71717A;">Local on Spark</span><span style="font-family: 'JetBrains Mono', monospace; color: #22C55E;">98% of work</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 11px 14px; background: #121316; font-size: 13px;"><span style="color: #71717A;">Likely external spend</span><span style="font-family: 'JetBrains Mono', monospace; color: #F59E0B;">~$4.00 (OCR)</span></div>
+          </div>
+        </div>
+
+        <!-- order summary -->
+        <div style="padding: 22px; border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">
+          <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 16px;">Order summary</h2>
+          <div style="display: flex; justify-content: space-between; padding: 9px 0; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #A1A1AA;">Flat job fee</span><span style="font-family: 'JetBrains Mono', monospace;">$20.00</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 9px 0; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #A1A1AA;">External spend</span><span style="font-family: 'JetBrains Mono', monospace; color: #F59E0B;">gated · approve later</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 9px 0; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #A1A1AA;">DGX Spark inference</span><span style="font-family: 'JetBrains Mono', monospace; color: #22C55E;">included</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 4px;"><span style="font-size: 14px; font-weight: 600;">Due today</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 600; color: #00E5CC;">$20.00</span></div>
+          <a href="OrderDetail.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px; border-radius: 9px; box-shadow: 0 0 24px rgba(0,229,204,0.35); margin-top: 16px; transition: box-shadow .2s;" style-hover="box-shadow: 0 0 34px rgba(0,229,204,0.55);">Pay $20 &amp; start job →</a>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #71717A;"><span style="color: #00E5CC;">⛉</span> Secured by Stripe · no external spend without approval</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:920}}">
+class Component extends DCLogic {
+  state = { hasFile: true, format: 'chatml', threshold: 5 };
+
+  addFile() { this.setState({ hasFile: true }); }
+  removeFile() { this.setState({ hasFile: false }); }
+  setFormat(f) { this.setState({ format: f }); }
+  setThreshold(v) { this.setState({ threshold: Number(v) }); }
+
+  renderVals() {
+    const isChatML = this.state.format === 'chatml';
+    const t = this.state.threshold;
+    const activeBg = 'rgba(0,229,204,0.12)';
+    let thresholdNote;
+    if (t === 0) thresholdNote = 'Every external spend will pause for human approval.';
+    else thresholdNote = 'Spends under $' + t + ' auto-execute and log; anything above pauses for your approval.';
+    return {
+      hasFile: this.state.hasFile,
+      noFile: !this.state.hasFile,
+      addFile: () => this.addFile(),
+      removeFile: () => this.removeFile(),
+      pickChatML: () => this.setFormat('chatml'),
+      pickShareGPT: () => this.setFormat('sharegpt'),
+      chatmlColor: isChatML ? '#00E5CC' : '#A1A1AA',
+      chatmlBg: isChatML ? activeBg : 'transparent',
+      sharegptColor: !isChatML ? '#00E5CC' : '#A1A1AA',
+      sharegptBg: !isChatML ? activeBg : 'transparent',
+      threshold: t,
+      thresholdLabel: '$' + t + '.00',
+      thresholdNote,
+      onThreshold: (e) => this.setThreshold(e.target.value),
+    };
+  }
+}
+</script>
+</body>
+</html>

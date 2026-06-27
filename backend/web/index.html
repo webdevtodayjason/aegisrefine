@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Aegis Refine · Governed, auditable dataset refinery</title>
+<meta name="description" content="Aegis turns messy data into clean ShareGPT / ChatML datasets — governed by the Aegis-14B model on NVIDIA DGX Spark, with a human gate on every external spend and a signed audit certificate per job."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific styles for the standalone marketing page (app.css holds the tokens) */
+  @keyframes ag-spin{to{transform:rotate(360deg)}}
+  @keyframes ag-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes ag-blink{0%,100%{opacity:1}50%{opacity:.2}}
+  @keyframes ag-ring{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+  .lp{position:relative;min-height:100vh;overflow-x:hidden;background:var(--bg)}
+  .lp a{transition:color .15s}
+  .lp-fx1{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('assets/grid-texture.png');background-size:cover;background-position:center;opacity:.10}
+  .lp-fx2{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1100px 700px at 78% -8%,rgba(0,229,204,0.10),transparent 60%),radial-gradient(900px 600px at 5% 18%,rgba(58,123,255,0.07),transparent 60%)}
+  .lp-wrap{position:relative;z-index:1}
+  .lp-nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px clamp(20px,5vw,64px);background:rgba(13,13,15,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .lp-navlinks{display:flex;align-items:center;gap:26px;font-size:14px;color:var(--muted)}
+  .lp-navlinks a:hover{color:var(--text)}
+  .lp-cta{display:inline-flex;align-items:center;gap:9px;font-weight:500;color:#04100E;background:var(--teal);border-radius:5px;box-shadow:0 0 18px rgba(0,229,204,.35);transition:box-shadow .2s,transform .12s}
+  .lp-cta:hover{box-shadow:0 0 30px rgba(0,229,204,.6)}
+  .lp-ghost{display:inline-flex;align-items:center;gap:9px;font-weight:500;color:var(--text);background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:5px;transition:border-color .2s,background .2s}
+  .lp-ghost:hover{border-color:rgba(0,229,204,.5);background:rgba(0,229,204,.06)}
+  .lp-section{max-width:1240px;margin:0 auto;padding:clamp(48px,6vw,88px) clamp(20px,5vw,64px)}
+  .lp-card{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+  .lp-corner{position:absolute;width:16px;height:16px}
+  @media(max-width:880px){.lp-hero{grid-template-columns:1fr !important}.lp-hud{display:none !important}.lp-navlinks{display:none !important}}
+  @media(max-width:720px){.lp-deliver{grid-template-columns:1fr !important}}
+</style>
+</head>
+<body>
+<div class="lp">
+  <div class="lp-fx1"></div>
+  <div class="lp-fx2"></div>
+  <div class="lp-wrap">
+
+  <!-- NAV -->
+  <nav class="lp-nav">
+    <a href="index.html" style="display:flex;align-items:center;gap:11px">
+      <img src="assets/shield.svg" alt="Aegis" style="width:30px;height:30px;display:block;filter:drop-shadow(0 0 8px rgba(0,229,204,.4))">
+      <span class="mono" style="font-size:16px;font-weight:600;letter-spacing:.16em">AEGIS<span class="teal">&nbsp;REFINE</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:30px">
+      <div class="lp-navlinks">
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="docs.html">Docs</a>
+      </div>
+      <a class="lp-cta" href="dashboard.html" style="font-size:13.5px;padding:9px 16px;white-space:nowrap">Launch app →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header id="top" class="lp-hero" style="position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;max-width:1240px;margin:0 auto;padding:clamp(48px,7vw,96px) clamp(20px,5vw,64px) clamp(40px,6vw,80px)">
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid var(--teal-line);border-radius:100px;background:rgba(0,229,204,.06);margin-bottom:26px">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:ag-pulse 2s infinite"></span>
+        <span class="mono muted" style="font-size:11.5px;letter-spacing:.16em;white-space:nowrap">CONDUCTOR-GOVERNED DATASET REFINERY</span>
+      </div>
+      <h1 style="font-size:clamp(40px,5.6vw,72px);line-height:1.03;font-weight:500;letter-spacing:-.02em;margin:0 0 22px">Your messy data.<br><span class="teal">Governed. Auditable. Delivered.</span></h1>
+      <p class="muted" style="font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:540px;margin:0 0 32px">Aegis is an autonomous refinery that turns Discord logs, PDFs, and scraped HTML into clean ShareGPT / ChatML datasets — governed end-to-end by the custom Aegis-14B model on NVIDIA DGX Spark, with a human gate on every dollar it proposes to spend, and a signed certificate proving exactly what happened.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:40px">
+        <a class="lp-cta" href="new-order.html" style="font-size:15px;padding:13px 22px">Start a refinement job &nbsp;→</a>
+        <a class="lp-ghost" href="how-it-works.html" style="font-size:15px;padding:13px 22px">See how it works</a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px 34px;padding-top:26px;border-top:1px solid var(--line)">
+        <div style="display:flex;flex-direction:column;gap:3px"><span class="mono teal" style="font-size:20px;font-weight:600">128.5K+</span><span class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">RECORDS REFINED</span></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span class="mono teal" style="font-size:20px;font-weight:600">94.7/100</span><span class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">QUALITY SCORE</span></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span class="mono teal" style="font-size:20px;font-weight:600">62%</span><span class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">NOISE REDUCTION</span></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span class="mono green" style="font-size:20px;font-weight:600">100%</span><span class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">GATED SPEND</span></div>
+      </div>
+    </div>
+
+    <!-- hero HUD: isometric refinement layers -->
+    <div class="lp-hud" style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center">
+      <div style="position:absolute;width:280px;height:280px;border-radius:50%;border:1px solid rgba(0,229,204,.12);animation:ag-pulse 4s infinite"></div>
+      <div style="position:absolute;width:360px;height:360px;border-radius:50%;border:1px solid rgba(0,229,204,.07)"></div>
+      <div style="perspective:1100px;animation:ag-float 6s ease-in-out infinite">
+        <div style="transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(45deg);position:relative;width:200px;height:200px">
+          <div style="position:absolute;inset:0;transform:translateZ(0px);border:1px solid rgba(0,229,204,.35);background:rgba(0,229,204,.04);background-image:linear-gradient(rgba(0,229,204,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.18) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 30px rgba(0,229,204,.15)"></div>
+          <div style="position:absolute;inset:0;transform:translateZ(48px);border:1px solid rgba(0,229,204,.55);background:rgba(0,229,204,.07);background-image:linear-gradient(rgba(0,229,204,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.22) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 40px rgba(0,229,204,.25)"></div>
+          <div style="position:absolute;inset:0;transform:translateZ(96px);border:1px solid rgba(0,229,204,.9);background:rgba(0,229,204,.10);background-image:linear-gradient(rgba(0,229,204,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.3) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 60px rgba(0,229,204,.4)">
+            <div style="position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--teal);box-shadow:0 0 24px 6px rgba(0,229,204,.8);animation:ag-pulse 2.2s infinite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PROBLEM -->
+  <section class="lp-section">
+    <div class="eyebrow" style="margin-bottom:16px">// THE BOTTLENECK</div>
+    <h2 style="font-size:clamp(26px,3.4vw,42px);line-height:1.18;font-weight:500;letter-spacing:-.015em;max-width:880px;margin:0 0 44px">Fine-tuning is blocked by messy data. And most agents <span class="muted">can't be trusted with the fix.</span></h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+      <div class="lp-card" style="padding:26px">
+        <div style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);font-family:var(--mono);font-size:18px;margin-bottom:18px">⌗</div>
+        <h3 style="font-size:18px;font-weight:600;margin:0 0 8px">Messy in, garbage out</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">Inconsistent formats, missing values, duplicates, PII, raw noise. Cleaning it by hand is slow, error-prone, and never quite finished.</p>
+      </div>
+      <div class="lp-card" style="padding:26px">
+        <div style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);font-family:var(--mono);font-size:18px;margin-bottom:18px">$</div>
+        <h3 style="font-size:18px;font-weight:600;margin:0 0 8px">Agents that spend unsupervised</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">Fully autonomous agents will call paid APIs and burn budget with no oversight. Powerful, but untrustworthy with real money.</p>
+      </div>
+      <div class="lp-card" style="padding:26px">
+        <div style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:var(--teal-dim);border:1px solid var(--teal-line);color:var(--teal);font-family:var(--mono);font-size:18px;margin-bottom:18px">∅</div>
+        <h3 style="font-size:18px;font-weight:600;margin:0 0 8px">No trusted middle path</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">There's nothing that combines real agent capability with strong human governance and a verifiable record of every decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS — interactive Conductor flow (self-contained demo, no backend) -->
+  <section id="how" style="position:relative;padding:clamp(48px,6vw,88px) clamp(20px,5vw,64px);border-top:1px solid var(--line);background:linear-gradient(180deg,rgba(0,229,204,.025),transparent 220px)">
+    <div style="max-width:1240px;margin:0 auto">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:16px">// THE CONDUCTOR LOOP</div>
+          <h2 style="font-size:clamp(26px,3.4vw,42px);line-height:1.14;font-weight:500;letter-spacing:-.015em;max-width:720px;margin:0">Every consequential action passes through a human gate.</h2>
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border:1px solid var(--teal-line);border-radius:5px;background:rgba(0,229,204,.05)">
+          <span class="dot"></span>
+          <span class="mono muted" style="font-size:11px;letter-spacing:.14em;white-space:nowrap">LIVE DEMO · WF-2025-00147</span>
+        </div>
+      </div>
+      <p class="muted" style="font-size:15px;max-width:760px;margin:18px 0 34px">Triage → score → route → propose → <span class="teal">human gate</span> → AAR. The agent hit an edge case mid-job and wants to spend on OCR enrichment. It can't, until you approve. <span style="color:var(--text)">Try it:</span></p>
+
+      <!-- 3 column flow -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;align-items:stretch">
+
+        <!-- STEP 1: AI PROPOSAL -->
+        <div class="lp-card" style="position:relative;border-radius:10px;padding:22px;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1px solid var(--teal-line);font-family:var(--mono);font-size:13px;color:var(--teal)">1</span>
+            <span class="mono muted2" style="font-size:11px;letter-spacing:.16em">AI AGENT PROPOSAL</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:34px;height:34px;border-radius:7px;background:rgba(0,229,204,.08);border:1px solid rgba(0,229,204,.25);display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:16px">◭</span>
+              <div><div style="font-size:15px;font-weight:600">Aegis-14B</div><div class="mono muted2" style="font-size:10.5px">DGX SPARK · LOCAL</div></div>
+            </div>
+            <span class="mono green" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.1em;padding:3px 8px;border-radius:4px;border:1px solid rgba(34,197,94,.3)"><span style="width:5px;height:5px;border-radius:50%;background:var(--green)"></span>ONLINE</span>
+          </div>
+          <div style="padding:16px;border-radius:8px;background:var(--bg);border:1px solid var(--line);text-align:center;margin-bottom:14px">
+            <div class="mono muted2" style="font-size:10px;letter-spacing:.18em;margin-bottom:8px">PROPOSED EXTERNAL SPEND</div>
+            <div class="teal" style="font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1">$4.00</div>
+            <div class="mono muted" style="font-size:11px;margin-top:8px">OCR enrichment · 1,240 scanned PDFs</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <div style="flex:1;padding:10px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--line);text-align:center"><div style="font-size:16px;font-weight:600;color:var(--green)">+38%</div><div class="mono muted2" style="font-size:8.5px;letter-spacing:.08em">QUALITY</div></div>
+            <div style="flex:1;padding:10px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--line);text-align:center"><div style="font-size:16px;font-weight:600;color:var(--teal)">−62%</div><div class="mono muted2" style="font-size:8.5px;letter-spacing:.08em">NOISE</div></div>
+            <div style="flex:1;padding:10px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--line);text-align:center"><div style="font-size:16px;font-weight:600;color:#3A7BFF">+91%</div><div class="mono muted2" style="font-size:8.5px;letter-spacing:.08em">SIGNAL</div></div>
+          </div>
+          <div class="mono muted2" style="font-size:10px;letter-spacing:.16em;margin-bottom:7px">RATIONALE</div>
+          <p class="muted" style="font-size:13px;line-height:1.55;margin:0">1,240 records are locked inside scanned PDFs. Local OCR can't parse them cleanly; a paid OCR pass recovers them at high fidelity. Recommend approving the spend.</p>
+        </div>
+
+        <!-- STEP 2: HUMAN GATE -->
+        <div id="gateCard" class="lp-card" style="position:relative;border-radius:10px;padding:22px;display:flex;flex-direction:column;border-width:1.5px;border-color:rgba(245,158,11,.5);box-shadow:0 0 40px rgba(245,158,11,.18);transition:border-color .4s,box-shadow .4s">
+          <div class="lp-corner gc-corner" style="top:8px;left:8px;border-top:2px solid var(--amber);border-left:2px solid var(--amber)"></div>
+          <div class="lp-corner gc-corner" style="top:8px;right:8px;border-top:2px solid var(--amber);border-right:2px solid var(--amber)"></div>
+          <div class="lp-corner gc-corner" style="bottom:8px;left:8px;border-bottom:2px solid var(--amber);border-left:2px solid var(--amber)"></div>
+          <div class="lp-corner gc-corner" style="bottom:8px;right:8px;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber)"></div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <span id="gateNum" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1px solid rgba(245,158,11,.5);font-family:var(--mono);font-size:13px;color:var(--amber)">2</span>
+            <span id="gateLabel" class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--amber)">HUMAN APPROVAL GATE</span>
+          </div>
+
+          <!-- gate emblem -->
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;height:124px;margin-bottom:8px">
+            <div id="gateSpinner" style="display:none;width:78px;height:78px;border-radius:50%;border:3px solid rgba(0,229,204,.2);border-top-color:var(--teal);animation:ag-spin .8s linear infinite"></div>
+            <div id="gateEmblemWrap" style="position:relative;display:flex;align-items:center;justify-content:center">
+              <div id="gateRing" style="position:absolute;width:92px;height:92px;border-radius:50%;border:1px solid rgba(245,158,11,.5);animation:ag-ring 2.4s ease-out infinite"></div>
+              <div id="gateEmblem" style="width:78px;height:78px;border-radius:50%;background:rgba(245,158,11,.08);border:2px solid rgba(245,158,11,.5);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--amber);box-shadow:0 0 30px rgba(245,158,11,.18);transition:all .4s">⛉</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-bottom:16px">
+            <div id="gateTitle" style="font-size:17px;font-weight:600;color:var(--amber);transition:color .4s">Approval required</div>
+            <div id="gateSub" class="mono muted" style="font-size:11px;margin-top:5px">Review the proposal and decide</div>
+          </div>
+
+          <!-- proposal summary -->
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">Proposed by</span><span class="mono">Aegis-14B</span></div>
+            <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">Spend amount</span><span class="mono amber">$4.00</span></div>
+            <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">Est. processing</span><span class="mono">18m 24s</span></div>
+            <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px"><span class="muted2">Policy check</span><span class="mono green">✓ PASS</span></div>
+          </div>
+
+          <!-- action area -->
+          <div style="margin-top:auto">
+            <div id="gatePending">
+              <button onclick="Demo.approve()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;font-family:var(--sans);font-size:14px;font-weight:600;color:#04130A;background:var(--green);border:none;padding:14px;border-radius:7px;cursor:pointer;box-shadow:0 0 24px rgba(34,197,94,.4);transition:box-shadow .2s">✓ &nbsp;APPROVE &amp; AUTHORIZE $4.00 (TEST)</button>
+              <button onclick="Demo.reject()" style="width:100%;font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--muted);background:transparent;border:1px solid var(--line-2);padding:12px;border-radius:7px;cursor:pointer;margin-top:9px;transition:border-color .2s,color .2s">Reject proposal</button>
+              <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Requires authenticated approver · POLICY-DATA-REFINE-01</div>
+            </div>
+            <div id="gateApproving" style="display:none">
+              <div class="mono teal" style="width:100%;text-align:center;font-size:12.5px;padding:14px;border:1px solid var(--teal-line);border-radius:7px;background:rgba(0,229,204,.05)">AUTHORIZING SPEND (TEST)<span style="animation:ag-blink 1s infinite">…</span></div>
+            </div>
+            <div id="gateResolved" style="display:none">
+              <div id="resolvedNote" class="mono" style="width:100%;text-align:center;padding:13px;border-radius:7px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.6);font-size:12px;color:var(--green)">✓ $4.00 SPEND AUTHORIZED (TEST)</div>
+              <button onclick="Demo.reset()" class="mono muted" style="width:100%;font-size:11.5px;letter-spacing:.1em;background:transparent;border:1px solid var(--line-2);padding:10px;border-radius:7px;cursor:pointer;margin-top:9px;transition:border-color .2s">↻ RESET DEMO</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: REFINED OUTPUT -->
+        <div class="lp-card" style="position:relative;border-radius:10px;padding:22px;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);font-family:var(--mono);font-size:13px;color:var(--muted)">3</span>
+            <span class="mono muted2" style="font-size:11px;letter-spacing:.16em">REFINED DATA OUTPUT</span>
+          </div>
+
+          <div id="outLocked" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:280px;gap:14px;opacity:.8">
+            <div style="width:60px;height:60px;border-radius:50%;border:1px dashed var(--line-2);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted-3)">⛒</div>
+            <div class="muted" style="font-size:15px;font-weight:600">Awaiting approval</div>
+            <p class="muted2" style="font-size:13px;line-height:1.55;margin:0;max-width:220px">Refinement is paused at the gate. No external spend executes until a human approves.</p>
+          </div>
+
+          <div id="outRejected" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:280px;gap:14px">
+            <div style="width:60px;height:60px;border-radius:50%;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--red)">✕</div>
+            <div style="font-size:15px;font-weight:600">Job halted</div>
+            <p class="muted2" style="font-size:13px;line-height:1.55;margin:0;max-width:230px">Proposal rejected. No spend authorized, <span class="green">no charge</span>. The decision is permanently recorded in the audit log.</p>
+          </div>
+
+          <div id="outApproved" style="display:none">
+            <div class="rise">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div style="font-size:15px;font-weight:600">Refined dataset</div>
+                <span class="mono green" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.1em;padding:3px 8px;border-radius:4px;border:1px solid rgba(34,197,94,.3)"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></span>READY</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px">
+                <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">Records processed</span><span class="mono">128,540</span></div>
+                <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">Quality score</span><span class="mono teal">94.7 / 100</span></div>
+                <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted2">PII detected &amp; masked</span><span class="mono">2,193</span></div>
+                <div style="display:flex;justify-content:space-between;padding:9px 13px;font-size:12.5px"><span class="muted2">Duplicates removed</span><span class="mono">18,732</span></div>
+              </div>
+              <div style="position:relative;border:1px solid var(--teal-line);border-radius:8px;padding:14px;background:rgba(0,229,204,.04);margin-bottom:14px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <img src="assets/shield.svg" alt="" style="width:30px;height:30px;filter:drop-shadow(0 0 6px rgba(0,229,204,.5))">
+                  <div><div class="mono muted2" style="font-size:10px;letter-spacing:.14em">AUDIT CERTIFICATE</div><div class="green" style="font-size:13px;font-weight:600">✓ VERIFIED &amp; SIGNED</div></div>
+                </div>
+                <div class="mono muted2" style="font-size:10.5px;margin-top:10px;word-break:break-all">cert_7a2b9c4d81 · $4.00 spend authorized (test) · 1 approval</div>
+              </div>
+              <a class="teal" href="certificate.html" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:500;border:1px solid var(--teal-line);padding:11px;border-radius:7px">View dataset &amp; certificate ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- audit trail + pipeline -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:18px">
+        <div class="lp-card" style="border-radius:10px;padding:20px 22px">
+          <div class="mono muted2" style="font-size:11px;letter-spacing:.16em;margin-bottom:16px">AUDIT TRAIL · IMMUTABLE</div>
+          <div id="auditTrail" style="display:flex;flex-direction:column;gap:0"></div>
+        </div>
+        <div class="lp-card" style="border-radius:10px;padding:20px 22px">
+          <div class="mono muted2" style="font-size:11px;letter-spacing:.16em;margin-bottom:16px">CONDUCTOR PIPELINE</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+            <span class="mono muted" style="font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)">✓ Triage</span>
+            <span class="mono muted" style="font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)">✓ Score</span>
+            <span class="mono muted" style="font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)">✓ Route</span>
+            <span class="mono muted" style="font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)">✓ Propose</span>
+            <span id="pipeGate" class="mono" style="font-size:11px;padding:6px 10px;border-radius:5px;color:#04130A;border:1px solid rgba(245,158,11,.5);background:var(--amber)">⛉ Human Gate</span>
+            <span id="pipeAar" class="mono muted3" style="font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid var(--line-2)">AAR</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:13px;border-radius:8px;background:var(--bg);border:1px solid var(--line)">
+            <span id="loopDot" style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--amber);box-shadow:0 0 8px var(--amber);animation:ag-pulse 1.6s infinite"></span>
+            <div><div class="mono muted2" style="font-size:10px;letter-spacing:.14em">CURRENT STATUS</div><div id="loopStatus" style="font-size:13.5px;font-weight:500;color:var(--amber)">Awaiting human approval</div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+            <div><div class="mono muted2" style="font-size:10px">REVENUE EARNED</div><div class="mono green" style="font-size:16px;font-weight:600">$20.00</div></div>
+            <div style="text-align:right"><div class="mono muted2" style="font-size:10px">GATED SPEND</div><div id="spendStat" class="mono muted2" style="font-size:16px;font-weight:600">$0.00</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT YOU GET -->
+  <section id="deliver" class="lp-section" style="border-top:1px solid var(--line)">
+    <div class="eyebrow" style="margin-bottom:16px">// THE DELIVERABLE</div>
+    <h2 style="font-size:clamp(26px,3.4vw,42px);line-height:1.16;font-weight:500;letter-spacing:-.015em;max-width:720px;margin:0 0 12px">A clean dataset, and signed proof of every decision.</h2>
+    <p class="muted" style="font-size:15px;max-width:640px;margin:0 0 40px">You get production-ready JSONL — and the signed AAR certificate is the deliverable you're actually paying for.</p>
+    <div class="lp-deliver" style="display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:stretch">
+      <!-- dataset -->
+      <div class="lp-card" style="border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)">
+          <div style="display:flex;align-items:center;gap:9px"><span class="teal">▤</span><span class="mono" style="font-size:13px">dataset.jsonl</span></div>
+          <span class="mono muted2" style="font-size:11px">ChatML · 128,540 rows</span>
+        </div>
+        <div class="mono muted" style="padding:18px;font-size:11.5px;line-height:1.85;overflow-x:auto;flex:1">
+          <div>{<span class="teal">"messages"</span>: [</div>
+          <div style="padding-left:16px">{<span class="teal">"role"</span>: <span style="color:#3A7BFF">"user"</span>, <span class="teal">"content"</span>: <span style="color:#d6dee8">"How do I reset my password?"</span>},</div>
+          <div style="padding-left:16px">{<span class="teal">"role"</span>: <span style="color:#3A7BFF">"assistant"</span>, <span class="teal">"content"</span>: <span style="color:#d6dee8">"Open Settings → Security → Reset…"</span>}</div>
+          <div>], <span class="teal">"source"</span>: <span style="color:#3A7BFF">"support_tickets"</span>, <span class="teal">"quality"</span>: <span class="amber">0.95</span>}</div>
+          <div class="muted3" style="margin-top:10px">… 128,539 more rows · 0 duplicates · PII masked</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:14px 18px;border-top:1px solid var(--line)">
+          <span class="mono green" style="font-size:10.5px;padding:4px 9px;border-radius:4px;border:1px solid rgba(34,197,94,.25)">✓ DEDUPED</span>
+          <span class="mono green" style="font-size:10.5px;padding:4px 9px;border-radius:4px;border:1px solid rgba(34,197,94,.25)">✓ PII MASKED</span>
+          <span class="mono green" style="font-size:10.5px;padding:4px 9px;border-radius:4px;border:1px solid rgba(34,197,94,.25)">✓ SCHEMA-VALID</span>
+        </div>
+      </div>
+      <!-- certificate -->
+      <div style="position:relative;background:linear-gradient(180deg,#121418,#0D0D0F);border:1px solid rgba(0,229,204,.25);border-radius:12px;padding:26px;display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,229,204,.08)">
+        <div class="lp-corner" style="top:10px;left:10px;width:18px;height:18px;border-top:2px solid rgba(0,229,204,.6);border-left:2px solid rgba(0,229,204,.6)"></div>
+        <div class="lp-corner" style="top:10px;right:10px;width:18px;height:18px;border-top:2px solid rgba(0,229,204,.6);border-right:2px solid rgba(0,229,204,.6)"></div>
+        <div class="lp-corner" style="bottom:10px;left:10px;width:18px;height:18px;border-bottom:2px solid rgba(0,229,204,.6);border-left:2px solid rgba(0,229,204,.6)"></div>
+        <div class="lp-corner" style="bottom:10px;right:10px;width:18px;height:18px;border-bottom:2px solid rgba(0,229,204,.6);border-right:2px solid rgba(0,229,204,.6)"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px">
+          <img src="assets/shield.svg" alt="" style="width:46px;height:46px;filter:drop-shadow(0 0 10px rgba(0,229,204,.5));margin-bottom:10px">
+          <div class="mono" style="font-size:16px;letter-spacing:.18em;font-weight:600">AUDIT CERTIFICATE</div>
+          <div class="mono muted2" style="font-size:10px;letter-spacing:.2em;margin-top:5px">CONDUCTOR-GOVERNED · SIGNED (Ed25519)</div>
+        </div>
+        <div style="display:inline-flex;align-self:center;align-items:center;gap:8px;padding:7px 14px;border-radius:100px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);margin-bottom:18px">
+          <span class="green" style="font-size:14px">✓</span><span class="mono green" style="font-size:11.5px;letter-spacing:.1em">VERIFIED &amp; COMPLIANT · L2</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+          <div style="background:#121418;padding:12px 14px"><div class="mono muted2" style="font-size:9.5px;letter-spacing:.12em">REVENUE</div><div class="mono green" style="font-size:15px;margin-top:3px">$20.00</div></div>
+          <div style="background:#121418;padding:12px 14px"><div class="mono muted2" style="font-size:9.5px;letter-spacing:.12em">GATED SPEND</div><div class="mono amber" style="font-size:15px;margin-top:3px">$4.00 (test)</div></div>
+          <div style="background:#121418;padding:12px 14px"><div class="mono muted2" style="font-size:9.5px;letter-spacing:.12em">HUMAN APPROVALS</div><div class="mono" style="font-size:15px;margin-top:3px">1 of 1</div></div>
+          <div style="background:#121418;padding:12px 14px"><div class="mono muted2" style="font-size:9.5px;letter-spacing:.12em">QUALITY</div><div class="mono teal" style="font-size:15px;margin-top:3px">94.7</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+          <div><div class="mono muted2" style="font-size:9.5px">CERT ID</div><div class="mono muted" style="font-size:11px;margin-top:2px">cert_7a2b9c4d81</div></div>
+          <div style="display:flex;gap:9px">
+            <span class="mono teal" style="font-size:10.5px;padding:7px 11px;border-radius:5px;border:1px solid var(--teal-line)">JSON</span>
+            <span class="mono teal" style="font-size:10.5px;padding:7px 11px;border-radius:5px;border:1px solid var(--teal-line)">PDF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY AEGIS -->
+  <section id="why" class="lp-section" style="border-top:1px solid var(--line)">
+    <div class="eyebrow" style="margin-bottom:16px">// WHY AEGIS</div>
+    <h2 style="font-size:clamp(26px,3.4vw,42px);line-height:1.16;font-weight:500;letter-spacing:-.015em;max-width:760px;margin:0 0 40px">Real Stripe revenue. Real gated spending. Real NVIDIA hardware. Real proof.</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+      <div class="lp-card" style="border-radius:10px;padding:28px">
+        <div style="width:44px;height:44px;border-radius:9px;background:rgba(0,229,204,.08);border:1px solid var(--teal-line);display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:20px;margin-bottom:18px">⛉</div>
+        <h3 style="font-size:19px;font-weight:600;margin:0 0 10px">Conductor is the product</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0 0 16px">Not background plumbing. Every meaningful action is triaged, scored, proposed, and gated — with a permanent audit trail behind it.</p>
+        <div class="mono teal" style="font-size:11px;letter-spacing:.08em">GOVERNED AUTONOMY</div>
+      </div>
+      <div class="lp-card" style="border-radius:10px;padding:28px">
+        <div style="width:44px;height:44px;border-radius:9px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;color:var(--green);font-size:20px;margin-bottom:18px">$</div>
+        <h3 style="font-size:19px;font-weight:600;margin:0 0 10px">Money moves, with consent</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0 0 16px">The agent earns real Stripe revenue per job. Outbound spend is human-gated and never unsupervised — today it executes as an authorized test stub, so no real money leaves without a human in the loop.</p>
+        <div class="mono green" style="font-size:11px;letter-spacing:.08em">STRIPE · HUMAN-GATED</div>
+      </div>
+      <div class="lp-card" style="border-radius:10px;padding:28px">
+        <div style="width:44px;height:44px;border-radius:9px;background:rgba(58,123,255,.08);border:1px solid rgba(58,123,255,.3);display:flex;align-items:center;justify-content:center;color:#3A7BFF;font-size:20px;margin-bottom:18px">▰</div>
+        <h3 style="font-size:19px;font-weight:600;margin:0 0 10px">Runs on NVIDIA DGX Spark</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0 0 16px">Aegis-14B does the bulk work locally — fast, private, zero marginal cost. External APIs are only used when justified, and only when approved.</p>
+        <div class="mono" style="font-size:11px;letter-spacing:.08em;color:#3A7BFF">LOCAL-FIRST INFERENCE</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" class="lp-section" style="border-top:1px solid var(--line)">
+    <div style="text-align:center;margin-bottom:44px">
+      <div class="eyebrow" style="margin-bottom:16px">// PRICING</div>
+      <h2 style="font-size:clamp(26px,3.4vw,42px);line-height:1.16;font-weight:500;letter-spacing:-.015em;margin:0 0 10px">Simple and transparent.</h2>
+      <p class="muted" style="font-size:15px;margin:0">One flat fee per job. External spends are always proposed, gated, and itemized on your certificate.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;max-width:980px;margin:0 auto">
+      <!-- main plan -->
+      <div style="position:relative;background:linear-gradient(180deg,rgba(0,229,204,.06),#16161A);border:1.5px solid rgba(0,229,204,.4);border-radius:14px;padding:32px;box-shadow:0 0 50px rgba(0,229,204,.1)">
+        <div class="mono teal" style="position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.12em;padding:5px 10px;border-radius:100px;border:1px solid rgba(0,229,204,.4);background:rgba(0,229,204,.06)">ON-DEMAND</div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:6px">Per Job</div>
+        <p class="muted" style="font-size:13.5px;margin:0 0 22px">One dataset, fully refined and certified.</p>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:24px">
+          <span class="teal" style="font-size:56px;font-weight:600;letter-spacing:-.03em">$20</span>
+          <span class="muted" style="font-size:15px">flat / job</span>
+        </div>
+        <a class="lp-cta" href="new-order.html" style="display:flex;justify-content:center;font-size:15px;font-weight:600;padding:14px;margin-bottom:24px">Start a refinement job</a>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Clean ShareGPT / ChatML JSONL output</div>
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Signed audit certificate (JSON + PDF)</div>
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Human gate on every external spend</div>
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Local DGX Spark inference included</div>
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> PII masking &amp; deduplication</div>
+        </div>
+      </div>
+      <!-- future tiers -->
+      <div class="lp-card" style="border-radius:14px;padding:32px">
+        <div style="font-size:17px;font-weight:600;margin-bottom:6px">Team &amp; Volume</div>
+        <p class="muted" style="font-size:13.5px;margin:0 0 22px">For studios running many jobs.</p>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:24px">
+          <span class="muted" style="font-size:42px;font-weight:600;letter-spacing:-.03em">Soon</span>
+        </div>
+        <a class="lp-ghost" href="#" style="display:flex;justify-content:center;font-size:15px;padding:14px;margin-bottom:24px">Join the waitlist</a>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="muted" style="display:flex;gap:10px;font-size:13.5px"><span class="muted3">○</span> Volume pricing &amp; shared spend budgets</div>
+          <div class="muted" style="display:flex;gap:10px;font-size:13.5px"><span class="muted3">○</span> Multi-user approval policies</div>
+          <div class="muted" style="display:flex;gap:10px;font-size:13.5px"><span class="muted3">○</span> API access &amp; webhooks</div>
+          <div class="muted" style="display:flex;gap:10px;font-size:13.5px"><span class="muted3">○</span> Curated dataset marketplace</div>
+          <div class="muted" style="display:flex;gap:10px;font-size:13.5px"><span class="muted3">○</span> Centralized audit dashboard</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA + FOOTER -->
+  <footer style="border-top:1px solid var(--line);margin-top:40px">
+    <div style="max-width:1240px;margin:0 auto;padding:clamp(48px,6vw,80px) clamp(20px,5vw,64px)">
+      <div style="text-align:center;margin-bottom:64px">
+        <h2 style="font-size:clamp(28px,4vw,48px);font-weight:500;letter-spacing:-.02em;margin:0 0 18px">Refine your data. <span class="teal">Keep the receipts.</span></h2>
+        <p class="muted" style="font-size:16px;max-width:520px;margin:0 auto 28px">Built for teams who already understand why governed autonomy matters.</p>
+        <a class="lp-cta" href="new-order.html" style="font-size:15px;font-weight:600;padding:14px 26px">Start a refinement job — $20 flat &nbsp;→</a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding-top:32px;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:center;gap:11px">
+          <img src="assets/shield.svg" alt="Aegis" style="width:26px;height:26px">
+          <span class="mono" style="font-size:14px;font-weight:600;letter-spacing:.16em">AEGIS<span class="teal">&nbsp;REFINE</span></span>
+        </div>
+        <div class="muted" style="display:flex;flex-wrap:wrap;gap:22px;font-size:13px">
+          <a href="#how">How it works</a>
+          <a href="#deliver">Deliverable</a>
+          <a href="#pricing">Pricing</a>
+          <a href="docs.html">Docs</a>
+          <a href="dashboard.html">Launch app</a>
+        </div>
+        <div class="mono muted2" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;padding:7px 13px;border:1px solid var(--line-2);border-radius:5px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> RUNNING ON NVIDIA DGX SPARK
+        </div>
+      </div>
+      <div class="mono muted3" style="font-size:10.5px;margin-top:24px">© 2026 Aegis Refine · aegisrefine.com · Built on Conductor + Aegis-14B</div>
+    </div>
+  </footer>
+
+  </div>
+</div>
+
+<script>
+// Self-contained Conductor-gate demo — no backend calls (this is the marketing page).
+// Honest framing: outbound spend executes as an authorized TEST stub, never a real charge.
+const Demo = (function(){
+  let gate = "pending", t = null;
+  const $ = id => document.getElementById(id);
+
+  const baseEvents = [
+    { t:"14:36:58", label:"Data analysis initiated", actor:"System",   dot:"#A1A1AA" },
+    { t:"14:37:22", label:"AI agent proposed spend",  actor:"Aegis-14B", dot:"#00E5CC" },
+  ];
+
+  function paintGate(opts){
+    const card = $("gateCard");
+    card.style.borderColor = opts.border;
+    card.style.boxShadow = "0 0 40px " + opts.shadow;
+    document.querySelectorAll(".gc-corner").forEach(c=>{ c.style.borderColor = opts.border; });
+    $("gateNum").style.borderColor = opts.border; $("gateNum").style.color = opts.color;
+    $("gateLabel").style.color = opts.color;
+    $("gateTitle").style.color = opts.color; $("gateTitle").textContent = opts.title;
+    $("gateSub").textContent = opts.sub;
+    const emblem = $("gateEmblem");
+    emblem.textContent = opts.glyph; emblem.style.color = opts.color;
+    emblem.style.borderColor = opts.border; emblem.style.background = opts.fill;
+    emblem.style.boxShadow = "0 0 30px " + opts.shadow;
+    $("gateRing").style.borderColor = opts.border;
+  }
+
+  function renderTrail(extra){
+    const evs = baseEvents.concat(extra||[]);
+    $("auditTrail").innerHTML = evs.map(e=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <span class="mono muted2" style="font-size:11px;width:64px;flex-shrink:0">${e.t}</span>
+        <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${e.dot};box-shadow:0 0 7px ${e.dot}"></span>
+        <span style="font-size:13px;flex:1">${e.label}</span>
+        <span class="mono muted2" style="font-size:10.5px">${e.actor}</span>
+      </div>`).join("");
+  }
+
+  function show(id, on, disp){ $(id).style.display = on ? (disp||"block") : "none"; }
+
+  function render(){
+    const pending   = gate==="pending";
+    const approving = gate==="approving";
+    const approved  = gate==="approved";
+    const rejected  = gate==="rejected";
+
+    // gate emblem vs spinner
+    show("gateSpinner", approving, "block");
+    show("gateEmblemWrap", !approving, "flex");
+
+    // action area
+    show("gatePending", pending);
+    show("gateApproving", approving);
+    show("gateResolved", approved || rejected);
+
+    // output column
+    show("outLocked", pending || approving, "flex");
+    show("outRejected", rejected, "flex");
+    show("outApproved", approved);
+
+    // gate theming
+    if(pending){
+      paintGate({color:"#F59E0B",border:"rgba(245,158,11,.5)",fill:"rgba(245,158,11,.08)",shadow:"rgba(245,158,11,.18)",glyph:"⛉",title:"Approval required",sub:"Review the proposal and decide"});
+    } else if(approving){
+      paintGate({color:"#00E5CC",border:"rgba(0,229,204,.6)",fill:"rgba(0,229,204,.08)",shadow:"rgba(0,229,204,.25)",glyph:"⛉",title:"Authorizing…",sub:"Authenticated approver confirmed"});
+    } else if(approved){
+      paintGate({color:"#22C55E",border:"rgba(34,197,94,.6)",fill:"rgba(34,197,94,.1)",shadow:"rgba(34,197,94,.3)",glyph:"✓",title:"Approved",sub:"Spend authorized (test)"});
+    } else {
+      paintGate({color:"#ef4444",border:"rgba(239,68,68,.6)",fill:"rgba(239,68,68,.1)",shadow:"rgba(239,68,68,.25)",glyph:"✕",title:"Rejected",sub:"No spend authorized"});
+    }
+
+    // resolved note
+    if(approved){
+      const n=$("resolvedNote"); n.textContent="✓ $4.00 SPEND AUTHORIZED (TEST)";
+      n.style.color="#22C55E"; n.style.background="rgba(34,197,94,.1)"; n.style.borderColor="rgba(34,197,94,.6)";
+    } else if(rejected){
+      const n=$("resolvedNote"); n.textContent="✕ PROPOSAL REJECTED · NO CHARGE";
+      n.style.color="#ef4444"; n.style.background="rgba(239,68,68,.1)"; n.style.borderColor="rgba(239,68,68,.6)";
+    }
+
+    // pipeline status
+    const loopColor = pending ? "#F59E0B" : approving ? "#00E5CC" : approved ? "#22C55E" : "#ef4444";
+    $("loopStatus").style.color = loopColor; $("loopDot").style.background = loopColor; $("loopDot").style.boxShadow = "0 0 8px "+loopColor;
+    $("loopStatus").textContent = pending ? "Awaiting human approval"
+      : approving ? "Approval received — authorizing"
+      : approved ? "Complete · certificate signed"
+      : "Halted · proposal rejected";
+    $("pipeGate").style.background = loopColor; $("pipeGate").style.borderColor = loopColor;
+    if(approved){ $("pipeAar").style.color="#22C55E"; $("pipeAar").style.borderColor="rgba(34,197,94,.3)"; $("pipeAar").style.background="rgba(34,197,94,.06)"; $("pipeAar").textContent="✓ AAR"; }
+    else { $("pipeAar").style.color="#52525B"; $("pipeAar").style.borderColor="rgba(255,255,255,.1)"; $("pipeAar").style.background="transparent"; $("pipeAar").textContent="AAR"; }
+
+    // gated-spend stat
+    const ss=$("spendStat");
+    if(approving||approved){ ss.textContent="$4.00 (test)"; ss.style.color="#F59E0B"; }
+    else if(rejected){ ss.textContent="$0.00 (blocked)"; ss.style.color="#22C55E"; }
+    else { ss.textContent="$0.00"; ss.style.color="#71717A"; }
+
+    // audit trail
+    let extra=[];
+    if(approving) extra=[{t:"14:41:09",label:"Human approved — authorizing",actor:"ops@aegisrefine.com",dot:"#22C55E"}];
+    if(approved) extra=[
+      {t:"14:41:09",label:"Human approved proposal",actor:"ops@aegisrefine.com",dot:"#22C55E"},
+      {t:"14:41:11",label:"Spend authorized (test stub)",actor:"Stripe",dot:"#F59E0B"},
+      {t:"14:58:07",label:"Refinement completed",actor:"Aegis-14B",dot:"#A1A1AA"},
+      {t:"14:58:11",label:"Audit certificate signed",actor:"System",dot:"#3A7BFF"},
+    ];
+    if(rejected) extra=[
+      {t:"14:41:09",label:"Human rejected proposal",actor:"ops@aegisrefine.com",dot:"#ef4444"},
+      {t:"14:41:10",label:"Job halted — no spend",actor:"System",dot:"#A1A1AA"},
+    ];
+    renderTrail(extra);
+  }
+
+  return {
+    approve(){ gate="approving"; render(); clearTimeout(t); t=setTimeout(()=>{ gate="approved"; render(); },1700); },
+    reject(){ clearTimeout(t); gate="rejected"; render(); },
+    reset(){ clearTimeout(t); gate="pending"; render(); },
+    init(){ render(); },
+  };
+})();
+Demo.init();
+</script>
+</body>
+</html>

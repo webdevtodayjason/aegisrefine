@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+psycopg2-binary
+stripe
+python-dotenv
+python-multipart
+alembic
+openai

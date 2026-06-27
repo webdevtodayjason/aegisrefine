@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">WORKSPACE</div>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▦</span> Dashboard</a>
+    <a href="NewOrder.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">＋</span> New order</a>
+    <a href="OrderDetail.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▤</span> Datasets</a>
+    <a href="Marketplace.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Marketplace</a>
+    <a href="Certificate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⛉</span> Certificates</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">ACCOUNT</div>
+    <a href="Billing.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">$</span> Billing</a>
+    <a href="Settings.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⚙</span> Settings</a>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◎</span> Ops console</a>
+    <div style="margin-top: auto; padding: 14px; border-radius: 10px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 6px;">CREDITS BALANCE</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; color: #00E5CC;">$142.75</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">aegis / <span style="color: #F2F2F5;">billing</span></div>
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 7px 12px; border: 1px solid rgba(255,255,255,0.09); border-radius: 6px;"><span style="color: #00E5CC;">⛉</span> SECURED BY STRIPE</div>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); display: flex; flex-direction: column; gap: 24px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #00E5CC; margin-bottom: 10px;">// BILLING &amp; PAYMENTS</div>
+        <h1 style="font-size: 28px; font-weight: 500; letter-spacing: -0.015em; margin: 0;">Billing</h1>
+      </div>
+
+      <!-- top row: payment method + plan -->
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px;">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); padding: 22px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A; margin-bottom: 16px;">PAYMENT METHOD</div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 64px; height: 42px; border-radius: 7px; background: linear-gradient(135deg, #1a1c33, #0D0D0F); border: 1px solid rgba(58,123,255,0.3); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #3A7BFF;">VISA</div>
+            <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500;">•••• •••• •••• 4242</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #71717A;">Expires 09 / 27 · Nous Builder</div></div>
+            <button style="font-size: 13px; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.14); padding: 8px 14px; border-radius: 7px; cursor: pointer; font-family: inherit; transition: border-color .2s;" style-hover="border-color: rgba(0,229,204,0.4);">Update</button>
+          </div>
+        </div>
+        <div style="border-radius: 14px; background: linear-gradient(180deg, rgba(0,229,204,0.05), #16161A); border: 1px solid rgba(0,229,204,0.2); padding: 22px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #00E5CC; margin-bottom: 16px;">CURRENT PLAN</div>
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">Per Job · On-demand</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A1A1AA;">$20 flat per job + gated spend</div>
+          <a href="Pricing.dc.html" style="display: inline-block; font-size: 13px; color: #00E5CC; margin-top: 14px;">View plans →</a>
+        </div>
+      </div>
+
+      <!-- stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px;">
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">TOTAL PAID</div><div style="font-size: 26px; font-weight: 600;">$320.00</div></div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">JOB FEES (16)</div><div style="font-size: 26px; font-weight: 600; color: #22C55E;">$320.00</div></div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">GATED SPEND</div><div style="font-size: 26px; font-weight: 600; color: #F59E0B;">$38.50</div></div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">THIS MONTH</div><div style="font-size: 26px; font-weight: 600;">$72.00</div></div>
+      </div>
+
+      <!-- tabs -->
+      <div style="display: flex; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; width: fit-content;">
+        <button onClick="{{ tabInvoices }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ invColor }}; background: {{ invBg }};">INVOICES</button>
+        <button onClick="{{ tabLedger }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ ledColor }}; background: {{ ledBg }};">GATED SPEND LEDGER</button>
+      </div>
+
+      <!-- INVOICES -->
+      <sc-if value="{{ showInvoices }}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+          <div style="display: grid; grid-template-columns: 1.2fr 1.6fr 0.8fr 0.9fr 90px; gap: 12px; padding: 12px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A;"><div>INVOICE</div><div>JOB</div><div>AMOUNT</div><div>STATUS</div><div></div></div>
+          <sc-for list="{{ invoices }}" as="iv" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 1.2fr 1.6fr 0.8fr 0.9fr 90px; gap: 12px; align-items: center; padding: 14px 22px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px;">{{ iv.id }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ iv.date }}</div></div>
+              <div style="font-size: 13.5px;">{{ iv.job }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">{{ iv.amount }}</div>
+              <div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #22C55E; padding: 4px 9px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3);">✓ PAID</span></div>
+              <div style="text-align: right;"><a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #00E5CC;">↓ PDF</a></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- LEDGER -->
+      <sc-if value="{{ showLedger }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+          <div style="display: grid; grid-template-columns: 1.4fr 1.4fr 0.8fr 1fr; gap: 12px; padding: 12px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A;"><div>JOB</div><div>REASON</div><div>AMOUNT</div><div>APPROVED BY</div></div>
+          <sc-for list="{{ ledger }}" as="l" hint-placeholder-count="4">
+            <div style="display: grid; grid-template-columns: 1.4fr 1.4fr 0.8fr 1fr; gap: 12px; align-items: center; padding: 14px 22px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px;">{{ l.job }}</div>
+              <div style="font-size: 13px; color: #A1A1AA;">{{ l.reason }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #F59E0B;">{{ l.amount }}</div>
+              <div style="display: flex; align-items: center; gap: 7px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #A1A1AA;">{{ l.by }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { tab: 'invoices' };
+  setTab(t) { this.setState({ tab: t }); }
+  renderVals() {
+    const invoices = [
+      { id: 'INV-00147', date: 'May 23, 2025', job: 'Support tickets → ChatML', amount: '$20.00' },
+      { id: 'INV-00146', date: 'May 23, 2025', job: 'Discord logs → ShareGPT', amount: '$20.00' },
+      { id: 'INV-00141', date: 'May 21, 2025', job: 'Scraped docs → ChatML', amount: '$20.00' },
+      { id: 'INV-00138', date: 'May 19, 2025', job: 'PDF manuals → instruct', amount: '$20.00' },
+      { id: 'INV-00129', date: 'May 15, 2025', job: 'Forum threads → QA pairs', amount: '$20.00' },
+    ];
+    const ledger = [
+      { job: 'JOB-2025-00146', reason: 'OCR enrichment · 980 PDFs', amount: '$3.20', by: 'nous@studio.ai' },
+      { job: 'JOB-2025-00141', reason: 'Language detection API', amount: '$1.20', by: 'nous@studio.ai' },
+      { job: 'JOB-2025-00138', reason: 'Entity enrichment · KB', amount: '$9.50', by: 'nous@studio.ai' },
+      { job: 'JOB-2025-00129', reason: 'OCR enrichment · 2,100 PDFs', amount: '$6.80', by: 'nous@studio.ai' },
+    ];
+    const t = this.state.tab;
+    const ab = 'rgba(0,229,204,0.12)';
+    return {
+      invoices, ledger,
+      showInvoices: t === 'invoices', showLedger: t === 'ledger',
+      tabInvoices: () => this.setTab('invoices'), tabLedger: () => this.setTab('ledger'),
+      invColor: t === 'invoices' ? '#00E5CC' : '#A1A1AA', invBg: t === 'invoices' ? ab : 'transparent',
+      ledColor: t === 'ledger' ? '#00E5CC' : '#A1A1AA', ledBg: t === 'ledger' ? ab : 'transparent',
+    };
+  }
+}
+</script>
+</body>
+</html>

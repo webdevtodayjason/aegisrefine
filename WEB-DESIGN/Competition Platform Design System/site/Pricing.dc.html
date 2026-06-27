@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  @keyframes ag-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+</style>
+</helmet>
+
+<div style="position: relative; min-height: 100vh; overflow-x: hidden;">
+  <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: url('assets/grid-texture.png'); background-size: cover; opacity: 0.08;"></div>
+  <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(900px 600px at 50% -8%, rgba(0,229,204,0.1), transparent 60%);"></div>
+
+  <div style="position: relative; z-index: 1;">
+
+  <!-- NAV -->
+  <nav style="position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px clamp(20px, 5vw, 64px); background: rgba(13,13,15,0.72); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 11px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <div style="display: flex; align-items: center; gap: 26px; font-size: 14px; color: #A1A1AA;">
+        <a href="HowItWorks.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">How it works</a>
+        <a href="Docs.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">Docs</a>
+        <a href="Pricing.dc.html" style="color: #00E5CC;">Pricing</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="Login.dc.html" style="font-size: 14px; color: #A1A1AA; padding: 8px 4px; white-space: nowrap;" style-hover="color: #F2F2F5;">Log in</a>
+        <a href="NewOrder.dc.html" style="font-size: 13.5px; font-weight: 500; color: #04100E; background: #00E5CC; padding: 9px 16px; border-radius: 4px; box-shadow: 0 0 18px rgba(0,229,204,0.35); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 26px rgba(0,229,204,0.55);">Start a job</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header style="text-align: center; max-width: 760px; margin: 0 auto; padding: clamp(48px, 7vw, 88px) clamp(20px, 5vw, 64px) 40px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 18px;">// PRICING</div>
+    <h1 style="font-size: clamp(34px, 5vw, 58px); line-height: 1.05; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 18px;">One flat fee. <span style="color: #00E5CC;">Every dollar accounted for.</span></h1>
+    <p style="font-size: clamp(16px, 1.7vw, 19px); line-height: 1.6; color: #A1A1AA; margin: 0;">$20 per job, on demand. External spends are always proposed, gated by your approval, and itemized on a signed certificate. No surprises, no auto-spend.</p>
+  </header>
+
+  <!-- PLANS -->
+  <section style="max-width: 980px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 64px) 40px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+      <div style="position: relative; background: linear-gradient(180deg, rgba(0,229,204,0.06), #16161A); border: 1.5px solid rgba(0,229,204,0.4); border-radius: 16px; padding: 34px; box-shadow: 0 0 50px rgba(0,229,204,0.1);">
+        <div style="position: absolute; top: 20px; right: 20px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #00E5CC; padding: 5px 11px; border-radius: 100px; border: 1px solid rgba(0,229,204,0.4); background: rgba(0,229,204,0.06);">ON-DEMAND</div>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">Per Job</div>
+        <p style="font-size: 13.5px; color: #A1A1AA; margin: 0 0 22px;">One dataset, fully refined and certified.</p>
+        <div style="display: flex; align-items: baseline; gap: 7px; margin-bottom: 26px;"><span style="font-size: 62px; font-weight: 600; letter-spacing: -0.03em; color: #00E5CC;">$20</span><span style="font-size: 15px; color: #A1A1AA;">flat / job</span></div>
+        <a href="NewOrder.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px; border-radius: 8px; box-shadow: 0 0 24px rgba(0,229,204,0.4); margin-bottom: 26px; transition: box-shadow .2s;" style-hover="box-shadow: 0 0 34px rgba(0,229,204,0.6);">Start a job →</a>
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Clean ShareGPT / ChatML JSONL</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Signed audit certificate (JSON + PDF)</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Human gate on every external spend</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Local DGX Spark inference included</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> PII masking &amp; deduplication</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Unlimited certificate re-downloads</div>
+        </div>
+      </div>
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 34px;">
+        <div style="position: relative; display: inline-block; margin-bottom: 6px;"><span style="font-size: 18px; font-weight: 600;">Team &amp; Volume</span></div>
+        <p style="font-size: 13.5px; color: #A1A1AA; margin: 0 0 22px;">For studios running many jobs.</p>
+        <div style="display: flex; align-items: baseline; gap: 7px; margin-bottom: 26px;"><span style="font-size: 46px; font-weight: 600; letter-spacing: -0.03em; color: #A1A1AA;">Custom</span></div>
+        <a href="#" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 500; color: #F2F2F5; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14); padding: 14px; border-radius: 8px; margin-bottom: 26px; transition: border-color .2s;" style-hover="border-color: rgba(0,229,204,0.4);">Join the waitlist</a>
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Volume pricing &amp; shared spend budgets</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Multi-user approval policies</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> API access &amp; webhooks</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Curated dataset marketplace</div>
+          <div style="display: flex; gap: 11px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Centralized audit dashboard &amp; SSO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- gated spend explainer -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 18px; padding: 22px 26px; border-radius: 14px; background: #16161A; border: 1px solid rgba(245,158,11,0.25);">
+      <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 10px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); display: flex; align-items: center; justify-content: center; color: #F59E0B; font-size: 20px;">⛉</span>
+      <div style="flex: 1; min-width: 240px;">
+        <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">How external spends work</div>
+        <p style="font-size: 13.5px; line-height: 1.55; color: #A1A1AA; margin: 0;">Some jobs need paid APIs (OCR, enrichment). Aegis <span style="color: #F2F2F5;">proposes</span> the spend with a reason — it never runs until you <span style="color: #22C55E;">approve</span>. Every approved spend is passed through at cost and itemized on your certificate.</p>
+      </div>
+      <div style="text-align: right;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">TYPICAL EXTERNAL SPEND</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #F59E0B;">$0–$10</div></div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section style="max-width: 980px; margin: 0 auto; padding: clamp(36px, 5vw, 64px) clamp(20px, 5vw, 64px);">
+    <h2 style="font-size: clamp(22px, 2.8vw, 32px); font-weight: 500; letter-spacing: -0.015em; text-align: center; margin: 0 0 32px;">The trusted middle path</h2>
+    <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.06);">
+        <div style="background: #121316; padding: 16px 18px;"></div>
+        <div style="background: #121316; padding: 16px 18px; text-align: center;"><div style="font-size: 13px; color: #A1A1AA;">Manual cleaning</div></div>
+        <div style="background: #121316; padding: 16px 18px; text-align: center;"><div style="font-size: 13px; color: #A1A1AA;">Unsupervised agent</div></div>
+        <div style="background: rgba(0,229,204,0.06); padding: 16px 18px; text-align: center; border-top: 2px solid #00E5CC;"><div style="font-size: 13px; font-weight: 600; color: #00E5CC;">Aegis</div></div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+          <div style="background: #16161A; padding: 15px 18px; font-size: 13.5px; color: #D4D4D8;">{{ r.label }}</div>
+          <div style="background: #16161A; padding: 15px 18px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{ r.aColor }};">{{ r.a }}</div>
+          <div style="background: #16161A; padding: 15px 18px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{ r.bColor }};">{{ r.b }}</div>
+          <div style="background: rgba(0,229,204,0.03); padding: 15px 18px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #22C55E;">{{ r.c }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section style="max-width: 760px; margin: 0 auto; padding: clamp(20px, 3vw, 40px) clamp(20px, 5vw, 64px) clamp(48px, 6vw, 80px);">
+    <h2 style="font-size: clamp(22px, 2.8vw, 32px); font-weight: 500; letter-spacing: -0.015em; text-align: center; margin: 0 0 32px;">Questions</h2>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="5">
+        <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 11px; background: #16161A; overflow: hidden;">
+          <button onClick="{{ f.toggle }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; padding: 18px 20px; background: transparent; border: none; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">
+            <span style="font-size: 15px; font-weight: 500; color: #F2F2F5;">{{ f.q }}</span>
+            <span style="font-size: 18px; color: #00E5CC; flex-shrink: 0; transform: {{ f.rotate }}; transition: transform .2s;">+</span>
+          </button>
+          <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 0 20px 18px; font-size: 14px; line-height: 1.6; color: #A1A1AA;">{{ f.a }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- CTA + FOOTER -->
+  <footer style="border-top: 1px solid rgba(255,255,255,0.06);">
+    <div style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 80px) clamp(20px, 5vw, 64px);">
+      <div style="text-align: center; margin-bottom: 60px;">
+        <h2 style="font-size: clamp(28px, 4vw, 44px); font-weight: 500; letter-spacing: -0.02em; margin: 0 0 18px;">Refine your data. <span style="color: #00E5CC;">Keep the receipts.</span></h2>
+        <a href="NewOrder.dc.html" style="display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px 26px; border-radius: 6px; box-shadow: 0 0 28px rgba(0,229,204,0.45); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 38px rgba(0,229,204,0.65);">Start a job — $20 flat →</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.07);">
+        <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 11px;"><img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span></a>
+        <div style="display: flex; flex-wrap: wrap; gap: 22px; font-size: 13px; color: #A1A1AA;">
+          <a href="HowItWorks.dc.html" style-hover="color: #F2F2F5;">How it works</a>
+          <a href="Docs.dc.html" style-hover="color: #F2F2F5;">Docs</a>
+          <a href="Pricing.dc.html" style-hover="color: #F2F2F5;">Pricing</a>
+          <a href="Login.dc.html" style-hover="color: #F2F2F5;">Log in</a>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 9px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A; padding: 7px 13px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 7px #22C55E;"></span> RUNNING ON NVIDIA DGX SPARK</div>
+      </div>
+    </div>
+  </footer>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  state = { openFaq: 0 };
+  toggle(i) { this.setState(s => ({ openFaq: s.openFaq === i ? -1 : i })); }
+
+  renderVals() {
+    const rowDefs = [
+      { label: 'High-quality structured output', a: 'Varies', aColor: '#A1A1AA', b: 'Sometimes', bColor: '#A1A1AA', c: '✓' },
+      { label: 'Speed at scale', a: 'Slow', aColor: '#ef4444', b: 'Fast', bColor: '#22C55E', c: '✓ Fast' },
+      { label: 'Human control over spend', a: 'Full', aColor: '#22C55E', b: 'None', bColor: '#ef4444', c: '✓ Gated' },
+      { label: 'Signed audit trail', a: '✕', aColor: '#ef4444', b: '✕', bColor: '#ef4444', c: '✓' },
+      { label: 'Cost', a: '$$$ labor', aColor: '#A1A1AA', b: 'Unbounded', bColor: '#ef4444', c: '$20 flat' },
+    ];
+    const faqDefs = [
+      { q: 'What does the $20 flat fee actually cover?', a: 'A complete refinement job: triage, scoring, local refinement on DGX Spark, PII masking, deduplication, your clean JSONL dataset, and a signed audit certificate. Local inference is included at no marginal cost.' },
+      { q: 'When would I be charged more than $20?', a: 'Only when the agent proposes a paid external service (like OCR or enrichment) AND you explicitly approve it. Those spends are passed through at cost and itemized on your certificate. Nothing runs without your approval.' },
+      { q: 'What happens if I reject a proposed spend?', a: 'The job continues without that step. The affected records are skipped or handled locally where possible, no external money is spent, and the rejection is permanently recorded in the audit log.' },
+      { q: 'What formats do you output?', a: 'ShareGPT and ChatML JSONL, ready for fine-tuning and agent training. Schema is validated before delivery.' },
+      { q: 'Is my data sent to third parties?', a: 'Bulk work runs locally on NVIDIA DGX Spark for data residency. External APIs are only ever called for spends you have explicitly approved.' },
+    ];
+    const open = this.state.openFaq;
+    return {
+      rows: rowDefs,
+      faqs: faqDefs.map((f, i) => ({
+        ...f,
+        open: open === i,
+        rotate: open === i ? 'rotate(45deg)' : 'rotate(0deg)',
+        toggle: () => this.toggle(i),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

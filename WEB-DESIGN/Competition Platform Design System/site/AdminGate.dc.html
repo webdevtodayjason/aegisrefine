@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  @keyframes ag-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+  @keyframes ag-spin { to { transform: rotate(360deg); } }
+  @keyframes ag-ring { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(1.5); opacity: 0; } }
+  @keyframes ag-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR (ops) -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;OPS</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">OPERATIONS</div>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">⛉</span> Approvals <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #04130A; background: #F59E0B; padding: 1px 7px; border-radius: 100px;">{{ pendingCount }}</span></a>
+    <a href="JobQueue.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">☰</span> Job queue</a>
+    <a href="AuditLog.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▤</span> Audit log</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◷</span> Policies</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◭</span> Agents</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">CRM</div>
+    <a href="Customers.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Customers</a>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">↩</span> Customer view</a>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px 4px;">
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B, #00E5CC); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #04100E;">OP</span>
+      <div style="line-height: 1.2;"><div style="font-size: 13px; font-weight: 500;">Ops Console</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #F59E0B;">ADMINISTRATOR</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">ops / <span style="color: #F2F2F5;">human approval gate</span></div>
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 7px 12px; border: 1px solid rgba(255,255,255,0.09); border-radius: 6px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E;"></span> NETWORK · ALL SYSTEMS OPERATIONAL</div>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); display: flex; flex-direction: column; gap: 22px;">
+
+      <!-- stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(245,158,11,0.25);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">PENDING APPROVALS</div>
+          <div style="font-size: 28px; font-weight: 600; color: #F59E0B;">{{ pendingCount }}</div>
+        </div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">APPROVED SPEND · TODAY</div>
+          <div style="font-size: 28px; font-weight: 600;">{{ approvedToday }}</div>
+        </div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">REVENUE · TODAY</div>
+          <div style="font-size: 28px; font-weight: 600; color: #22C55E;">$120</div>
+        </div>
+        <div style="padding: 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 10px;">ACTIVE JOBS</div>
+          <div style="font-size: 28px; font-weight: 600;">6</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 22px; align-items: start;">
+
+        <!-- QUEUE -->
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+          <div style="padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #71717A;">SPEND PROPOSAL QUEUE</div>
+          <sc-for list="{{ proposals }}" as="p" hint-placeholder-count="3">
+            <button onClick="{{ p.select }}" style="width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); border-left: 3px solid {{ p.edge }}; background: {{ p.rowBg }}; cursor: pointer; transition: background .15s; font-family: inherit;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #F2F2F5;">{{ p.job }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: {{ p.amtColor }};">{{ p.amountLabel }}</span>
+              </div>
+              <div style="font-size: 12.5px; color: #A1A1AA;">{{ p.reason }}</div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 5px; color: {{ p.statusColor }}; border: 1px solid {{ p.statusBorder }}; background: {{ p.statusBg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ p.statusColor }};"></span>{{ p.statusLabel }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ p.age }}</span>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+
+        <!-- DETAIL / GATE -->
+        <div style="position: relative; border-radius: 14px; background: #16161A; border: 1.5px solid {{ gateBorder }}; box-shadow: 0 0 44px {{ gateShadow }}; padding: 26px; transition: all .4s;">
+          <div style="position: absolute; top: 9px; left: 9px; width: 16px; height: 16px; border-top: 2px solid {{ gateBorder }}; border-left: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; top: 9px; right: 9px; width: 16px; height: 16px; border-top: 2px solid {{ gateBorder }}; border-right: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; bottom: 9px; left: 9px; width: 16px; height: 16px; border-bottom: 2px solid {{ gateBorder }}; border-left: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; bottom: 9px; right: 9px; width: 16px; height: 16px; border-bottom: 2px solid {{ gateBorder }}; border-right: 2px solid {{ gateBorder }};"></div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 11px;">
+              <span style="width: 38px; height: 38px; border-radius: 8px; background: rgba(0,229,204,0.08); border: 1px solid rgba(0,229,204,0.25); display: flex; align-items: center; justify-content: center; color: #00E5CC; font-size: 16px;">◭</span>
+              <div><div style="font-size: 15px; font-weight: 600;">{{ sel.agent }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ sel.job }} · DGX SPARK</div></div>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ gateColor }}; padding: 5px 10px; border-radius: 6px; border: 1px solid {{ gateBorder }}; background: {{ gateFill }};">{{ sel.statusLabel }}</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: center; margin-bottom: 20px;">
+            <div style="position: relative; display: flex; align-items: center; justify-content: center; height: 130px;">
+              <sc-if value="{{ isApproving }}" hint-placeholder-val="{{ false }}">
+                <div style="width: 78px; height: 78px; border-radius: 50%; border: 3px solid rgba(0,229,204,0.2); border-top-color: #00E5CC; animation: ag-spin .8s linear infinite;"></div>
+              </sc-if>
+              <sc-if value="{{ showEmblem }}" hint-placeholder-val="{{ true }}">
+                <div style="position: absolute; width: 96px; height: 96px; border-radius: 50%; border: 1px solid {{ gateBorder }}; animation: ag-ring 2.4s ease-out infinite;"></div>
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: {{ gateFill }}; border: 2px solid {{ gateBorder }}; display: flex; align-items: center; justify-content: center; font-size: 36px; color: {{ gateColor }}; box-shadow: 0 0 30px {{ gateShadow }}; transition: all .4s;">{{ gateGlyph }}</div>
+              </sc-if>
+            </div>
+            <div style="text-align: center; padding: 18px; border-radius: 10px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #71717A; margin-bottom: 8px;">PROPOSED SPEND</div>
+              <div style="font-size: 44px; font-weight: 600; color: {{ gateColor }}; line-height: 1; letter-spacing: -0.02em; transition: color .4s;">{{ sel.amountLabel }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; margin-top: 8px;">{{ sel.reason }}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; overflow: hidden; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #121316; font-size: 12.5px;"><span style="color: #71717A;">Workflow</span><span style="font-family: 'JetBrains Mono', monospace;">{{ sel.workflow }}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #121316; font-size: 12.5px;"><span style="color: #71717A;">Est. processing</span><span style="font-family: 'JetBrains Mono', monospace;">{{ sel.eta }}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #121316; font-size: 12.5px;"><span style="color: #71717A;">Policy check</span><span style="font-family: 'JetBrains Mono', monospace; color: {{ sel.policyColor }};">{{ sel.policy }}</span></div>
+          </div>
+
+          <!-- rationale -->
+          <div style="padding: 14px; border-radius: 8px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 18px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #71717A; margin-bottom: 7px;">AGENT RATIONALE</div>
+            <p style="font-size: 13px; line-height: 1.55; color: #A1A1AA; margin: 0;">{{ sel.rationale }}</p>
+          </div>
+
+          <!-- actions -->
+          <sc-if value="{{ isPending }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; gap: 10px;">
+              <button onClick="{{ approve }}" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 9px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: #04130A; background: #22C55E; border: none; padding: 15px; border-radius: 8px; cursor: pointer; box-shadow: 0 0 24px rgba(34,197,94,0.4); transition: box-shadow .2s, transform .1s;" style-hover="box-shadow: 0 0 34px rgba(34,197,94,0.65);" style-active="transform: translateY(1px);">✓ &nbsp;APPROVE &amp; SPEND {{ sel.amountLabel }}</button>
+              <button onClick="{{ reject }}" style="flex: 1; font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 500; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.14); padding: 15px; border-radius: 8px; cursor: pointer; transition: all .2s;" style-hover="border-color: rgba(239,68,68,0.5); color: #ef4444;">Reject</button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #71717A;"><span style="color: #00E5CC;">⛉</span> Decision is signed &amp; recorded · POLICY-DATA-REFINE-01</div>
+          </sc-if>
+          <sc-if value="{{ isApproving }}" hint-placeholder-val="{{ false }}">
+            <div style="width: 100%; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #00E5CC; padding: 15px; border: 1px solid rgba(0,229,204,0.3); border-radius: 8px; background: rgba(0,229,204,0.05);">EXECUTING {{ sel.amountLabel }} VIA STRIPE…</div>
+          </sc-if>
+          <sc-if value="{{ isResolved }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 8px; background: {{ gateFill }}; border: 1px solid {{ gateBorder }};">
+              <span style="font-size: 16px; color: {{ gateColor }};">{{ gateGlyph }}</span>
+              <span style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{ gateColor }};">{{ resolvedNote }}</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- audit log -->
+      <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); padding: 22px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #71717A; margin-bottom: 14px;">SYSTEM AUDIT LOG · LATEST</div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ auditLog }}" as="ev" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A; width: 64px; flex-shrink: 0;">{{ ev.t }}</span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ ev.dot }}; box-shadow: 0 0 7px {{ ev.dot }};"></span>
+              <span style="font-size: 13px; flex: 1;">{{ ev.label }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ ev.actor }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      selected: 'JOB-2025-00147',
+      decisions: {}, // id -> 'approved' | 'rejected'
+      live: null,    // id currently 'approving'
+    };
+    this.base = [
+      { id: 'JOB-2025-00147', agent: 'Aegis-7B', amount: 4.0, reason: 'OCR enrichment · 1,240 scanned PDFs', workflow: 'WF-2025-00147', eta: '18m 24s', policy: '✓ PASS', policyColor: '#22C55E', rationale: '1,240 records are locked inside scanned PDFs. Local OCR cannot parse them cleanly; a paid OCR pass recovers them at high fidelity. Recommend approving.', age: '2m ago' },
+      { id: 'JOB-2025-00151', agent: 'Aegis-7B', amount: 1.2, reason: 'Language detection API · 9,400 rows', workflow: 'WF-2025-00151', eta: '4m 10s', policy: '✓ PASS', policyColor: '#22C55E', rationale: 'A small batch of rows have ambiguous language. A paid detection call removes non-English noise before refinement.', age: '8m ago' },
+      { id: 'JOB-2025-00149', agent: 'Aegis-12B', amount: 9.5, reason: 'Entity enrichment · external KB', workflow: 'WF-2025-00149', eta: '22m 02s', policy: '⚠ REVIEW · above auto threshold', policyColor: '#F59E0B', rationale: 'Enrichment against an external knowledge base would raise dataset quality, but the spend exceeds the customer auto-approve threshold and requires explicit review.', age: '14m ago' },
+    ];
+  }
+
+  select(id) { this.setState({ selected: id }); }
+  approve() {
+    const id = this.state.selected;
+    this.setState({ live: id });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => {
+      this.setState(s => ({ live: null, decisions: { ...s.decisions, [id]: 'approved' } }));
+    }, 1600);
+  }
+  reject() {
+    const id = this.state.selected;
+    clearTimeout(this._t);
+    this.setState(s => ({ live: null, decisions: { ...s.decisions, [id]: 'rejected' } }));
+  }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  statusTheme(decision, isLive) {
+    if (isLive) return { label: 'EXECUTING', color: '#00E5CC', border: 'rgba(0,229,204,0.6)', fill: 'rgba(0,229,204,0.08)', shadow: 'rgba(0,229,204,0.25)' };
+    if (decision === 'approved') return { label: 'APPROVED', color: '#22C55E', border: 'rgba(34,197,94,0.6)', fill: 'rgba(34,197,94,0.1)', shadow: 'rgba(34,197,94,0.28)' };
+    if (decision === 'rejected') return { label: 'REJECTED', color: '#ef4444', border: 'rgba(239,68,68,0.6)', fill: 'rgba(239,68,68,0.1)', shadow: 'rgba(239,68,68,0.22)' };
+    return { label: 'AWAITING GATE', color: '#F59E0B', border: 'rgba(245,158,11,0.5)', fill: 'rgba(245,158,11,0.09)', shadow: 'rgba(245,158,11,0.16)' };
+  }
+
+  renderVals() {
+    const { selected, decisions, live } = this.state;
+
+    const proposals = this.base.map(p => {
+      const dec = decisions[p.id];
+      const isLive = live === p.id;
+      const th = this.statusTheme(dec, isLive);
+      const isSel = p.id === selected;
+      return {
+        ...p,
+        amountLabel: '$' + p.amount.toFixed(2),
+        amtColor: dec === 'rejected' ? '#71717A' : '#F59E0B',
+        statusLabel: th.label, statusColor: th.color, statusBorder: th.border, statusBg: th.fill,
+        edge: isSel ? th.color : 'transparent',
+        rowBg: isSel ? 'rgba(255,255,255,0.03)' : 'transparent',
+        select: () => this.select(p.id),
+      };
+    });
+
+    const pendingCount = this.base.filter(p => !decisions[p.id]).length;
+
+    const sb = this.base.find(p => p.id === selected) || this.base[0];
+    const dec = decisions[selected];
+    const isLive = live === selected;
+    const th = this.statusTheme(dec, isLive);
+    const isPending = !dec && !isLive;
+    const isApproving = isLive;
+    const isApproved = dec === 'approved';
+    const isRejected = dec === 'rejected';
+    const isResolved = isApproved || isRejected;
+    let gateGlyph = '⛉';
+    if (isApproved) gateGlyph = '✓'; else if (isRejected) gateGlyph = '✕';
+    const resolvedNote = isApproved
+      ? ('$' + sb.amount.toFixed(2) + ' EXECUTED · ' + sb.job + ' RESUMED')
+      : (sb.job + ' · SPEND BLOCKED · NO CHARGE');
+
+    // approved-today running total
+    const baseApproved = 38.5;
+    const sessionApproved = this.base.filter(p => decisions[p.id] === 'approved').reduce((a, p) => a + p.amount, 0);
+    const approvedToday = '$' + (baseApproved + sessionApproved).toFixed(2);
+
+    // audit log
+    const colorByKind = { system: '#A1A1AA', agent: '#00E5CC', human: '#22C55E', money: '#F59E0B', cert: '#3A7BFF', reject: '#ef4444' };
+    let log = [
+      { t: '14:37:22', label: 'Aegis-7B proposed $4.00 spend', actor: 'Aegis-7B', kind: 'agent' },
+      { t: '14:35:08', label: 'Aegis-7B proposed $1.20 spend', actor: 'Aegis-7B', kind: 'agent' },
+      { t: '14:29:44', label: 'Aegis-12B proposed $9.50 spend', actor: 'Aegis-12B', kind: 'agent' },
+      { t: '14:18:03', label: 'Payment received · $20.00', actor: 'Stripe', kind: 'money' },
+    ];
+    // prepend session decisions (newest first)
+    const order = ['JOB-2025-00147', 'JOB-2025-00151', 'JOB-2025-00149'];
+    order.forEach(id => {
+      const d = decisions[id];
+      if (d === 'approved') log.unshift({ t: 'now', label: id + ' · spend approved & executed', actor: 'ops@aegis', kind: 'human' });
+      else if (d === 'rejected') log.unshift({ t: 'now', label: id + ' · proposal rejected', actor: 'ops@aegis', kind: 'reject' });
+    });
+    const auditLog = log.slice(0, 6).map(e => ({ ...e, dot: colorByKind[e.kind] }));
+
+    return {
+      proposals, pendingCount, approvedToday,
+      sel: { ...sb, amountLabel: '$' + sb.amount.toFixed(2), statusLabel: th.label },
+      gateColor: th.color, gateBorder: th.border, gateFill: th.fill, gateShadow: th.shadow, gateGlyph,
+      isPending, isApproving, isApproved, isRejected, isResolved,
+      showEmblem: !isApproving,
+      resolvedNote,
+      approve: () => this.approve(), reject: () => this.reject(),
+      auditLog,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Certificate · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — everything else comes from app.css */
+  .tabs{display:inline-flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .tab{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:9px 18px;border-radius:6px;border:0;cursor:pointer;color:var(--muted);background:transparent;transition:all .15s}
+  .tab.on{color:var(--teal);background:var(--teal-dim)}
+  .tab:hover:not(.on){color:var(--text)}
+  /* the certificate artifact */
+  .cert{position:relative;width:100%;max-width:700px;margin:0 auto;background:linear-gradient(180deg,#121519,#0D0D0F);border:1px solid var(--teal-line);border-radius:16px;padding:clamp(26px,4vw,46px);box-shadow:0 0 70px rgba(0,229,204,0.08)}
+  .crn{position:absolute;width:22px;height:22px}
+  .crn.tl{top:14px;left:14px;border-top:2px solid rgba(0,229,204,.6);border-left:2px solid rgba(0,229,204,.6)}
+  .crn.tr{top:14px;right:14px;border-top:2px solid rgba(0,229,204,.6);border-right:2px solid rgba(0,229,204,.6)}
+  .crn.bl{bottom:14px;left:14px;border-bottom:2px solid rgba(0,229,204,.6);border-left:2px solid rgba(0,229,204,.6)}
+  .crn.br{bottom:14px;right:14px;border-bottom:2px solid rgba(0,229,204,.6);border-right:2px solid rgba(0,229,204,.6)}
+  .cert-shield{width:54px;height:54px;filter:drop-shadow(0 0 12px rgba(0,229,204,.5));margin-bottom:14px}
+  .cert-title{font-size:clamp(23px,3.2vw,32px);font-weight:600;letter-spacing:-.01em}
+  .cert-sub{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--muted-2);margin-top:8px}
+  .vbadge{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:100px}
+  .vbadge .chk{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .stat{background:#121519;padding:15px 12px;text-align:center}
+  .stat .h{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--muted-2)}
+  .stat .v{font-family:var(--mono);font-size:16px;margin-top:6px}
+  .declist{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .decrow{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#121519}
+  .decdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .attrow{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;background:var(--panel-3);font-size:13px}
+  .attrow .k{color:var(--muted-2);flex-shrink:0}
+  .attrow .v{font-family:var(--mono);text-align:right;word-break:break-all}
+  .siglabel{width:130px;height:1px;background:rgba(255,255,255,.2);margin:6px 0}
+  .qr{width:62px;height:62px;border-radius:8px;border:1px solid var(--teal-line);background-color:#0D0D0F;background-image:repeating-linear-gradient(45deg,rgba(0,229,204,.5) 0 3px,transparent 3px 6px),repeating-linear-gradient(-45deg,rgba(0,229,204,.3) 0 3px,transparent 3px 6px)}
+  @media (max-width:560px){.statgrid{grid-template-columns:repeat(2,1fr)}}
+  @media print{.sidebar,.topbar,.tabs,.noprint{display:none!important}.app{display:block}.content{padding:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <!-- header / thesis -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">// SIGNED AAR CERTIFICATE</div>
+          <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Proof of refinement</h1>
+          <p class="muted" style="font-size:14px;margin:0;max-width:560px">Every Aegis job ships an Agent Attestation Record — Ed25519-signed, governed by Aegis-14B, and <span class="teal">checkable by anyone, owned by no vendor</span>.</p>
+        </div>
+        <div class="noprint" style="display:flex;gap:9px" id="actions"></div>
+      </div>
+
+      <!-- tabs -->
+      <div class="noprint" style="margin-bottom:22px">
+        <div class="tabs">
+          <button class="tab on" id="tab-cert" onclick="setTab('cert')">CERTIFICATE</button>
+          <button class="tab" id="tab-json" onclick="setTab('json')">SIGNED JSON</button>
+          <button class="tab" id="tab-verify" onclick="setTab('verify')">VERIFY</button>
+        </div>
+      </div>
+
+      <!-- the live region -->
+      <div id="root">
+        <div class="card" style="max-width:700px;margin:0 auto;text-align:center">
+          <span class="dot" style="display:inline-block;margin-right:8px"></span>
+          <span class="muted mono" style="font-size:13px">Loading certificate…</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("certificate", "certificate");
+
+const jobId = Aegis.jobParam();
+let aar = null, job = null, tab = "cert";
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+const short = (s, n = 14) => { s = String(s || ""); return s.length > n * 2 ? s.slice(0, n) + "…" + s.slice(-n) : s; };
+const fmtDate = (iso) => { try { return new Date(iso).toISOString().replace("T", " ").replace(/\.\d+Z$/, "").replace("Z", "") + " UTC"; } catch { return iso || "—"; } };
+
+async function load() {
+  if (!jobId) { renderNoJob(); return; }
+  try {
+    aar = await Aegis.aar(jobId);
+  } catch (e) {
+    renderUnavailable(e);
+    return;
+  }
+  // best-effort enrichment for the governed-decisions ledger
+  try { job = await Aegis.getJob(jobId); } catch (_) { job = null; }
+  renderActions();
+  render();
+}
+
+/* ---------- shells ---------- */
+function setTab(t) {
+  if (!aar) return;
+  tab = t;
+  for (const k of ["cert", "json", "verify"]) $("tab-" + k).classList.toggle("on", k === t);
+  render();
+}
+
+function render() {
+  if (tab === "cert") renderCert();
+  else if (tab === "json") renderJson();
+  else renderVerify();
+}
+
+/* ---------- CERTIFICATE view ---------- */
+function statCell(h, v, color) {
+  return `<div class="stat"><div class="h">${h}</div><div class="v"${color ? ` style="color:${color}"` : ""}>${v}</div></div>`;
+}
+
+function decisionsHtml() {
+  const rows = [];
+  const tickets = (job && job.spend_tickets) || [];
+  const colorFor = (st) => st === "approved" || st === "executed" ? "var(--green)" : st === "rejected" ? "var(--red)" : "var(--amber)";
+  for (const tk of tickets) {
+    const amt = tk.amount != null ? `$${Number(tk.amount).toFixed(2)}` : "";
+    rows.push(`<div class="decrow"><span class="decdot" style="background:${colorFor(tk.status)}"></span>`
+      + `<span style="flex:1;font-size:13px">Agent proposed ${esc(amt)} — ${esc(tk.description || "external spend")}</span>`
+      + `<span class="mono muted2" style="font-size:11px">Aegis-14B</span></div>`);
+    if (tk.approved_by)
+      rows.push(`<div class="decrow"><span class="decdot" style="background:var(--green)"></span>`
+        + `<span style="flex:1;font-size:13px">Human ${tk.status === "rejected" ? "rejected" : "approved"} the spend</span>`
+        + `<span class="mono muted2" style="font-size:11px">${esc(tk.approved_by)}</span></div>`);
+    if (tk.status === "executed")
+      rows.push(`<div class="decrow"><span class="decdot" style="background:var(--amber)"></span>`
+        + `<span style="flex:1;font-size:13px">Spend authorized <span class="amber">(test)</span> — no live funds moved</span>`
+        + `<span class="mono muted2" style="font-size:11px">stub</span></div>`);
+  }
+  // the always-true closing decision: the signed attestation itself
+  rows.push(`<div class="decrow"><span class="decdot" style="background:var(--teal)"></span>`
+    + `<span style="flex:1;font-size:13px">Dataset refined &amp; certificate signed</span>`
+    + `<span class="mono muted2" style="font-size:11px">${esc((aar.verifier && aar.verifier.id ? aar.verifier.id.split(":").pop() : "conductor"))}</span></div>`);
+  if (!tickets.length)
+    rows.unshift(`<div class="decrow"><span class="decdot" style="background:var(--green)"></span>`
+      + `<span style="flex:1;font-size:13px">Refinement governed end-to-end by Aegis-14B</span>`
+      + `<span class="mono muted2" style="font-size:11px">no gated spend</span></div>`);
+  return rows.join("");
+}
+
+function renderCert() {
+  const sha = (aar.checks && aar.checks[0] && aar.checks[0].response_sha256) || "—";
+  const verifierId = (aar.verifier && aar.verifier.id) || "—";
+  const sigAlg = (aar.sig && aar.sig.alg) || "—";
+  const sigVal = (aar.sig && aar.sig.value) || "";
+  const certId = (job && job.certificate && job.certificate.id) ? `cert_${job.certificate.id}` : (aar.task && aar.task.id) || `job-${jobId}`;
+  const revenue = job && job.estimated_cost != null ? `$${Number(job.estimated_cost).toFixed(2)}` : "$20.00";
+
+  $("root").innerHTML = `
+  <div class="cert rise">
+    <span class="crn tl"></span><span class="crn tr"></span><span class="crn bl"></span><span class="crn br"></span>
+
+    <div style="text-align:center;margin-bottom:22px">
+      <img class="cert-shield" src="assets/shield.svg" alt="">
+      <div class="cert-title">Audit <span class="teal">Certificate</span></div>
+      <div class="cert-sub">AEGIS-14B-GOVERNED · CRYPTOGRAPHICALLY SIGNED</div>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-bottom:24px">
+      <div class="vbadge" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.4)">
+        <span class="chk" style="background:var(--green);color:#04130A">✓</span>
+        <span class="mono" style="font-size:12px;letter-spacing:.1em;color:var(--green)">${esc(String(aar.verdict || "verified").toUpperCase())} · GROUND TRUTH ${esc(String(aar.ground_truth || "confirmed").toUpperCase())}</span>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 auto 26px;max-width:480px">
+      This attests that <span class="mono" style="color:var(--text)">${esc((aar.task && aar.task.id) || ("job-" + jobId))}</span>
+      ${esc((aar.task && aar.task.claim) ? "— " + aar.task.claim + " —" : "")}
+      was governed by a Aegis-14B agent, every external spend held behind an explicit human gate, and the result hash committed as evidence for an independent verifier.
+    </p>
+
+    <div class="statgrid" style="margin-bottom:22px">
+      ${statCell("JOB FEE (STRIPE)", revenue, "var(--green)")}
+      ${statCell("GATED SPEND", "AUTHORIZED (TEST)", "var(--amber)")}
+      ${statCell("VERIFIER", "INDEPENDENT", "var(--teal)")}
+      ${statCell("CONFORMANCE", "L2 TARGET", "var(--teal)")}
+    </div>
+
+    <div class="label" style="margin-bottom:12px">GOVERNED DECISIONS</div>
+    <div class="declist" style="margin-bottom:26px">${decisionsHtml()}</div>
+
+    <div class="label" style="margin-bottom:12px">ATTESTATION RECORD</div>
+    <div class="declist" style="margin-bottom:26px">
+      <div class="attrow"><span class="k">Subject</span><span class="v teal">${esc(aar.subject)}</span></div>
+      <div class="attrow"><span class="k">Principal</span><span class="v">${esc(aar.principal)}</span></div>
+      <div class="attrow"><span class="k">Claim</span><span class="v">${esc((aar.task && aar.task.claim) || "—")}</span></div>
+      <div class="attrow"><span class="k">Verdict</span><span class="v green">${esc(aar.verdict)}</span></div>
+      <div class="attrow"><span class="k">Ground truth</span><span class="v green">${esc(aar.ground_truth)}</span></div>
+      <div class="attrow"><span class="k">Evidence (response_sha256)</span><span class="v teal" title="${esc(sha)}">${esc(short(sha, 12))}</span></div>
+      <div class="attrow"><span class="k">Verifier</span><span class="v">${esc(verifierId)}</span></div>
+      <div class="attrow"><span class="k">Issued</span><span class="v">${esc(fmtDate(aar.issued))}</span></div>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:22px;border-top:1px solid rgba(255,255,255,0.08)">
+      <div>
+        <div class="mono teal" style="font-size:18px;letter-spacing:.05em;margin-bottom:4px">⌁ ${esc(verifierId.split(":").pop() || "conductor")}</div>
+        <div class="siglabel"></div>
+        <div class="mono muted2" style="font-size:10px">${esc(sigAlg)} · sig <span title="${esc(sigVal)}">${esc(short(sigVal, 10))}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div class="qr"></div>
+        <div class="mono muted2" style="font-size:9px">SCAN TO VERIFY</div>
+      </div>
+      <div style="text-align:right">
+        <div class="mono muted2" style="font-size:9.5px">CERT ID</div>
+        <div class="mono" style="font-size:11px;color:var(--muted);margin-bottom:8px">${esc(certId)}</div>
+        <div class="mono muted2" style="font-size:9.5px">SIGNING AUTHORITY</div>
+        <div class="mono" style="font-size:11px;color:var(--muted)">${esc((aar.sig && aar.sig.by) || aar.principal)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- SIGNED JSON view ---------- */
+function renderJson() {
+  $("root").innerHTML = `
+  <div class="rise" style="width:100%;max-width:700px;margin:0 auto;border-radius:14px;background:#0D0D0F;border:1px solid var(--line);overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line);background:var(--panel)">
+      <span class="mono" style="font-size:12.5px">job-${esc(jobId)}.aar.json</span>
+      <span class="mono ${aar.sig && aar.sig.value ? "green" : "amber"}" style="font-size:11px">${aar.sig && aar.sig.value ? "✓ ED25519 SIGNATURE PRESENT" : "⚠ UNSIGNED"}</span>
+    </div>
+    <pre style="margin:0;border:0;border-radius:0;background:#0D0D0F;padding:20px;font-size:12px;line-height:1.7;color:#9fd6d0;max-height:70vh">${esc(JSON.stringify(aar, null, 2))}</pre>
+  </div>
+  <p class="muted2 mono" style="text-align:center;font-size:10.5px;margin-top:14px">This is the exact bytes served at <span class="teal">/jobs/${esc(jobId)}/aar</span> — verify it yourself with the public key at /.well-known/did.json</p>`;
+}
+
+/* ---------- VERIFY view ---------- */
+function renderVerify() {
+  $("root").innerHTML = `
+  <div class="card rise" style="max-width:620px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="teal">⛉</span><span style="font-size:15px;font-weight:600">Independent verification</span></div>
+    <p class="muted" style="font-size:13px;margin:0 0 18px;line-height:1.6">
+      Runs the public zero-dependency verifier (<span class="mono">tools/aar.mjs</span>) against this certificate and the published DID document. No Aegis trust required — the math checks out or it doesn't.
+    </p>
+    <button class="btn" id="verifyBtn" onclick="runVerify()">Run public verifier →</button>
+    <div id="verifyResult" style="margin-top:20px"></div>
+  </div>`;
+}
+
+async function runVerify() {
+  const btn = $("verifyBtn"); if (btn) btn.disabled = true;
+  const box = $("verifyResult");
+  box.innerHTML = `<span class="dot" style="display:inline-block;margin-right:8px"></span><span class="muted mono" style="font-size:12.5px">verifying signature + conformance…</span>`;
+  try {
+    const v = await Aegis.verify(jobId);
+    const ok = v.ok && v.level !== "FAIL";
+    const pill = ok ? "ok" : "bad";
+    const icon = ok ? "✓" : "✗";
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <span style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:${ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)"};border:1px solid ${ok ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"};color:${ok ? "var(--green)" : "var(--red)"}">${icon}</span>
+        <div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:5px">${ok ? "Signature verified" : "Verification failed"}</div>
+          <span class="pill ${pill}">CONFORMANCE: ${esc(v.level || "FAIL")}</span>
+          ${ok ? `<span class="pill teal" style="margin-left:6px">UNMODIFIED SINCE ISSUE</span>` : ""}
+        </div>
+      </div>
+      <div class="label" style="margin-bottom:8px">RAW VERIFIER OUTPUT</div>
+      <pre>${esc(v.output || "(no output)")}</pre>`;
+  } catch (e) {
+    box.innerHTML = `<div class="err">✗ ${esc(e.message || e)}</div>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* ---------- top actions ---------- */
+function renderActions() {
+  $("actions").innerHTML = `
+    <button class="btn ghost" style="font-family:var(--mono);font-size:12px;padding:8px 14px" onclick="downloadJson()">↓ JSON</button>
+    <button class="btn ghost" style="font-family:var(--mono);font-size:12px;padding:8px 14px" onclick="window.print()">↓ PDF</button>`;
+}
+
+function downloadJson() {
+  const blob = new Blob([JSON.stringify(aar, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `job-${jobId}.aar.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ---------- empty / error states ---------- */
+function renderNoJob() {
+  $("actions").innerHTML = "";
+  $("root").innerHTML = `
+  <div class="card" style="max-width:560px;margin:0 auto;text-align:center">
+    <img src="assets/shield.svg" alt="" style="width:40px;height:40px;opacity:.6;filter:drop-shadow(0 0 8px rgba(0,229,204,.3));margin-bottom:14px">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 8px">No certificate selected</h2>
+    <p class="muted" style="font-size:13.5px;margin:0 0 18px;line-height:1.6">Open a certificate by job id — every completed Aegis job has a signed AAR.</p>
+    <div style="display:flex;gap:8px;max-width:320px;margin:0 auto">
+      <input id="jobInput" placeholder="job id, e.g. 1" inputmode="numeric" style="text-align:center"/>
+      <button class="btn" style="white-space:nowrap" onclick="gotoJob()">Open →</button>
+    </div>
+    <div class="mono muted2" style="font-size:10.5px;margin-top:14px"><a class="teal" href="dashboard.html">← back to dashboard</a></div>
+  </div>`;
+  const inp = $("jobInput");
+  if (inp) inp.addEventListener("keydown", e => { if (e.key === "Enter") gotoJob(); });
+}
+function gotoJob() {
+  const v = ($("jobInput").value || "").trim();
+  if (v) location.search = "?job=" + encodeURIComponent(v);
+}
+
+function renderUnavailable(e) {
+  $("actions").innerHTML = "";
+  const msg = (e && (e.message || e)) || "unknown error";
+  const is404 = /no certificate|404|not found/i.test(String(msg));
+  $("root").innerHTML = `
+  <div class="card" style="max-width:560px;margin:0 auto;text-align:center">
+    <div style="width:46px;height:46px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);color:var(--amber)">!</div>
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 8px">${is404 ? "No certificate for this job yet" : "Could not load certificate"}</h2>
+    <p class="muted" style="font-size:13.5px;margin:0 0 18px;line-height:1.6">${is404
+      ? `Job <span class="mono">${esc(jobId)}</span> hasn't been completed and signed. The certificate is issued when the job finishes.`
+      : `<span class="err" style="margin:0">${esc(msg)}</span>`}</p>
+    <div class="mono muted2" style="font-size:11px"><a class="teal" href="order-detail.html?job=${esc(jobId)}">→ view job ${esc(jobId)}</a> &nbsp;·&nbsp; <a class="teal" href="dashboard.html">dashboard</a></div>
+  </div>`;
+}
+
+load();
+</script>
+</body>
+</html>

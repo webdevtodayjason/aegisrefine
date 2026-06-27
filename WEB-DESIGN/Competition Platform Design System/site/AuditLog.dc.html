@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  input { font-family: 'Space Grotesk', sans-serif; }
+  input::placeholder { color: #52525B; }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR (ops) -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;OPS</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">OPERATIONS</div>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⛉</span> Approvals <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #04130A; background: #F59E0B; padding: 1px 7px; border-radius: 100px;">3</span></a>
+    <a href="JobQueue.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">☰</span> Job queue</a>
+    <a href="AuditLog.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">▤</span> Audit log</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◷</span> Policies</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◭</span> Agents</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">CRM</div>
+    <a href="Customers.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Customers</a>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">↩</span> Customer view</a>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px 4px;">
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B, #00E5CC); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #04100E;">OP</span>
+      <div style="line-height: 1.2;"><div style="font-size: 13px; font-weight: 500;">Ops Console</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #F59E0B;">ADMINISTRATOR</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">ops / <span style="color: #F2F2F5;">audit log</span></div>
+      <div style="display: flex; gap: 9px;">
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00E5CC; padding: 8px 14px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3); transition: background .2s;" style-hover="background: rgba(0,229,204,0.08);">↓ EXPORT CSV</a>
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00E5CC; padding: 8px 14px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3); transition: background .2s;" style-hover="background: rgba(0,229,204,0.08);">↓ JSON</a>
+      </div>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #00E5CC; margin-bottom: 10px;">// IMMUTABLE SYSTEM TRAIL</div>
+        <h1 style="font-size: 28px; font-weight: 500; letter-spacing: -0.015em; margin: 0 0 6px;">Audit log</h1>
+        <p style="font-size: 14px; color: #A1A1AA; margin: 0;">Every action across every job — append-only, signed, and exportable. <span style="font-family: 'JetBrains Mono', monospace; color: #71717A;">12,418 events</span></p>
+      </div>
+
+      <!-- controls -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+            <button onClick="{{ f.select }}" style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em; padding: 7px 12px; border-radius: 5px; border: none; cursor: pointer; transition: all .15s; color: {{ f.color }}; background: {{ f.bg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ f.dot }};"></span>{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 13px; border-radius: 8px; background: #16161A; border: 1px solid rgba(255,255,255,0.09); min-width: 240px;">
+          <span style="color: #71717A;">⌕</span><input placeholder="Search actor, action, job ID…" style="flex: 1; background: transparent; border: none; outline: none; color: #F2F2F5; font-size: 13px;">
+        </div>
+      </div>
+
+      <!-- log table -->
+      <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 150px 1fr 1.4fr 1fr 1fr; gap: 12px; padding: 12px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A;">
+          <div>TIMESTAMP</div><div>EVENT</div><div>DETAILS</div><div>ACTOR</div><div>JOB</div>
+        </div>
+        <sc-for list="{{ events }}" as="e" hint-placeholder-count="8">
+          <div style="display: grid; grid-template-columns: 150px 1fr 1.4fr 1fr 1fr; gap: 12px; align-items: center; padding: 13px 22px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">{{ e.ts }}</div>
+            <div><span style="display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ e.color }};"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ e.color }}; box-shadow: 0 0 6px {{ e.color }};"></span>{{ e.action }}</span></div>
+            <div style="font-size: 12.5px; color: #A1A1AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ e.details }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #D4D4D8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ e.actor }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">{{ e.job }}</div>
+          </div>
+        </sc-for>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">
+          <span>Showing {{ count }} of 12,418 events</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px; color: #22C55E;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E;"></span>CHAIN INTACT · ed25519</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = { filter: 'all' };
+  setFilter(f) { this.setState({ filter: f }); }
+
+  renderVals() {
+    const kindMeta = {
+      agent: { color: '#00E5CC', label: 'AGENT' },
+      human: { color: '#22C55E', label: 'HUMAN' },
+      money: { color: '#F59E0B', label: 'MONEY' },
+      system: { color: '#A1A1AA', label: 'SYSTEM' },
+      reject: { color: '#ef4444', label: 'REJECT' },
+      cert: { color: '#3A7BFF', label: 'CERT' },
+    };
+    const raw = [
+      { ts: '14:58:11', kind: 'cert', action: 'cert.signed', details: 'Audit certificate cert_7a2b9c4d81 signed', actor: 'Conductor', job: '00147' },
+      { ts: '14:58:07', kind: 'system', action: 'job.completed', details: 'Refinement completed · 128,540 rows', actor: 'Spark 1', job: '00147' },
+      { ts: '14:41:11', kind: 'money', action: 'spend.executed', details: '$4.00 charged via Stripe (pi_3Q…7xK)', actor: 'Stripe', job: '00147' },
+      { ts: '14:41:09', kind: 'human', action: 'spend.approved', details: 'Approved $4.00 OCR enrichment', actor: 'nous@studio.ai', job: '00147' },
+      { ts: '14:37:22', kind: 'agent', action: 'spend.proposed', details: 'Proposed $4.00 · OCR · 1,240 PDFs', actor: 'Aegis-7B', job: '00147' },
+      { ts: '14:35:08', kind: 'agent', action: 'spend.proposed', details: 'Proposed $1.20 · language detection', actor: 'Aegis-7B', job: '00151' },
+      { ts: '14:31:55', kind: 'reject', action: 'spend.rejected', details: 'Rejected $12.00 · over threshold', actor: 'ops@hermes.ai', job: '00139' },
+      { ts: '14:29:44', kind: 'agent', action: 'spend.proposed', details: 'Proposed $9.50 · entity enrichment', actor: 'Aegis-12B', job: '00149' },
+      { ts: '14:22:03', kind: 'system', action: 'job.triaged', details: 'Triage + scoring · complexity 0.64', actor: 'Conductor', job: '00146' },
+      { ts: '14:18:03', kind: 'money', action: 'payment.received', details: '$20.00 job fee received', actor: 'Stripe', job: '00147' },
+      { ts: '14:11:47', kind: 'system', action: 'job.created', details: 'New job intake · support_tickets', actor: 'Conductor', job: '00147' },
+      { ts: '14:02:19', kind: 'cert', action: 'cert.signed', details: 'Audit certificate cert_5b1f…a3 signed', actor: 'Conductor', job: '00141' },
+    ];
+    let events = raw.map(e => ({ ...e, color: kindMeta[e.kind].color, job: 'JOB-…' + e.job }));
+    const f = this.state.filter;
+    if (f !== 'all') events = events.filter(e => e.kind === f);
+
+    const defs = [
+      { key: 'all', label: 'ALL', dot: '#A1A1AA' },
+      { key: 'agent', label: 'AGENT', dot: '#00E5CC' },
+      { key: 'human', label: 'HUMAN', dot: '#22C55E' },
+      { key: 'money', label: 'MONEY', dot: '#F59E0B' },
+      { key: 'reject', label: 'REJECT', dot: '#ef4444' },
+      { key: 'cert', label: 'CERT', dot: '#3A7BFF' },
+    ];
+    const filters = defs.map(d => ({
+      label: d.label, dot: d.dot,
+      select: () => this.setFilter(d.key),
+      color: f === d.key ? '#00E5CC' : '#71717A',
+      bg: f === d.key ? 'rgba(0,229,204,0.12)' : 'transparent',
+    }));
+    return { events, filters, count: events.length };
+  }
+}
+</script>
+</body>
+</html>

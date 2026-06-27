@@ -1,0 +1,22 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:web:aegisrefine.com",
+  "verificationMethod": [
+    {
+      "id": "did:web:aegisrefine.com#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:aegisrefine.com",
+      "publicKeyJwk": {
+        "crv": "Ed25519",
+        "x": "_KYcrzJT4N_8yXV_OFQ8LbZLd-nHEsqpL8thrlF9LQE",
+        "kty": "OKP"
+      }
+    }
+  ],
+  "assertionMethod": [
+    "did:web:aegisrefine.com#key-1"
+  ]
+}

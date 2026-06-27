@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Customers · CRM · Aegis Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .sample-tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--amber);padding:6px 11px;border-radius:6px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06)}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+  .stat{padding:16px 18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat .h{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2);margin-bottom:8px}
+  .stat .n{font-size:24px;font-weight:600;letter-spacing:-.01em}
+
+  .crm-grid{display:grid;grid-template-columns:0.95fr 1.05fr;gap:22px;align-items:start}
+  @media(max-width:1040px){.crm-grid{grid-template-columns:1fr}.detail{position:static!important}}
+
+  .listcard{border-radius:14px;background:var(--panel);border:1px solid var(--line-2);overflow:hidden}
+  .listhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--muted-2)}
+  .crow{width:100%;text-align:left;display:flex;align-items:center;gap:13px;padding:14px 18px;border:none;border-bottom:1px solid rgba(255,255,255,.05);border-left:3px solid transparent;background:transparent;cursor:pointer;transition:background .15s;font-family:inherit;color:var(--text)}
+  .crow:last-child{border-bottom:0}
+  .crow:hover{background:rgba(255,255,255,.03)}
+  .crow.sel{border-left-color:var(--teal);background:rgba(0,229,204,.05)}
+  .avatar{flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#04100E}
+  .a-sm{width:36px;height:36px;font-size:12px}
+  .a-lg{width:52px;height:52px;font-size:17px}
+  .crow .nm{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crow .em{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crow .rev{font-family:var(--mono);font-size:12px;color:var(--green);text-align:right}
+  .crow .jb{font-family:var(--mono);font-size:10px;color:var(--muted-2);text-align:right}
+
+  .detail{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
+  .detcard{border-radius:14px;background:var(--panel);border:1px solid var(--line-2);padding:24px}
+  .detgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .detgrid .cell{background:var(--panel-3);padding:14px 16px}
+  .detgrid .ck{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--muted-2)}
+  .detgrid .cv{font-family:var(--mono);font-size:17px;margin-top:4px}
+  .statpill{font-family:var(--mono);font-size:10.5px;color:var(--green);padding:5px 10px;border-radius:6px;border:1px solid rgba(34,197,94,0.3)}
+  .recent .rrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .recent .rrow:last-child{border-bottom:0}
+  .recent .rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .recent .rnm{flex:1;font-size:13px}
+  .recent .rst,.recent .rdt{font-family:var(--mono);font-size:10.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;flex-direction:column;gap:22px">
+
+        <!-- page header -->
+        <div class="pagehead">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// CUSTOMER MANAGEMENT</div>
+            <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Customers</h1>
+            <p class="muted" style="font-size:14px;margin:0">CRM view of refinery customers — revenue, gated spend, and approval history. Jobs are governed by Aegis-14B on DGX Spark.</p>
+          </div>
+          <span class="sample-tag" title="There is no customers backend endpoint yet — these records are illustrative.">◆ SAMPLE CRM DATA</span>
+        </div>
+
+        <!-- summary stats (representative) -->
+        <div class="statgrid" id="stats"></div>
+
+        <!-- list + detail -->
+        <div class="crm-grid">
+          <!-- list -->
+          <div class="listcard">
+            <div class="listhead">
+              <span>ALL CUSTOMERS</span>
+              <span id="listmeta" class="muted2"></span>
+            </div>
+            <div id="list"></div>
+          </div>
+
+          <!-- detail -->
+          <div class="detail" id="detail"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("customers", "customers");
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+// ---- representative CRM data --------------------------------------------------
+// NOTE: there is no customers backend endpoint (see API_CONTRACT.md). These records
+// are illustrative sample data so the CRM screen reads as finished; "recent jobs"
+// is static per customer, not a live backend feed. Aggregate top-line stats below
+// describe a larger book of business than the rows shown — labeled as sample.
+const GRAD = [
+  "linear-gradient(135deg,#00E5CC,#3A7BFF)",
+  "linear-gradient(135deg,#F59E0B,#00E5CC)",
+  "linear-gradient(135deg,#3A7BFF,#22C55E)",
+  "linear-gradient(135deg,#22C55E,#00E5CC)",
+  "linear-gradient(135deg,#00E5CC,#F59E0B)",
+];
+
+// dataset-refinery job status -> dot color (matches the app status palette)
+const DOT = { AWAITING:"#F59E0B", REFINING:"#00E5CC", QUEUED:"#3A7BFF", COMPLETE:"#22C55E", HALTED:"#ef4444" };
+
+const CUSTOMERS = [
+  { name:"Nous Builder", email:"nous@studio.ai", initials:"NB", jobs:16, revenue:"$320", spend:"$38.50", approval:"92%", status:"ACTIVE", joined:"JAN 2025", plan:"PER-JOB",
+    recent:[ {name:"Support tickets → ChatML", status:"AWAITING", date:"May 23"}, {name:"Discord logs → ShareGPT", status:"REFINING", date:"May 23"}, {name:"Scraped docs → ChatML", status:"COMPLETE", date:"May 21"} ] },
+  { name:"Hermes Labs", email:"ops@hermes.ai", initials:"HL", jobs:84, revenue:"$1,680", spend:"$412", approval:"88%", status:"ACTIVE", joined:"NOV 2024", plan:"PER-JOB",
+    recent:[ {name:"Entity enrichment set", status:"AWAITING", date:"May 23"}, {name:"RAG corpus → QA", status:"COMPLETE", date:"May 22"}, {name:"Chat exports → ShareGPT", status:"HALTED", date:"May 20"} ] },
+  { name:"Vector Co", email:"data@vector.co", initials:"VC", jobs:41, revenue:"$820", spend:"$96", approval:"95%", status:"ACTIVE", joined:"FEB 2025", plan:"PER-JOB",
+    recent:[ {name:"Forum threads → QA", status:"REFINING", date:"May 23"}, {name:"Scraped HTML → ChatML", status:"QUEUED", date:"May 23"}, {name:"PDF specs → instruct", status:"COMPLETE", date:"May 19"} ] },
+  { name:"Solo Dev", email:"me@solo.dev", initials:"SD", jobs:7, revenue:"$140", spend:"$11", approval:"100%", status:"ACTIVE", joined:"MAY 2025", plan:"PER-JOB",
+    recent:[ {name:"PDF manuals → instruct", status:"REFINING", date:"May 23"}, {name:"Chat exports → ShareGPT", status:"HALTED", date:"May 18"}, {name:"Notes → QA pairs", status:"COMPLETE", date:"May 14"} ] },
+  { name:"Atlas Research", email:"team@atlas.org", initials:"AR", jobs:23, revenue:"$460", spend:"$64", approval:"90%", status:"ACTIVE", joined:"MAR 2025", plan:"PER-JOB",
+    recent:[ {name:"Papers → instruct pairs", status:"COMPLETE", date:"May 22"}, {name:"Citations → QA", status:"COMPLETE", date:"May 20"}, {name:"Abstracts → summary", status:"COMPLETE", date:"May 16"} ] },
+];
+
+// aggregate book of business (representative — broader than the rows shown)
+const TOTALS = [
+  ["TOTAL CUSTOMERS", "38", "var(--text)"],
+  ["JOBS · ALL TIME", "412", "var(--teal)"],
+  ["REVENUE · STRIPE TEST", "$8,240", "var(--green)"],
+  ["GATED SPEND · AUTH (TEST)", "$1,118", "var(--amber)"],
+];
+
+let selected = 0;
+
+// ---- renderers ---------------------------------------------------------------
+function renderStats(){
+  document.getElementById("stats").innerHTML = TOTALS.map(([h,n,col]) =>
+    `<div class="stat"><div class="h">${h}</div><div class="n" style="color:${col}">${esc(n)}</div></div>`
+  ).join("");
+}
+
+function renderList(){
+  document.getElementById("listmeta").textContent = CUSTOMERS.length + " of 38 shown";
+  document.getElementById("list").innerHTML = CUSTOMERS.map((c, i) =>
+    `<button class="crow ${i === selected ? "sel" : ""}" onclick="select(${i})">
+       <span class="avatar a-sm" style="background:${GRAD[i % GRAD.length]}">${esc(c.initials)}</span>
+       <div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email)}</div></div>
+       <div><div class="rev">${esc(c.revenue)}</div><div class="jb">${esc(c.jobs)} jobs</div></div>
+     </button>`
+  ).join("");
+}
+
+function renderDetail(){
+  const c = CUSTOMERS[selected];
+  const grad = GRAD[selected % GRAD.length];
+  const cells = [
+    ["JOBS", esc(c.jobs), "var(--text)"],
+    ["REVENUE", esc(c.revenue), "var(--green)"],
+    ["GATED SPEND", esc(c.spend), "var(--amber)"],
+    ["APPROVAL RATE", esc(c.approval), "var(--teal)"],
+  ];
+  const recent = c.recent.map(r => {
+    const dot = DOT[r.status] || "#A1A1AA";
+    return `<div class="rrow">
+      <span class="rdot" style="background:${dot};box-shadow:0 0 6px ${dot}"></span>
+      <span class="rnm">${esc(r.name)}</span>
+      <span class="rst" style="color:${dot}">${esc(r.status)}</span>
+      <span class="rdt muted2">${esc(r.date)}</span>
+    </div>`;
+  }).join("");
+
+  document.getElementById("detail").innerHTML = `
+    <div class="detcard">
+      <div style="display:flex;align-items:center;gap:15px;margin-bottom:22px">
+        <span class="avatar a-lg" style="background:${grad}">${esc(c.initials)}</span>
+        <div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:600">${esc(c.name)}</div><div class="mono muted2" style="font-size:12px">${esc(c.email)}</div></div>
+        <span class="statpill">● ${esc(c.status)}</span>
+      </div>
+      <div class="detgrid">
+        ${cells.map(([k,v,col]) => `<div class="cell"><div class="ck">${k}</div><div class="cv" style="color:${col}">${v}</div></div>`).join("")}
+      </div>
+      <div style="display:flex;gap:18px;margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--muted-2)">
+        <span>JOINED ${esc(c.joined)}</span><span>·</span><span>PLAN ${esc(c.plan)}</span>
+      </div>
+    </div>
+
+    <div class="detcard recent" style="padding:20px 22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="mono muted2" style="font-size:10.5px;letter-spacing:.14em">RECENT JOBS</div>
+        <span class="mono muted2" style="font-size:10px">SAMPLE · STATIC</span>
+      </div>
+      ${recent}
+    </div>`;
+}
+
+function select(i){ selected = i; renderList(); renderDetail(); }
+
+renderStats();
+renderList();
+renderDetail();
+</script>
+</body>
+</html>

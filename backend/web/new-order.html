@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>New order · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <main style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px;align-items:start">
+        <!-- LEFT: form -->
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">// NEW REFINEMENT JOB</div>
+            <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Describe your data</h1>
+            <p class="muted" style="font-size:14px;margin:0">Point Aegis at a dataset, tell it what you need, and Aegis-14B triages it before anything runs.</p>
+          </div>
+
+          <div>
+            <div class="label" style="margin-bottom:10px">Source data (https URL)</div>
+            <input id="dataset" value="https://data.example.com/discord-export.json"/>
+            <div class="mono muted2" style="font-size:11px;margin-top:8px">Discord logs · PDFs · scraped HTML · raw JSON</div>
+          </div>
+
+          <div>
+            <div class="label" style="margin-bottom:10px">Customer email</div>
+            <input id="email" value="judge@aegisrefine.com"/>
+          </div>
+
+          <div>
+            <div class="label" style="margin-bottom:10px">Output format</div>
+            <div style="display:flex;gap:4px;padding:4px;background:#16161A;border:1px solid var(--line);border-radius:9px;max-width:360px">
+              <button class="fmt mono" data-fmt="chatml" onclick="pickFmt('chatml')" style="flex:1;font-size:12px;padding:10px;border-radius:6px;border:0;cursor:pointer">ChatML JSONL</button>
+              <button class="fmt mono" data-fmt="sharegpt" onclick="pickFmt('sharegpt')" style="flex:1;font-size:12px;padding:10px;border-radius:6px;border:0;cursor:pointer">ShareGPT</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="label" style="margin-bottom:10px">Refinement spec</div>
+            <textarea id="spec" rows="4">Clean into instruction/response pairs. Mask all PII, drop duplicates, normalize timestamps, keep English only. High signal for fine-tuning.</textarea>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="teal">⛉</span><span style="font-size:15px;font-weight:600">Spend policy</span></div>
+            <p class="muted" style="font-size:13px;margin:0 0 18px">Aegis may propose small external spends (OCR, enrichment). Set the threshold above which a human must approve.</p>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+              <span class="label">Require approval above</span><span class="mono amber" id="thLabel" style="font-size:17px;font-weight:600">$5.00</span>
+            </div>
+            <input type="range" min="0" max="25" step="1" value="5" id="threshold" oninput="onThresh()"/>
+            <div style="display:flex;justify-content:space-between" class="mono muted2"><span style="font-size:10px">$0 · gate everything</span><span style="font-size:10px">$25</span></div>
+            <div class="muted" id="thNote" style="margin-top:14px;font-size:12.5px"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: summary (sticky) -->
+        <div style="position:sticky;top:90px;display:flex;flex-direction:column;gap:18px">
+          <div class="card">
+            <h2 style="font-size:16px;font-weight:600;margin:0 0 16px">Order summary</h2>
+            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">Flat job fee</span><span class="mono">$20.00</span></div>
+            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">External spend</span><span class="mono amber">gated · approve later</span></div>
+            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">DGX Spark inference</span><span class="mono green">included</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 4px"><span style="font-size:14px;font-weight:600">Due today</span><span class="mono teal" style="font-size:24px;font-weight:600">$20.00</span></div>
+            <button class="btn" style="width:100%;margin-top:16px" onclick="payAndStart()">Pay $20 &amp; start job →</button>
+            <button class="btn ghost" style="width:100%;margin-top:10px" onclick="simulateAndStart()">Simulate paid → start job (dev)</button>
+            <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Secured by Stripe · no external spend without approval</div>
+            <div id="out"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("new-order", "new order");
+let fmt = "chatml";
+function pickFmt(f){ fmt=f; document.querySelectorAll(".fmt").forEach(b=>{const on=b.dataset.fmt===f;b.style.color=on?"var(--teal)":"var(--muted)";b.style.background=on?"rgba(0,229,204,0.12)":"transparent";}); }
+function onThresh(){ const t=+document.getElementById("threshold").value; document.getElementById("thLabel").textContent="$"+t+".00";
+  document.getElementById("thNote").textContent = t===0 ? "Every external spend pauses for human approval." : "Spends under $"+t+" auto-execute and log; anything above pauses for your approval."; }
+pickFmt("chatml"); onThresh();
+const err = e => document.getElementById("out").innerHTML = `<div class="err">✗ ${e.message||e}</div>`;
+async function payAndStart(){
+  try{ const d = await Aegis.createCheckout(document.getElementById("dataset").value, document.getElementById("email").value);
+    document.getElementById("out").innerHTML = `<p class="muted" style="font-size:12.5px;margin-top:14px">Redirecting to Stripe (test card 4242)…</p>`;
+    window.location = d.checkout_url;
+  }catch(e){ err(e); }
+}
+async function simulateAndStart(){
+  try{ const d = await Aegis.simulatePaid(document.getElementById("dataset").value, document.getElementById("email").value);
+    window.location = `order-detail.html?job=${d.job_id}`;
+  }catch(e){ err(e); }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Spend policy · autonomy gate · Aegis Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — everything else comes from app.css */
+  @keyframes ag-spin{to{transform:rotate(360deg)}}
+  .ops-head{display:flex;gap:20px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px}
+  .creds{min-width:300px;max-width:360px;padding:16px}
+  .creds .row{margin-bottom:12px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
+  .stat{padding:18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .stat.warn{border-color:rgba(245,158,11,0.25)}
+  .stat .h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted-2);margin-bottom:10px}
+  .stat .n{font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .stat .s{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+  /* gate-logic flow */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+  .fnode{flex:1;min-width:150px;border-radius:11px;border:1px solid var(--line);background:var(--panel-3);padding:15px 14px;display:flex;flex-direction:column;gap:7px}
+  .fnode.gate{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.05);box-shadow:0 0 28px rgba(245,158,11,0.12)}
+  .fnode .fi{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid var(--line-2)}
+  .fnode .ft{font-size:13.5px;font-weight:600;line-height:1.25}
+  .fnode .fd{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .farrow{display:flex;align-items:center;justify-content:center;color:var(--muted-3);font-family:var(--mono);font-size:18px;padding:0 4px}
+  @media(max-width:960px){.farrow{transform:rotate(90deg);padding:6px 0}.flow{flex-direction:column}}
+
+  .pgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start;margin-bottom:22px}
+  @media(max-width:1080px){.pgrid{grid-template-columns:1fr}}
+
+  /* policy rule list */
+  .ruleline{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+  .ruleline:last-child{border-bottom:0}
+  .ruleline .ri{width:26px;height:26px;flex:0 0 auto;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .ruleline .rt{font-size:13.5px;font-weight:500;margin-bottom:3px}
+  .ruleline .rd{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  /* autonomy dial */
+  .dial-read{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin:4px 0 18px}
+  .dial-read .big{font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1;transition:color .3s}
+  .dial-marks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted-3);margin-top:8px}
+  .tierrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 4px}
+  .tier{text-align:center;padding:10px 8px;border-radius:9px;border:1px solid var(--line);background:var(--panel-3);cursor:pointer;transition:all .15s}
+  .tier:hover{border-color:var(--line-2)}
+  .tier.on{border-color:var(--teal-line);background:var(--teal-dim)}
+  .tier .tn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em}
+  .tier .tv{font-size:11px;color:var(--muted-2);margin-top:4px}
+
+  /* per-customer thresholds */
+  .thwrap{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .thead-row{display:grid;grid-template-columns:1.4fr .9fr .9fr .9fr;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--muted-2)}
+  .throw{display:grid;grid-template-columns:1.4fr .9fr .9fr .9fr;gap:10px;align-items:center;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05)}
+  .throw:last-child{border-bottom:0}
+  .throw .cust{font-size:13.5px;font-weight:500}
+  .throw .cust .seg{font-family:var(--mono);font-size:10px;color:var(--muted-2);margin-top:2px}
+  .throw input{padding:8px 10px;font-size:13px;font-family:var(--mono);border-radius:8px;text-align:right}
+  .throw .auto{font-family:var(--mono);font-size:11px;text-align:center;padding:5px;border-radius:6px;border:1px solid var(--line)}
+
+  .alog{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+  .alog:last-child{border-bottom:0}
+  .alog .t{font-family:var(--mono);font-size:11px;color:var(--muted-2);width:64px;flex-shrink:0}
+  .alog .d{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .alog .l{font-size:13px;flex:1}
+  .alog .a{font-family:var(--mono);font-size:10.5px;color:var(--muted-2)}
+
+  .repnote{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted-2);border:1px solid var(--line-2);border-radius:5px;padding:3px 8px}
+  .draftbadge{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--amber);border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.07);border-radius:5px;padding:3px 8px;opacity:0;transition:opacity .2s}
+  .draftbadge.show{opacity:1}
+
+  #toast{position:fixed;top:18px;right:18px;z-index:60;display:flex;flex-direction:column;gap:10px;max-width:380px}
+  .toast{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);box-shadow:0 12px 40px rgba(0,0,0,0.5);font-size:12.5px;line-height:1.5}
+  .toast.ok{border-color:rgba(34,197,94,0.5)} .toast.ok .i{color:var(--green)}
+  .toast.no{border-color:rgba(239,68,68,0.45)} .toast.no .i{color:var(--red)}
+  .toast .i{font-size:15px;flex-shrink:0;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <!-- header -->
+      <div class="ops-head">
+        <div style="max-width:580px">
+          <div class="eyebrow" style="margin-bottom:10px">// SPEND GOVERNANCE POLICY</div>
+          <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Autonomy &amp; the spend gate</h1>
+          <p class="muted" style="font-size:14px;margin:0">Aegis-14B governs every job autonomously on DGX Spark — local inference runs uncapped. But the policy holds one hard line: <span style="color:var(--text)">no dollar leaves the system without a human signature.</span> This page is where that line is configured.</p>
+        </div>
+
+        <div class="creds card">
+          <div class="row">
+            <div class="label" style="margin-bottom:8px">Operator key · X-Admin-Key</div>
+            <input id="adminKey" value="dev-admin-key" autocomplete="off" spellcheck="false"/>
+          </div>
+          <div class="row">
+            <div class="label" style="margin-bottom:8px">Operator identity · recorded</div>
+            <input id="operator" value="ops@aegisrefine.com" autocomplete="off" spellcheck="false"/>
+          </div>
+          <button class="btn ghost" style="width:100%" onclick="refresh()">↻ Re-check live gate</button>
+          <div class="mono muted2" style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:10px;line-height:1.5">
+            <span class="teal">⛉</span> The key validates against the live gate. Outbound spend is a test stub — no real money moves yet.
+          </div>
+        </div>
+      </div>
+
+      <div id="banner"></div>
+
+      <!-- stats -->
+      <div class="stats">
+        <div class="stat">
+          <div class="h">ACTIVE POLICY</div>
+          <div class="n teal" style="font-size:20px;font-family:var(--mono);letter-spacing:.02em">DATA-REFINE-01</div>
+          <div class="s">v3 · enforced on every job</div>
+        </div>
+        <div class="stat warn">
+          <div class="h">ENFORCED GATE THRESHOLD</div>
+          <div class="n amber">$0.00</div>
+          <div class="s">100% of outbound spend gated</div>
+        </div>
+        <div class="stat">
+          <div class="h">PROPOSALS AT GATE · LIVE</div>
+          <div class="n" id="stPending">—</div>
+          <div class="s" id="stPendingSub">checking live gate…</div>
+        </div>
+        <div class="stat">
+          <div class="h">OUTBOUND MOVED (TEST)</div>
+          <div class="n" id="stReal" style="color:var(--muted-2)">$0.00</div>
+          <div class="s">execution is a stub</div>
+        </div>
+      </div>
+
+      <!-- gate logic flow -->
+      <div class="card" style="margin-bottom:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:9px"><span class="teal">⟁</span><h2 style="font-size:16px;font-weight:600;margin:0">How the gate fires</h2></div>
+          <span class="pill warn">ONE HUMAN GATE · ENFORCED LIVE</span>
+        </div>
+        <div class="flow">
+          <div class="fnode">
+            <div class="fi" style="color:#3A7BFF;border-color:rgba(58,123,255,0.4)">$</div>
+            <div class="ft">Order paid</div>
+            <div class="fd">Stripe checkout clears · a Job is created. $20 flat (test mode).</div>
+          </div>
+          <div class="farrow">→</div>
+          <div class="fnode">
+            <div class="fi" style="color:var(--teal);border-color:var(--teal-line)">◭</div>
+            <div class="ft">Aegis-14B governs</div>
+            <div class="fd">Triage, quality, planning — all local on DGX Spark. <span class="teal">No gate, uncapped.</span></div>
+          </div>
+          <div class="farrow">→</div>
+          <div class="fnode">
+            <div class="fi" style="color:var(--amber);border-color:rgba(245,158,11,0.4)">↗</div>
+            <div class="ft">Proposes outbound spend</div>
+            <div class="fd">Only when a paid external tool would raise dataset quality. A SpendTicket is opened.</div>
+          </div>
+          <div class="farrow">→</div>
+          <div class="fnode gate">
+            <div class="fi" style="color:var(--amber);border-color:rgba(245,158,11,0.5)">⛉</div>
+            <div class="ft amber">Human gate</div>
+            <div class="fd">Paused. An operator approves or denies with <span class="mono">X-Admin-Key</span>. The decision is signed &amp; recorded.</div>
+          </div>
+          <div class="farrow">→</div>
+          <div class="fnode">
+            <div class="fi" style="color:var(--green);border-color:rgba(34,197,94,0.4)">✓</div>
+            <div class="ft">Execute</div>
+            <div class="fd">On approval the spend executes — <span style="color:var(--muted-2)">test stub today, real <span class="mono">@stripe/link-cli</span> later.</span></div>
+          </div>
+        </div>
+        <div class="mono muted2" style="margin-top:14px;font-size:11px;display:flex;align-items:center;gap:7px;line-height:1.5">
+          <span class="teal">⛉</span> Local refinement never crosses the gate — only outbound money does. This flow is the real, enforced behavior of the live backend.
+        </div>
+      </div>
+
+      <!-- policy + autonomy dial -->
+      <div class="pgrid">
+
+        <!-- POLICY-DATA-REFINE-01 -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+            <div>
+              <div class="mono teal" style="font-size:13px;letter-spacing:.04em">POLICY-DATA-REFINE-01</div>
+              <div class="mono muted2" style="font-size:10.5px;margin-top:3px">SPEND GOVERNANCE · v3 · APPLIES TO ALL JOBS</div>
+            </div>
+            <span class="pill ok">ACTIVE</span>
+          </div>
+          <p class="muted" style="font-size:13px;margin:10px 0 6px;line-height:1.55">The standing rule set every refinement job is governed under. These clauses are enforced by the live backend.</p>
+
+          <div style="margin-top:8px">
+            <div class="ruleline">
+              <div class="ri teal" style="background:var(--teal-dim);border:1px solid var(--teal-line)">◭</div>
+              <div><div class="rt">Local inference is uncapped</div><div class="rd">Aegis-14B triage, scoring &amp; planning run on DGX Spark with no spend gate and no human stop.</div></div>
+            </div>
+            <div class="ruleline">
+              <div class="ri amber" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4)">⛉</div>
+              <div><div class="rt">Every outbound dollar is gated</div><div class="rd">Any external/paid tool spend pauses for explicit human approval. There is no auto-spend path — currently enforced at a $0.00 threshold.</div></div>
+            </div>
+            <div class="ruleline">
+              <div class="ri" style="color:#3A7BFF;background:rgba(58,123,255,0.08);border:1px solid rgba(58,123,255,0.4)">✍</div>
+              <div><div class="rt">Approver identity is recorded</div><div class="rd">Approve/deny carries <span class="mono">X-Admin-User</span>; the handle is written to the immutable audit trail on every decision.</div></div>
+            </div>
+            <div class="ruleline">
+              <div class="ri green" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.4)">⛉</div>
+              <div><div class="rt">Decisions are signed</div><div class="rd">Each gate decision &amp; each finished job ships an Ed25519-signed record (AAR), independently verifiable at L2.</div></div>
+            </div>
+            <div class="ruleline">
+              <div class="ri" style="color:var(--muted-2);background:var(--panel-3);border:1px solid var(--line-2)">⚑</div>
+              <div><div class="rt">Execution is a test stub</div><div class="rd">Approved spend "executes" without moving real money. Live payout via <span class="mono">@stripe/link-cli</span> lands in the SPEND milestone.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUTONOMY DIAL -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:9px"><span class="amber">◷</span><h2 style="font-size:16px;font-weight:600;margin:0">Autonomy dial</h2></div>
+            <span class="draftbadge" id="draftBadge">● UNSAVED DRAFT</span>
+          </div>
+          <p class="muted" style="font-size:13px;margin:6px 0 10px;line-height:1.55">Set the line between <span class="green">auto-execute</span> and <span class="amber">human gate</span>. Below the threshold, an approved policy could let Aegis spend without pausing; at or above it, the human gate always fires.</p>
+
+          <div class="dial-read">
+            <div>
+              <div class="label" style="margin-bottom:6px">AUTO-EXECUTE BELOW</div>
+              <div class="big" id="dialVal" style="color:var(--amber)">$0</div>
+            </div>
+            <div style="text-align:right">
+              <div class="label" style="margin-bottom:6px">TIER</div>
+              <div class="mono" id="dialTier" style="font-size:15px;font-weight:600;color:var(--amber)">GATED</div>
+            </div>
+          </div>
+
+          <input type="range" id="dial" min="0" max="500" step="5" value="0" oninput="onDial()"/>
+          <div class="dial-marks"><span>$0 · gate all</span><span>$100</span><span>$250</span><span>$500</span></div>
+
+          <div class="tierrow">
+            <button class="tier on" id="tier-gated" onclick="setDial(0)">
+              <div class="tn amber">GATED</div><div class="tv">every $ to human</div>
+            </button>
+            <button class="tier" id="tier-assisted" onclick="setDial(50)">
+              <div class="tn teal">ASSISTED</div><div class="tv">auto &lt; $50</div>
+            </button>
+            <button class="tier" id="tier-trusted" onclick="setDial(250)">
+              <div class="tn green">TRUSTED</div><div class="tv">auto &lt; $250</div>
+            </button>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:18px">
+            <button class="btn" style="flex:1" onclick="saveDial()">Save draft locally</button>
+            <button class="btn ghost" onclick="setDial(0)">Reset to gate-all</button>
+          </div>
+
+          <div class="mono muted2" style="margin-top:14px;font-size:10.5px;line-height:1.6;display:flex;gap:7px">
+            <span class="amber" style="flex-shrink:0">⚑</span>
+            <span><b style="color:var(--muted)">Representative control.</b> The live backend gates 100% of outbound spend regardless of this dial — there is no auto-spend endpoint yet. Drafts persist in this browser only; threshold persistence ships with the SPEND milestone.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- per-customer thresholds + enforcement log -->
+      <div class="pgrid">
+
+        <!-- per-customer thresholds -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+            <h2 style="font-size:16px;font-weight:600;margin:0">Per-customer spend caps</h2>
+            <span class="repnote">⚑ REPRESENTATIVE · SAMPLE DATA</span>
+          </div>
+          <div class="thwrap">
+            <div class="thead-row">
+              <div>CUSTOMER</div><div style="text-align:right">MONTHLY CAP</div><div style="text-align:right">GATE ABOVE</div><div style="text-align:center">AUTONOMY</div>
+            </div>
+            <div id="thresholds"></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px">
+            <div class="mono muted2" style="font-size:10.5px;line-height:1.55"><span class="amber">⚑</span> Sample customers &amp; caps for layout — not pulled from the backend (no customer/policy endpoint yet). Edits persist in this browser only.</div>
+            <button class="btn ghost" style="white-space:nowrap" onclick="saveThresholds()">Save caps</button>
+          </div>
+        </div>
+
+        <!-- live policy enforcement log -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="mono muted2" style="font-size:11px;letter-spacing:.14em">POLICY ENFORCEMENT LOG · GATE EVENTS</div>
+            <div class="mono muted2" style="font-size:10px;display:inline-flex;align-items:center;gap:7px"><span class="dot"></span> LIVE FEED</div>
+          </div>
+          <div id="enforcelog"><div class="muted mono" style="font-size:12px;padding:14px 0">loading gate events…</div></div>
+          <div class="mono muted2" style="margin-top:12px;font-size:10.5px;line-height:1.55"><span class="teal">⛉</span> Real spend-gate events from the live activity feed — every proposal, approval, denial &amp; execution the policy has touched.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("policies", "policies");
+
+// ---- helpers -----------------------------------------------------------
+const KEY  = () => document.getElementById("adminKey").value.trim();
+const esc  = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const money = n => "$" + Number(n || 0).toFixed(2);
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }); } catch { return iso || "—"; } };
+const LS_DIAL = "aegis.policy.dial.v1";
+const LS_CAPS = "aegis.policy.caps.v1";
+
+// ---- banners / toasts --------------------------------------------------
+function banner(html, kind) {
+  const b = document.getElementById("banner");
+  if (!html) { b.innerHTML = ""; return; }
+  const c = kind === "err" ? "rgba(239,68,68,0.4)" : "var(--teal-line)";
+  const col = kind === "err" ? "var(--red)" : "var(--teal)";
+  b.innerHTML = `<div class="rise" style="margin-bottom:18px;padding:13px 16px;border-radius:10px;border:1px solid ${c};background:#16161A;font-size:13px;color:${col};display:flex;gap:9px;align-items:center"><span>${kind === "err" ? "✗" : "⛉"}</span><span style="color:var(--text)">${html}</span></div>`;
+}
+function toast(msg, kind) {
+  const t = document.createElement("div");
+  t.className = "toast rise " + (kind === "no" ? "no" : "ok");
+  t.innerHTML = `<span class="i">${kind === "no" ? "✕" : "✓"}</span><span>${esc(msg)}</span>`;
+  document.getElementById("toast").appendChild(t);
+  setTimeout(() => { t.style.transition = "opacity .4s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 400); }, 6000);
+}
+
+// ---- autonomy dial -----------------------------------------------------
+let savedDial = 0;
+function tierFor(v) {
+  if (v <= 0)   return { name:"GATED",    col:"var(--amber)" };
+  if (v < 250)  return { name:"ASSISTED", col:"var(--teal)"  };
+  return            { name:"TRUSTED",  col:"var(--green)" };
+}
+function paintTiers(v) {
+  document.getElementById("tier-gated").classList.toggle("on", v <= 0);
+  document.getElementById("tier-assisted").classList.toggle("on", v > 0 && v < 250);
+  document.getElementById("tier-trusted").classList.toggle("on", v >= 250);
+}
+function onDial() {
+  const v = Number(document.getElementById("dial").value);
+  const tier = tierFor(v);
+  document.getElementById("dialVal").textContent = "$" + v;
+  document.getElementById("dialVal").style.color = tier.col;
+  document.getElementById("dialTier").textContent = tier.name;
+  document.getElementById("dialTier").style.color = tier.col;
+  paintTiers(v);
+  document.getElementById("draftBadge").classList.toggle("show", v !== savedDial);
+}
+function setDial(v) { document.getElementById("dial").value = v; onDial(); }
+function saveDial() {
+  const v = Number(document.getElementById("dial").value);
+  savedDial = v;
+  try { localStorage.setItem(LS_DIAL, String(v)); } catch {}
+  document.getElementById("draftBadge").classList.remove("show");
+  toast(v <= 0
+    ? "Saved locally · gate-all (every outbound dollar to the human gate). Backend already enforces this."
+    : `Saved locally · draft threshold ${money(v)}. Representative only — the live gate still holds every dollar.`, "ok");
+}
+
+// ---- per-customer thresholds (representative sample) --------------------
+const DEFAULT_CAPS = [
+  { name:"Northwind Analytics", seg:"PRO · 14 jobs/mo",   cap:2000, gate:50,  auto:"ASSISTED" },
+  { name:"Helios Robotics",     seg:"SCALE · 61 jobs/mo", cap:5000, gate:250, auto:"TRUSTED"  },
+  { name:"Acme Legal Data",     seg:"PRO · regulated",    cap:750,  gate:0,   auto:"GATED"    },
+  { name:"Vega Labs",           seg:"STARTER · 5 jobs/mo",cap:1200, gate:100, auto:"ASSISTED" },
+];
+let caps = [];
+function autoFor(gate) {
+  if (Number(gate) <= 0) return { t:"GATED", col:"var(--amber)", bd:"rgba(245,158,11,0.35)" };
+  if (Number(gate) < 250) return { t:"ASSISTED", col:"var(--teal)", bd:"var(--teal-line)" };
+  return { t:"TRUSTED", col:"var(--green)", bd:"rgba(34,197,94,0.35)" };
+}
+function loadCaps() {
+  try { const s = localStorage.getItem(LS_CAPS); caps = s ? JSON.parse(s) : null; } catch { caps = null; }
+  if (!Array.isArray(caps) || !caps.length) caps = JSON.parse(JSON.stringify(DEFAULT_CAPS));
+  renderThresholds();
+}
+function renderThresholds() {
+  const el = document.getElementById("thresholds");
+  el.innerHTML = caps.map((c, i) => {
+    const a = autoFor(c.gate);
+    return `<div class="throw">
+      <div class="cust">${esc(c.name)}<div class="seg">${esc(c.seg)}</div></div>
+      <div><input type="number" min="0" step="50" value="${Number(c.cap)}" oninput="capEdit(${i},'cap',this.value)" aria-label="monthly cap"/></div>
+      <div><input type="number" min="0" step="10" value="${Number(c.gate)}" oninput="capEdit(${i},'gate',this.value)" aria-label="gate above"/></div>
+      <div><span class="auto" id="auto-${i}" style="color:${a.col};border-color:${a.bd}">${a.t}</span></div>
+    </div>`;
+  }).join("");
+}
+function capEdit(i, field, val) {
+  caps[i][field] = Number(val) || 0;
+  if (field === "gate") {
+    const a = autoFor(caps[i].gate);
+    const chip = document.getElementById("auto-" + i);
+    if (chip) { chip.textContent = a.t; chip.style.color = a.col; chip.style.borderColor = a.bd; }
+  }
+}
+function saveThresholds() {
+  try { localStorage.setItem(LS_CAPS, JSON.stringify(caps)); } catch {}
+  toast("Spend caps saved locally — representative config, not yet enforced by the backend.", "ok");
+}
+
+// ---- live data: gate status + enforcement log --------------------------
+async function refresh() {
+  // live gate proposal count (validates the operator key against the real gate)
+  const pEl = document.getElementById("stPending"), pSub = document.getElementById("stPendingSub");
+  if (!KEY()) {
+    pEl.textContent = "—"; pSub.textContent = "enter operator key";
+    banner("Enter the operator key to validate against the live gate.", "err");
+    loadEnforce();
+    return;
+  }
+  try {
+    const t = await Aegis.tickets(KEY());
+    const arr = Array.isArray(t) ? t : [];
+    pEl.textContent = arr.length;
+    pEl.style.color = arr.length ? "var(--amber)" : "var(--text)";
+    pSub.textContent = arr.length ? "awaiting a human decision" : "gate clear";
+    banner("");
+  } catch (e) {
+    pEl.textContent = "—"; pEl.style.color = "var(--muted-2)";
+    pSub.textContent = "gate locked";
+    banner(`Gate key rejected — ${esc(e.message || e)}. Policy is read-only until the operator key validates.`, "err");
+  }
+  loadEnforce();
+}
+
+const GATE_ACTIONS = {
+  spend_proposed: { dot:"#F59E0B" },
+  spend_decision: { dot:"#A1A1AA" },
+  spend_approved: { dot:"#22C55E" },
+  spend_rejected: { dot:"#ef4444" },
+  spend_executed: { dot:"#F59E0B" },
+};
+async function loadEnforce() {
+  const el = document.getElementById("enforcelog");
+  try {
+    const feed = await Aegis.activity(60);
+    const rows = (Array.isArray(feed) ? feed : []).filter(e => e.action && e.action.indexOf("spend_") === 0).slice(0, 12);
+    if (!rows.length) { el.innerHTML = `<div class="muted mono" style="font-size:12px;padding:14px 0">No spend-gate events yet — the policy hasn't been exercised. Process a job that proposes a spend to arm the gate.</div>`; return; }
+    el.innerHTML = rows.map(ev => {
+      const dot = (GATE_ACTIONS[ev.action] || { dot:"#A1A1AA" }).dot;
+      return `<div class="alog">
+        <span class="t">${fmtTime(ev.at)}</span>
+        <span class="d" style="background:${dot};box-shadow:0 0 7px ${dot}"></span>
+        <span class="l">${esc(ev.summary || ev.action.replace(/_/g," "))}${ev.job_id != null ? ` <span class="mono muted2" style="font-size:10.5px">· job #${esc(ev.job_id)}</span>` : ""}</span>
+        <span class="a">${esc(ev.actor || "system")}</span>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    el.innerHTML = `<div class="muted mono" style="font-size:12px;padding:14px 0">enforcement feed unavailable — ${esc(e.message || e)}</div>`;
+  }
+}
+
+// ---- boot --------------------------------------------------------------
+function bootDial() {
+  let v = 0;
+  try { const s = localStorage.getItem(LS_DIAL); if (s != null) v = Number(s) || 0; } catch {}
+  savedDial = v;
+  setDial(v);
+  document.getElementById("draftBadge").classList.remove("show");
+}
+document.getElementById("adminKey").addEventListener("change", refresh);
+bootDial();
+loadCaps();
+refresh();
+setInterval(loadEnforce, 8000);
+</script>
+</body>
+</html>

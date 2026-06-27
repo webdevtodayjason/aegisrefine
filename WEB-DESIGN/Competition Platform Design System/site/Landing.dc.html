@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ::selection { background: rgba(0,229,204,0.3); color: #fff; }
+  a { color: inherit; text-decoration: none; }
+  @keyframes ag-spin { to { transform: rotate(360deg); } }
+  @keyframes ag-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  @keyframes ag-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes ag-blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+  @keyframes ag-scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(900%); } }
+  @keyframes ag-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ag-ring { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(1.5); opacity: 0; } }
+</style>
+</helmet>
+
+<div style="position: relative; min-height: 100vh; overflow-x: hidden; background: #0D0D0F;">
+
+  <!-- ambient background -->
+  <sc-if value="{{ ambientFx }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: url('assets/grid-texture.png'); background-size: cover; background-position: center; opacity: 0.10;"></div>
+    <div style="position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(1100px 700px at 78% -8%, rgba(0,229,204,0.10), transparent 60%), radial-gradient(900px 600px at 5% 18%, rgba(58,123,255,0.07), transparent 60%);"></div>
+  </sc-if>
+
+  <div style="position: relative; z-index: 1;">
+
+  <!-- NAV -->
+  <nav style="position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px clamp(20px, 5vw, 64px); background: rgba(13,13,15,0.72); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+    <a href="#top" style="display: flex; align-items: center; gap: 11px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 30px; height: 30px; display: block; filter: drop-shadow(0 0 8px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <div style="display: flex; align-items: center; gap: 26px; font-size: 14px; color: #A1A1AA;">
+        <a href="#how" style="transition: color .15s;" style-hover="color: #F2F2F5;">How it works</a>
+        <a href="#deliver" style="transition: color .15s;" style-hover="color: #F2F2F5;">What you get</a>
+        <a href="#why" style="transition: color .15s;" style-hover="color: #F2F2F5;">Why Aegis</a>
+        <a href="#pricing" style="transition: color .15s;" style-hover="color: #F2F2F5;">Pricing</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="#" style="font-size: 14px; color: #A1A1AA; padding: 8px 4px; white-space: nowrap;" style-hover="color: #F2F2F5;">Log in</a>
+        <a href="#how" style="font-size: 13.5px; font-weight: 500; color: #04100E; background: #00E5CC; padding: 9px 16px; border-radius: 4px; box-shadow: 0 0 18px rgba(0,229,204,0.35); transition: transform .12s, box-shadow .2s;" style-hover="box-shadow: 0 0 26px rgba(0,229,204,0.55);">Start a job</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header id="top" style="position: relative; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; max-width: 1240px; margin: 0 auto; padding: clamp(48px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(40px, 6vw, 80px);">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; border: 1px solid rgba(0,229,204,0.3); border-radius: 100px; background: rgba(0,229,204,0.06); margin-bottom: 26px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 8px #22C55E; animation: ag-pulse 2s infinite;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.16em; color: #A1A1AA; white-space: nowrap;">CONDUCTOR-GOVERNED DATASET REFINERY</span>
+      </div>
+      <h1 style="font-size: clamp(40px, 5.6vw, 72px); line-height: 1.03; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 22px;">Your messy data.<br><span style="color: #00E5CC;">Governed. Auditable. Delivered.</span></h1>
+      <p style="font-size: clamp(16px, 1.6vw, 19px); line-height: 1.6; color: #A1A1AA; max-width: 540px; margin: 0 0 32px;">Aegis turns Discord logs, PDFs, and scraped HTML into clean ShareGPT / ChatML datasets — with a human gate on every dollar the agent spends, and a signed audit certificate proving exactly what happened.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 40px;">
+        <a href="#how" style="display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 500; color: #04100E; background: #00E5CC; padding: 13px 22px; border-radius: 5px; box-shadow: 0 0 24px rgba(0,229,204,0.4); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 34px rgba(0,229,204,0.6);">See the human gate &nbsp;→</a>
+        <a href="#deliver" style="display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 500; color: #F2F2F5; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14); padding: 13px 22px; border-radius: 5px; transition: border-color .2s, background .2s;" style-hover="border-color: rgba(0,229,204,0.5); background: rgba(0,229,204,0.06);">View a sample certificate</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 14px 34px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #00E5CC;">128.5K+</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A;">DATASETS PROCESSED</span></div>
+        <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #00E5CC;">94.7/100</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A;">QUALITY SCORE</span></div>
+        <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #00E5CC;">62%</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A;">NOISE REDUCTION</span></div>
+        <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #22C55E;">100%</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #71717A;">GATED SPEND</span></div>
+      </div>
+    </div>
+
+    <!-- hero HUD visual: isometric refinement layers -->
+    <div style="position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+      <div style="position: absolute; width: 280px; height: 280px; border-radius: 50%; border: 1px solid rgba(0,229,204,0.12); animation: ag-pulse 4s infinite;"></div>
+      <div style="position: absolute; width: 360px; height: 360px; border-radius: 50%; border: 1px solid rgba(0,229,204,0.07);"></div>
+      <div style="perspective: 1100px; animation: ag-float 6s ease-in-out infinite;">
+        <div style="transform-style: preserve-3d; transform: rotateX(58deg) rotateZ(45deg); position: relative; width: 200px; height: 200px;">
+          <div style="position: absolute; inset: 0; transform: translateZ(0px); border: 1px solid rgba(0,229,204,0.35); background: rgba(0,229,204,0.04); background-image: linear-gradient(rgba(0,229,204,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,204,0.18) 1px, transparent 1px); background-size: 25px 25px; box-shadow: 0 0 30px rgba(0,229,204,0.15);"></div>
+          <div style="position: absolute; inset: 0; transform: translateZ(48px); border: 1px solid rgba(0,229,204,0.55); background: rgba(0,229,204,0.07); background-image: linear-gradient(rgba(0,229,204,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,204,0.22) 1px, transparent 1px); background-size: 25px 25px; box-shadow: 0 0 40px rgba(0,229,204,0.25);"></div>
+          <div style="position: absolute; inset: 0; transform: translateZ(96px); border: 1px solid rgba(0,229,204,0.9); background: rgba(0,229,204,0.10); background-image: linear-gradient(rgba(0,229,204,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,204,0.3) 1px, transparent 1px); background-size: 25px 25px; box-shadow: 0 0 60px rgba(0,229,204,0.4);">
+            <div style="position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #00E5CC; box-shadow: 0 0 24px 6px rgba(0,229,204,0.8); animation: ag-pulse 2.2s infinite;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PROBLEM -->
+  <section style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 88px) clamp(20px, 5vw, 64px);">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 16px;">// THE BOTTLENECK</div>
+    <h2 style="font-size: clamp(26px, 3.4vw, 42px); line-height: 1.18; font-weight: 500; letter-spacing: -0.015em; max-width: 880px; margin: 0 0 44px;">Fine-tuning is blocked by messy data. And most agents <span style="color: #A1A1AA;">can't be trusted with the fix.</span></h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+      <div style="padding: 26px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+        <div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #F59E0B; font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-bottom: 18px;">⌗</div>
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 8px;">Messy in, garbage out</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0;">Inconsistent formats, missing values, duplicates, PII, raw noise. Cleaning it by hand is slow, error-prone, and never quite finished.</p>
+      </div>
+      <div style="padding: 26px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+        <div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-bottom: 18px;">$</div>
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 8px;">Agents that spend unsupervised</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0;">Fully autonomous agents will call paid APIs and burn budget with no oversight. Powerful, but untrustworthy with real money.</p>
+      </div>
+      <div style="padding: 26px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+        <div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.3); color: #00E5CC; font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-bottom: 18px;">∅</div>
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 8px;">No trusted middle path</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0;">There's nothing that combines real agent capability with strong human governance and a verifiable record of every decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS — interactive Conductor flow -->
+  <section id="how" style="position: relative; padding: clamp(48px, 6vw, 88px) clamp(20px, 5vw, 64px); border-top: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(0,229,204,0.025), transparent 220px);">
+    <div style="max-width: 1240px; margin: 0 auto;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px;">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 16px;">// THE CONDUCTOR LOOP</div>
+          <h2 style="font-size: clamp(26px, 3.4vw, 42px); line-height: 1.14; font-weight: 500; letter-spacing: -0.015em; max-width: 720px; margin: 0;">Every consequential action passes through a human gate.</h2>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid rgba(0,229,204,0.3); border-radius: 5px; background: rgba(0,229,204,0.05);">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #00E5CC; box-shadow: 0 0 8px #00E5CC; animation: ag-pulse 1.6s infinite;"></span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #A1A1AA; white-space: nowrap;">LIVE DEMO · WF-2025-00147</span>
+        </div>
+      </div>
+      <p style="font-size: 15px; color: #A1A1AA; max-width: 760px; margin: 18px 0 34px;">Triage → score → route → propose → <span style="color: #00E5CC;">human gate</span> → AAR. The agent hit an edge case mid-job and wants to spend on OCR enrichment. It can't, until you approve. <span style="color: #F2F2F5;">Try it:</span></p>
+
+      <!-- 3 column flow -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; align-items: stretch;">
+
+        <!-- STEP 1: AI PROPOSAL -->
+        <div style="position: relative; background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 22px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,229,204,0.4); font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #00E5CC;">1</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #71717A;">AI AGENT PROPOSAL</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 34px; height: 34px; border-radius: 7px; background: rgba(0,229,204,0.08); border: 1px solid rgba(0,229,204,0.25); display: flex; align-items: center; justify-content: center; color: #00E5CC; font-size: 16px;">◭</span>
+              <div><div style="font-size: 15px; font-weight: 600;">Aegis-7B</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">DGX SPARK · LOCAL</div></div>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #22C55E; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.3);"><span style="width: 5px; height: 5px; border-radius: 50%; background: #22C55E;"></span>ONLINE</span>
+          </div>
+          <div style="padding: 16px; border-radius: 8px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06); text-align: center; margin-bottom: 14px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #71717A; margin-bottom: 8px;">PROPOSED EXTERNAL SPEND</div>
+            <div style="font-size: 40px; font-weight: 600; color: #00E5CC; letter-spacing: -0.02em; line-height: 1;">{{ spendLabel }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; margin-top: 8px;">OCR enrichment · 1,240 scanned PDFs</div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+            <div style="flex: 1; padding: 10px 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;"><div style="font-size: 16px; font-weight: 600; color: #22C55E;">+38%</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; color: #71717A;">QUALITY</div></div>
+            <div style="flex: 1; padding: 10px 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;"><div style="font-size: 16px; font-weight: 600; color: #00E5CC;">−62%</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; color: #71717A;">NOISE</div></div>
+            <div style="flex: 1; padding: 10px 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); text-align: center;"><div style="font-size: 16px; font-weight: 600; color: #3A7BFF;">+91%</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; color: #71717A;">SIGNAL</div></div>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #71717A; margin-bottom: 7px;">RATIONALE</div>
+          <p style="font-size: 13px; line-height: 1.55; color: #A1A1AA; margin: 0;">1,240 records are locked inside scanned PDFs. Local OCR can't parse them cleanly; a paid OCR pass recovers them at high fidelity. Recommend approving the spend.</p>
+        </div>
+
+        <!-- STEP 2: HUMAN GATE -->
+        <div style="position: relative; background: #16161A; border: 1.5px solid {{ gateBorder }}; border-radius: 10px; padding: 22px; box-shadow: 0 0 40px {{ gateShadow }}; transition: border-color .4s, box-shadow .4s; display: flex; flex-direction: column;">
+          <div style="position: absolute; top: 8px; left: 8px; width: 16px; height: 16px; border-top: 2px solid {{ gateBorder }}; border-left: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 16px; height: 16px; border-top: 2px solid {{ gateBorder }}; border-right: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; bottom: 8px; left: 8px; width: 16px; height: 16px; border-bottom: 2px solid {{ gateBorder }}; border-left: 2px solid {{ gateBorder }};"></div>
+          <div style="position: absolute; bottom: 8px; right: 8px; width: 16px; height: 16px; border-bottom: 2px solid {{ gateBorder }}; border-right: 2px solid {{ gateBorder }};"></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid {{ gateBorder }}; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{ gateColor }};">2</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: {{ gateColor }};">HUMAN APPROVAL GATE</span>
+          </div>
+
+          <!-- gate emblem -->
+          <div style="position: relative; display: flex; align-items: center; justify-content: center; height: 124px; margin-bottom: 8px;">
+            <sc-if value="{{ isApproving }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 78px; height: 78px; border-radius: 50%; border: 3px solid rgba(0,229,204,0.2); border-top-color: #00E5CC; animation: ag-spin .8s linear infinite;"></div>
+            </sc-if>
+            <sc-if value="{{ showGateEmblem }}" hint-placeholder-val="{{ true }}">
+              <div style="position: absolute; width: 92px; height: 92px; border-radius: 50%; border: 1px solid {{ gateBorder }}; animation: ag-ring 2.4s ease-out infinite;"></div>
+              <div style="width: 78px; height: 78px; border-radius: 50%; background: {{ gateFill }}; border: 2px solid {{ gateBorder }}; display: flex; align-items: center; justify-content: center; font-size: 36px; color: {{ gateColor }}; box-shadow: 0 0 30px {{ gateShadow }}; transition: all .4s;">{{ gateGlyph }}</div>
+            </sc-if>
+          </div>
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="font-size: 17px; font-weight: 600; color: {{ gateColor }}; transition: color .4s;">{{ gateTitle }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; margin-top: 5px;">{{ gateSub }}</div>
+          </div>
+
+          <!-- proposal summary -->
+          <div style="border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; overflow: hidden; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">Proposed by</span><span style="font-family: 'JetBrains Mono', monospace;">Aegis-7B</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">Spend amount</span><span style="font-family: 'JetBrains Mono', monospace; color: #F59E0B;">{{ spendLabel }}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">Est. processing</span><span style="font-family: 'JetBrains Mono', monospace;">18m 24s</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px;"><span style="color: #71717A;">Policy check</span><span style="font-family: 'JetBrains Mono', monospace; color: #22C55E;">✓ PASS</span></div>
+          </div>
+
+          <!-- action area -->
+          <div style="margin-top: auto;">
+            <sc-if value="{{ isPending }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ approve }}" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: #04130A; background: #22C55E; border: none; padding: 14px; border-radius: 7px; cursor: pointer; box-shadow: 0 0 24px rgba(34,197,94,0.4); transition: box-shadow .2s, transform .1s;" style-hover="box-shadow: 0 0 34px rgba(34,197,94,0.65);" style-active="transform: translateY(1px);">✓ &nbsp;APPROVE &amp; SPEND {{ spendLabel }}</button>
+              <button onClick="{{ reject }}" style="width: 100%; font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 500; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.14); padding: 12px; border-radius: 7px; cursor: pointer; margin-top: 9px; transition: border-color .2s, color .2s;" style-hover="border-color: rgba(239,68,68,0.5); color: #ef4444;">Reject proposal</button>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #71717A;"><span style="color: #00E5CC;">⛉</span> Requires authenticated approver · POLICY-DATA-REFINE-01</div>
+            </sc-if>
+            <sc-if value="{{ isApproving }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 100%; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #00E5CC; padding: 14px; border: 1px solid rgba(0,229,204,0.3); border-radius: 7px; background: rgba(0,229,204,0.05);">EXECUTING SPEND VIA STRIPE<span style="animation: ag-blink 1s infinite;">…</span></div>
+            </sc-if>
+            <sc-if value="{{ isResolved }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 100%; text-align: center; padding: 13px; border-radius: 7px; background: {{ gateFill }}; border: 1px solid {{ gateBorder }}; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{ gateColor }};">{{ resolvedNote }}</div>
+              <button onClick="{{ reset }}" style="width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.1em; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 10px; border-radius: 7px; cursor: pointer; margin-top: 9px; transition: border-color .2s;" style-hover="border-color: rgba(0,229,204,0.5);">↻ RESET DEMO</button>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- STEP 3: REFINED OUTPUT -->
+        <div style="position: relative; background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; transition: opacity .4s;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A1A1AA;">3</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #71717A;">REFINED DATA OUTPUT</span>
+          </div>
+
+          <sc-if value="{{ outputLocked }}" hint-placeholder-val="{{ true }}">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 280px; gap: 14px; opacity: .8;">
+              <div style="width: 60px; height: 60px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #52525B;">⛒</div>
+              <div style="font-size: 15px; font-weight: 600; color: #A1A1AA;">Awaiting approval</div>
+              <p style="font-size: 13px; line-height: 1.55; color: #71717A; margin: 0; max-width: 220px;">Refinement is paused at the gate. No external spend executes until a human approves.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isRejected }}" hint-placeholder-val="{{ false }}">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 280px; gap: 14px;">
+              <div style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #ef4444;">✕</div>
+              <div style="font-size: 15px; font-weight: 600; color: #F2F2F5;">Job halted</div>
+              <p style="font-size: 13px; line-height: 1.55; color: #71717A; margin: 0; max-width: 230px;">Proposal rejected. No spend executed, <span style="color: #22C55E;">no charge</span>. The decision is permanently recorded in the audit log.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isApproved }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: ag-rise .5s ease both;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                <div style="font-size: 15px; font-weight: 600;">Refined dataset</div>
+                <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #22C55E; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.3);"><span style="width: 5px; height: 5px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E;"></span>READY</span>
+              </div>
+              <div style="border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; overflow: hidden; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">Records processed</span><span style="font-family: 'JetBrains Mono', monospace;">128,540</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">Quality score</span><span style="font-family: 'JetBrains Mono', monospace; color: #00E5CC;">94.7 / 100</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,0.05);"><span style="color: #71717A;">PII detected &amp; masked</span><span style="font-family: 'JetBrains Mono', monospace;">2,193</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 9px 13px; font-size: 12.5px;"><span style="color: #71717A;">Duplicates removed</span><span style="font-family: 'JetBrains Mono', monospace;">18,732</span></div>
+              </div>
+              <!-- mini cert -->
+              <div style="position: relative; border: 1px solid rgba(0,229,204,0.3); border-radius: 8px; padding: 14px; background: rgba(0,229,204,0.04); margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <img src="assets/shield.svg" alt="" style="width: 30px; height: 30px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.5));">
+                  <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #71717A;">AUDIT CERTIFICATE</div><div style="font-size: 13px; font-weight: 600; color: #22C55E;">✓ VERIFIED &amp; SIGNED</div></div>
+                </div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A; margin-top: 10px; word-break: break-all;">cert_7a2b9c4d81 · {{ spendLabel }} gated spend · 1 approval</div>
+              </div>
+              <a href="#deliver" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #00E5CC; border: 1px solid rgba(0,229,204,0.4); padding: 11px; border-radius: 7px; transition: background .2s;" style-hover="background: rgba(0,229,204,0.08);">View dataset &amp; certificate ↗</a>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- audit trail + pipeline -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 18px;">
+        <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 20px 22px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #71717A; margin-bottom: 16px;">AUDIT TRAIL · IMMUTABLE</div>
+          <div style="display: flex; flex-direction: column; gap: 0;">
+            <sc-for list="{{ events }}" as="ev" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A; width: 64px; flex-shrink: 0;">{{ ev.t }}</span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ ev.dot }}; box-shadow: 0 0 7px {{ ev.dot }};"></span>
+                <span style="font-size: 13px; flex: 1;">{{ ev.label }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ ev.actor }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 20px 22px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #71717A; margin-bottom: 16px;">CONDUCTOR PIPELINE</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Triage</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Score</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Route</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.06);">✓ Propose</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #04130A; padding: 6px 10px; border-radius: 5px; border: 1px solid {{ gateBorder }}; background: {{ gateColor }};">⛉ Human Gate</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);">AAR</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 13px; border-radius: 8px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06);">
+            <span style="width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: {{ gateColor }}; box-shadow: 0 0 8px {{ gateColor }}; animation: ag-pulse 1.6s infinite;"></span>
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #71717A;">CURRENT STATUS</div><div style="font-size: 13.5px; font-weight: 500; color: {{ gateColor }};">{{ loopStatus }}</div></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);">
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #71717A;">REVENUE EARNED</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: #22C55E;">{{ flatFeeLabel }}</div></div>
+            <div style="text-align: right;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #71717A;">GATED SPEND</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: {{ spendStatColor }};">{{ spendStat }}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT YOU GET -->
+  <section id="deliver" style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 88px) clamp(20px, 5vw, 64px); border-top: 1px solid rgba(255,255,255,0.06);">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 16px;">// THE DELIVERABLE</div>
+    <h2 style="font-size: clamp(26px, 3.4vw, 42px); line-height: 1.16; font-weight: 500; letter-spacing: -0.015em; max-width: 720px; margin: 0 0 12px;">A clean dataset, and signed proof of every decision.</h2>
+    <p style="font-size: 15px; color: #A1A1AA; max-width: 640px; margin: 0 0 40px;">You get production-ready JSONL — and the audit certificate is the deliverable you're actually paying for.</p>
+    <div style="display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px; align-items: stretch;">
+      <!-- dataset -->
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02);">
+          <div style="display: flex; align-items: center; gap: 9px;"><span style="color: #00E5CC;">▤</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">dataset.jsonl</span></div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A;">ChatML · 128,540 rows</span>
+        </div>
+        <div style="padding: 18px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.85; color: #A1A1AA; overflow-x: auto; flex: 1;">
+          <div>{<span style="color: #00E5CC;">"messages"</span>: [</div>
+          <div style="padding-left: 16px;">{<span style="color: #00E5CC;">"role"</span>: <span style="color: #3A7BFF;">"user"</span>, <span style="color: #00E5CC;">"content"</span>: <span style="color: #d6dee8;">"How do I reset my password?"</span>},</div>
+          <div style="padding-left: 16px;">{<span style="color: #00E5CC;">"role"</span>: <span style="color: #3A7BFF;">"assistant"</span>, <span style="color: #00E5CC;">"content"</span>: <span style="color: #d6dee8;">"Open Settings → Security → Reset…"</span>}</div>
+          <div>], <span style="color: #00E5CC;">"source"</span>: <span style="color: #3A7BFF;">"support_tickets"</span>, <span style="color: #00E5CC;">"quality"</span>: <span style="color: #F59E0B;">0.95</span>}</div>
+          <div style="margin-top: 10px; color: #52525B;">… 128,539 more rows · 0 duplicates · PII masked</div>
+        </div>
+        <div style="display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.07);">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #22C55E; padding: 4px 9px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.25);">✓ DEDUPED</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #22C55E; padding: 4px 9px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.25);">✓ PII MASKED</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #22C55E; padding: 4px 9px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.25);">✓ SCHEMA-VALID</span>
+        </div>
+      </div>
+      <!-- certificate -->
+      <div style="position: relative; background: linear-gradient(180deg, #121418, #0D0D0F); border: 1px solid rgba(0,229,204,0.25); border-radius: 12px; padding: 26px; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,229,204,0.08);">
+        <div style="position: absolute; top: 10px; left: 10px; width: 18px; height: 18px; border-top: 2px solid rgba(0,229,204,0.6); border-left: 2px solid rgba(0,229,204,0.6);"></div>
+        <div style="position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-top: 2px solid rgba(0,229,204,0.6); border-right: 2px solid rgba(0,229,204,0.6);"></div>
+        <div style="position: absolute; bottom: 10px; left: 10px; width: 18px; height: 18px; border-bottom: 2px solid rgba(0,229,204,0.6); border-left: 2px solid rgba(0,229,204,0.6);"></div>
+        <div style="position: absolute; bottom: 10px; right: 10px; width: 18px; height: 18px; border-bottom: 2px solid rgba(0,229,204,0.6); border-right: 2px solid rgba(0,229,204,0.6);"></div>
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 18px;">
+          <img src="assets/shield.svg" alt="" style="width: 46px; height: 46px; filter: drop-shadow(0 0 10px rgba(0,229,204,0.5)); margin-bottom: 10px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 0.18em; font-weight: 600;">AUDIT CERTIFICATE</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: #71717A; margin-top: 5px;">CONDUCTOR-GOVERNED · SIGNED</div>
+        </div>
+        <div style="display: inline-flex; align-self: center; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 100px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4); margin-bottom: 18px;">
+          <span style="color: #22C55E; font-size: 14px;">✓</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.1em; color: #22C55E;">VERIFIED &amp; COMPLIANT</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; overflow: hidden;">
+          <div style="background: #121418; padding: 12px 14px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A;">REVENUE</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #22C55E; margin-top: 3px;">{{ flatFeeLabel }}.00</div></div>
+          <div style="background: #121418; padding: 12px 14px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A;">GATED SPEND</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #F59E0B; margin-top: 3px;">{{ spendLabel }}</div></div>
+          <div style="background: #121418; padding: 12px 14px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A;">HUMAN APPROVALS</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; margin-top: 3px;">1 of 1</div></div>
+          <div style="background: #121418; padding: 12px 14px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A;">QUALITY</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #00E5CC; margin-top: 3px;">94.7</div></div>
+        </div>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07);">
+          <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #71717A;">CERT ID</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; margin-top: 2px;">cert_7a2b9c4d81</div></div>
+          <div style="display: flex; gap: 9px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #00E5CC; padding: 7px 11px; border-radius: 5px; border: 1px solid rgba(0,229,204,0.3);">JSON</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #00E5CC; padding: 7px 11px; border-radius: 5px; border: 1px solid rgba(0,229,204,0.3);">PDF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY AEGIS -->
+  <section id="why" style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 88px) clamp(20px, 5vw, 64px); border-top: 1px solid rgba(255,255,255,0.06);">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 16px;">// WHY AEGIS</div>
+    <h2 style="font-size: clamp(26px, 3.4vw, 42px); line-height: 1.16; font-weight: 500; letter-spacing: -0.015em; max-width: 760px; margin: 0 0 40px;">Real Stripe revenue. Real gated spending. Real NVIDIA hardware. Real proof.</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 28px;">
+        <div style="width: 44px; height: 44px; border-radius: 9px; background: rgba(0,229,204,0.08); border: 1px solid rgba(0,229,204,0.3); display: flex; align-items: center; justify-content: center; color: #00E5CC; font-size: 20px; margin-bottom: 18px;">⛉</div>
+        <h3 style="font-size: 19px; font-weight: 600; margin: 0 0 10px;">Conductor is the product</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0 0 16px;">Not background plumbing. Every meaningful action is triaged, scored, proposed, and gated — with a permanent audit trail behind it.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00E5CC; letter-spacing: 0.08em;">GOVERNED AUTONOMY</div>
+      </div>
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 28px;">
+        <div style="width: 44px; height: 44px; border-radius: 9px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); display: flex; align-items: center; justify-content: center; color: #22C55E; font-size: 20px; margin-bottom: 18px;">$</div>
+        <h3 style="font-size: 19px; font-weight: 600; margin: 0 0 10px;">Money moves, with consent</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0 0 16px;">The agent earns real Stripe revenue and can only spend real money after a human explicitly approves it. No mock billing, no simulated transactions.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #22C55E; letter-spacing: 0.08em;">STRIPE · HUMAN-GATED</div>
+      </div>
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 28px;">
+        <div style="width: 44px; height: 44px; border-radius: 9px; background: rgba(58,123,255,0.08); border: 1px solid rgba(58,123,255,0.3); display: flex; align-items: center; justify-content: center; color: #3A7BFF; font-size: 20px; margin-bottom: 18px;">▰</div>
+        <h3 style="font-size: 19px; font-weight: 600; margin: 0 0 10px;">Runs on NVIDIA DGX Spark</h3>
+        <p style="font-size: 14.5px; line-height: 1.6; color: #A1A1AA; margin: 0 0 16px;">Bulk work runs locally — fast, private, zero marginal cost. External APIs are only used when justified, and only when approved.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #3A7BFF; letter-spacing: 0.08em;">LOCAL-FIRST INFERENCE</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 88px) clamp(20px, 5vw, 64px); border-top: 1px solid rgba(255,255,255,0.06);">
+    <div style="text-align: center; margin-bottom: 44px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 16px;">// PRICING</div>
+      <h2 style="font-size: clamp(26px, 3.4vw, 42px); line-height: 1.16; font-weight: 500; letter-spacing: -0.015em; margin: 0 0 10px;">Simple and transparent.</h2>
+      <p style="font-size: 15px; color: #A1A1AA; margin: 0;">One flat fee per job. External spends are always proposed, gated, and itemized on your certificate.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; max-width: 980px; margin: 0 auto;">
+      <!-- main plan -->
+      <div style="position: relative; background: linear-gradient(180deg, rgba(0,229,204,0.06), #16161A); border: 1.5px solid rgba(0,229,204,0.4); border-radius: 14px; padding: 32px; box-shadow: 0 0 50px rgba(0,229,204,0.1);">
+        <div style="position: absolute; top: 18px; right: 18px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #00E5CC; padding: 5px 10px; border-radius: 100px; border: 1px solid rgba(0,229,204,0.4); background: rgba(0,229,204,0.06);">ON-DEMAND</div>
+        <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px;">Per Job</div>
+        <p style="font-size: 13.5px; color: #A1A1AA; margin: 0 0 22px;">One dataset, fully refined and certified.</p>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px;">
+          <span style="font-size: 56px; font-weight: 600; letter-spacing: -0.03em; color: #00E5CC;">{{ flatFeeLabel }}</span>
+          <span style="font-size: 15px; color: #A1A1AA;">flat / job</span>
+        </div>
+        <a href="#" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px; border-radius: 7px; box-shadow: 0 0 24px rgba(0,229,204,0.4); margin-bottom: 24px; transition: box-shadow .2s;" style-hover="box-shadow: 0 0 34px rgba(0,229,204,0.6);">Start a job</a>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Clean ShareGPT / ChatML JSONL output</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Signed audit certificate (JSON + PDF)</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Human gate on every external spend</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> Local DGX Spark inference included</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #D4D4D8;"><span style="color: #00E5CC;">✓</span> PII masking &amp; deduplication</div>
+        </div>
+      </div>
+      <!-- future tiers -->
+      <div style="background: #16161A; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 32px;">
+        <div style="position: relative; display: inline-block; margin-bottom: 6px;"><span style="font-size: 17px; font-weight: 600;">Team &amp; Volume</span></div>
+        <p style="font-size: 13.5px; color: #A1A1AA; margin: 0 0 22px;">For studios running many jobs.</p>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px;">
+          <span style="font-size: 42px; font-weight: 600; letter-spacing: -0.03em; color: #A1A1AA;">Soon</span>
+        </div>
+        <a href="#" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 500; color: #F2F2F5; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14); padding: 14px; border-radius: 7px; margin-bottom: 24px; transition: border-color .2s;" style-hover="border-color: rgba(0,229,204,0.4);">Join the waitlist</a>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Volume pricing &amp; shared spend budgets</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Multi-user approval policies</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> API access &amp; webhooks</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Curated dataset marketplace</div>
+          <div style="display: flex; gap: 10px; font-size: 13.5px; color: #A1A1AA;"><span style="color: #52525B;">○</span> Centralized audit dashboard</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA + FOOTER -->
+  <footer style="border-top: 1px solid rgba(255,255,255,0.06); margin-top: 40px;">
+    <div style="max-width: 1240px; margin: 0 auto; padding: clamp(48px, 6vw, 80px) clamp(20px, 5vw, 64px);">
+      <div style="text-align: center; margin-bottom: 64px;">
+        <h2 style="font-size: clamp(28px, 4vw, 48px); font-weight: 500; letter-spacing: -0.02em; margin: 0 0 18px;">Refine your data. <span style="color: #00E5CC;">Keep the receipts.</span></h2>
+        <p style="font-size: 16px; color: #A1A1AA; max-width: 520px; margin: 0 auto 28px;">Built for the Hermes / Nous community that already understands why governed autonomy matters.</p>
+        <a href="#how" style="display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 14px 26px; border-radius: 6px; box-shadow: 0 0 28px rgba(0,229,204,0.45); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 38px rgba(0,229,204,0.65);">Start a job — {{ flatFeeLabel }} flat &nbsp;→</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.07);">
+        <div style="display: flex; align-items: center; gap: 11px;">
+          <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 22px; font-size: 13px; color: #A1A1AA;">
+          <a href="#how" style-hover="color: #F2F2F5;">How it works</a>
+          <a href="#deliver" style-hover="color: #F2F2F5;">Deliverable</a>
+          <a href="#pricing" style-hover="color: #F2F2F5;">Pricing</a>
+          <a href="#" style-hover="color: #F2F2F5;">Docs</a>
+          <a href="#" style-hover="color: #F2F2F5;">Log in</a>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 9px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717A; padding: 7px 13px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 7px #22C55E;"></span> RUNNING ON NVIDIA DGX SPARK
+        </div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #52525B; margin-top: 24px;">© 2026 Aegis Refine · aegisrefine.com · Built on Conductor + Spark 1</div>
+    </div>
+  </footer>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:1400},&quot;gatedSpend&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:1,&quot;max&quot;:50,&quot;unit&quot;:&quot;$&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;flatFee&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:5,&quot;max&quot;:100,&quot;unit&quot;:&quot;$&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;ambientFx&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Visuals&quot;}}">
+class Component extends DCLogic {
+  state = { gate: 'pending' };
+
+  approve() {
+    this.setState({ gate: 'approving' });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ gate: 'approved' }), 1700);
+  }
+  reject() { clearTimeout(this._t); this.setState({ gate: 'rejected' }); }
+  reset() { clearTimeout(this._t); this.setState({ gate: 'pending' }); }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  renderVals() {
+    const g = this.state.gate;
+    const spend = Number(this.props.gatedSpend ?? 4);
+    const fee = Number(this.props.flatFee ?? 20);
+    const ambientFx = this.props.ambientFx ?? true;
+
+    const isPending = g === 'pending';
+    const isApproving = g === 'approving';
+    const isApproved = g === 'approved';
+    const isRejected = g === 'rejected';
+    const isResolved = isApproved || isRejected;
+
+    const spendLabel = '$' + spend.toFixed(2);
+    const flatFeeLabel = '$' + fee;
+
+    // gate visual theming by state
+    let gateColor = '#F59E0B', gateBorder = 'rgba(245,158,11,0.5)', gateFill = 'rgba(245,158,11,0.08)', gateShadow = 'rgba(245,158,11,0.18)';
+    let gateGlyph = '⛉', gateTitle = 'Approval required', gateSub = 'Review the proposal and decide';
+    if (isApproving) {
+      gateColor = '#00E5CC'; gateBorder = 'rgba(0,229,204,0.6)'; gateFill = 'rgba(0,229,204,0.08)'; gateShadow = 'rgba(0,229,204,0.25)';
+      gateTitle = 'Executing…'; gateSub = 'Authenticated approver confirmed';
+    } else if (isApproved) {
+      gateColor = '#22C55E'; gateBorder = 'rgba(34,197,94,0.6)'; gateFill = 'rgba(34,197,94,0.1)'; gateShadow = 'rgba(34,197,94,0.3)';
+      gateGlyph = '✓'; gateTitle = 'Approved'; gateSub = 'Spend executed via Stripe';
+    } else if (isRejected) {
+      gateColor = '#ef4444'; gateBorder = 'rgba(239,68,68,0.6)'; gateFill = 'rgba(239,68,68,0.1)'; gateShadow = 'rgba(239,68,68,0.25)';
+      gateGlyph = '✕'; gateTitle = 'Rejected'; gateSub = 'No spend executed';
+    }
+
+    const resolvedNote = isApproved ? ('✓ ' + spendLabel + ' SPEND EXECUTED') : '✕ PROPOSAL REJECTED · NO CHARGE';
+
+    // audit trail
+    const colorByKind = { system: '#A1A1AA', agent: '#00E5CC', human: '#22C55E', money: '#F59E0B', cert: '#3A7BFF', reject: '#ef4444' };
+    let events = [
+      { t: '14:36:58', label: 'Data analysis initiated', actor: 'System', kind: 'system' },
+      { t: '14:37:22', label: 'AI agent proposed spend', actor: 'Aegis-7B', kind: 'agent' },
+    ];
+    if (isApproving) {
+      events.push({ t: '14:41:09', label: 'Human approved — executing', actor: 'ops@aegisrefine.com', kind: 'human' });
+    }
+    if (isApproved) {
+      events.push(
+        { t: '14:41:09', label: 'Human approved proposal', actor: 'ops@aegisrefine.com', kind: 'human' },
+        { t: '14:41:11', label: 'Spend executed via Stripe', actor: 'Stripe', kind: 'money' },
+        { t: '14:58:07', label: 'Refinement completed', actor: 'Spark 1', kind: 'system' },
+        { t: '14:58:11', label: 'Audit certificate signed', actor: 'System', kind: 'cert' },
+      );
+    }
+    if (isRejected) {
+      events.push(
+        { t: '14:41:09', label: 'Human rejected proposal', actor: 'ops@aegisrefine.com', kind: 'reject' },
+        { t: '14:41:10', label: 'Job halted — no spend', actor: 'System', kind: 'system' },
+      );
+    }
+    events = events.map(e => ({ ...e, dot: colorByKind[e.kind] }));
+
+    let loopStatus = 'Awaiting human approval';
+    if (isApproving) loopStatus = 'Approval received — executing';
+    else if (isApproved) loopStatus = 'Complete · certificate signed';
+    else if (isRejected) loopStatus = 'Halted · proposal rejected';
+
+    let spendStat = '$0.00', spendStatColor = '#71717A';
+    if (isApproving || isApproved) { spendStat = spendLabel; spendStatColor = '#F59E0B'; }
+    else if (isRejected) { spendStat = '$0.00 (blocked)'; spendStatColor = '#22C55E'; }
+
+    return {
+      ambientFx,
+      isPending, isApproving, isApproved, isRejected, isResolved,
+      showGateEmblem: !isApproving,
+      outputLocked: isPending || isApproving,
+      spendLabel, flatFeeLabel,
+      approve: () => this.approve(),
+      reject: () => this.reject(),
+      reset: () => this.reset(),
+      gateColor, gateBorder, gateFill, gateShadow, gateGlyph, gateTitle, gateSub,
+      resolvedNote, events, loopStatus, spendStat, spendStatColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

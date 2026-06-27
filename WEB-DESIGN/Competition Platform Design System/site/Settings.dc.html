@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  input { font-family: 'Space Grotesk', sans-serif; }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">WORKSPACE</div>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▦</span> Dashboard</a>
+    <a href="NewOrder.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">＋</span> New order</a>
+    <a href="OrderDetail.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▤</span> Datasets</a>
+    <a href="Marketplace.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Marketplace</a>
+    <a href="Certificate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⛉</span> Certificates</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">ACCOUNT</div>
+    <a href="Billing.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">$</span> Billing</a>
+    <a href="Settings.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">⚙</span> Settings</a>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◎</span> Ops console</a>
+    <div style="margin-top: auto; padding: 14px; border-radius: 10px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 6px;">CREDITS BALANCE</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; color: #00E5CC;">$142.75</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">aegis / <span style="color: #F2F2F5;">settings</span></div>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); max-width: 820px; display: flex; flex-direction: column; gap: 24px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #00E5CC; margin-bottom: 10px;">// ACCOUNT</div>
+        <h1 style="font-size: 28px; font-weight: 500; letter-spacing: -0.015em; margin: 0;">Settings</h1>
+      </div>
+
+      <!-- tabs -->
+      <div style="display: flex; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; width: fit-content;">
+        <button onClick="{{ tabProfile }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ pColor }}; background: {{ pBg }};">PROFILE</button>
+        <button onClick="{{ tabKeys }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ kColor }}; background: {{ kBg }};">API KEYS</button>
+        <button onClick="{{ tabNotif }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ nColor }}; background: {{ nBg }};">NOTIFICATIONS</button>
+      </div>
+
+      <!-- PROFILE -->
+      <sc-if value="{{ showProfile }}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); padding: 26px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+            <span style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #00E5CC, #3A7BFF); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; color: #04100E;">NR</span>
+            <div><div style="font-size: 16px; font-weight: 600;">Nous Builder</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">nous@studio.ai</div></div>
+            <button style="margin-left: auto; font-size: 13px; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.14); padding: 8px 14px; border-radius: 7px; cursor: pointer; font-family: inherit; transition: border-color .2s;" style-hover="border-color: rgba(0,229,204,0.4);">Change avatar</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div><label style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 8px;">DISPLAY NAME</label><input value="Nous Builder" style="width: 100%; font-size: 14px; color: #F2F2F5; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 13px; outline: none;" style-focus="border-color: rgba(0,229,204,0.6);"></div>
+            <div><label style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 8px;">EMAIL</label><input value="nous@studio.ai" style="width: 100%; font-size: 14px; color: #F2F2F5; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 13px; outline: none;" style-focus="border-color: rgba(0,229,204,0.6);"></div>
+          </div>
+          <div style="margin-bottom: 20px;"><label style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #71717A; margin-bottom: 8px;">PASSWORD</label><input type="password" value="passwordvalue" style="width: 100%; font-size: 14px; color: #F2F2F5; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 13px; outline: none;" style-focus="border-color: rgba(0,229,204,0.6);"></div>
+          <button style="font-size: 14px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 11px 20px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 0 20px rgba(0,229,204,0.3);">Save changes</button>
+        </div>
+      </sc-if>
+
+      <!-- API KEYS -->
+      <sc-if value="{{ showKeys }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); padding: 26px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;"><h2 style="font-size: 16px; font-weight: 600; margin: 0;">API keys</h2><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #F59E0B; padding: 3px 9px; border-radius: 5px; border: 1px solid rgba(245,158,11,0.4);">PREVIEW</span></div>
+            <button style="font-size: 13px; font-weight: 600; color: #04100E; background: #00E5CC; padding: 9px 15px; border: none; border-radius: 7px; cursor: pointer; font-family: inherit;">＋ Generate key</button>
+          </div>
+          <p style="font-size: 13.5px; color: #A1A1AA; margin: 0 0 20px;">Programmatic access ships with Team &amp; Volume plans. Keys created now are sandbox-only.</p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ keys }}" as="k" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.06);">
+                <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 7px; background: rgba(0,229,204,0.08); border: 1px solid rgba(0,229,204,0.25); display: flex; align-items: center; justify-content: center; color: #00E5CC;">⚿</span>
+                <div style="flex: 1; min-width: 0;"><div style="font-size: 14px; font-weight: 500;">{{ k.name }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">{{ k.key }}</div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ k.created }}</span>
+                <button style="font-size: 12px; color: #A1A1AA; background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 6px 11px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all .2s;" style-hover="border-color: rgba(239,68,68,0.5); color: #ef4444;">Revoke</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- NOTIFICATIONS -->
+      <sc-if value="{{ showNotif }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); padding: 26px;">
+          <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 20px;">Notifications</h2>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ toggles }}" as="tg" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="flex: 1;"><div style="font-size: 14.5px; font-weight: 500;">{{ tg.title }}</div><div style="font-size: 13px; color: #A1A1AA;">{{ tg.desc }}</div></div>
+                <button onClick="{{ tg.toggle }}" style="position: relative; width: 44px; height: 24px; border-radius: 100px; border: none; cursor: pointer; flex-shrink: 0; transition: background .2s; background: {{ tg.trackBg }};">
+                  <span style="position: absolute; top: 3px; left: {{ tg.knobLeft }}; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s;"></span>
+                </button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="border-radius: 14px; background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.25); padding: 22px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #ef4444; margin-bottom: 10px;">DANGER ZONE</div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="flex: 1;"><div style="font-size: 14.5px; font-weight: 500;">Delete account</div><div style="font-size: 13px; color: #A1A1AA;">Removes all jobs and datasets. Audit certificates remain verifiable.</div></div>
+            <button style="font-size: 13px; font-weight: 500; color: #ef4444; background: transparent; border: 1px solid rgba(239,68,68,0.4); padding: 9px 16px; border-radius: 7px; cursor: pointer; font-family: inherit; transition: background .2s;" style-hover="background: rgba(239,68,68,0.1);">Delete</button>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:760}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'profile',
+    notif: { gate: true, complete: true, billing: false, product: true },
+  };
+  setTab(t) { this.setState({ tab: t }); }
+  toggle(key) { this.setState(s => ({ notif: { ...s.notif, [key]: !s.notif[key] } })); }
+
+  renderVals() {
+    const t = this.state.tab;
+    const ab = 'rgba(0,229,204,0.12)';
+    const keys = [
+      { name: 'Production (sandbox)', key: 'ak_live_••••••••••••7f3a', created: 'May 12, 2025' },
+      { name: 'CI pipeline', key: 'ak_live_••••••••••••2b9c', created: 'Apr 28, 2025' },
+    ];
+    const tgDefs = [
+      { key: 'gate', title: 'Spend approval requests', desc: 'When an agent proposes an external spend that needs your gate.' },
+      { key: 'complete', title: 'Job completed', desc: 'When a dataset is refined and the certificate is signed.' },
+      { key: 'billing', title: 'Billing & receipts', desc: 'Invoices and payment confirmations.' },
+      { key: 'product', title: 'Product updates', desc: 'New features and plan announcements.' },
+    ];
+    const n = this.state.notif;
+    const toggles = tgDefs.map(d => ({
+      title: d.title, desc: d.desc,
+      toggle: () => this.toggle(d.key),
+      trackBg: n[d.key] ? '#00E5CC' : '#2A2A30',
+      knobLeft: n[d.key] ? '23px' : '3px',
+    }));
+    return {
+      keys, toggles,
+      showProfile: t === 'profile', showKeys: t === 'keys', showNotif: t === 'notif',
+      tabProfile: () => this.setTab('profile'), tabKeys: () => this.setTab('keys'), tabNotif: () => this.setTab('notif'),
+      pColor: t === 'profile' ? '#00E5CC' : '#A1A1AA', pBg: t === 'profile' ? ab : 'transparent',
+      kColor: t === 'keys' ? '#00E5CC' : '#A1A1AA', kBg: t === 'keys' ? ab : 'transparent',
+      nColor: t === 'notif' ? '#00E5CC' : '#A1A1AA', nBg: t === 'notif' ? ab : 'transparent',
+    };
+  }
+}
+</script>
+</body>
+</html>

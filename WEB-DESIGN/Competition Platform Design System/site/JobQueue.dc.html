@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+  input { font-family: 'Space Grotesk', sans-serif; }
+  input::placeholder { color: #52525B; }
+  @keyframes ag-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+</style>
+</helmet>
+
+<div style="display: grid; grid-template-columns: 244px 1fr; min-height: 100vh;">
+
+  <!-- SIDEBAR (ops) -->
+  <aside style="position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: #0F1012; border-right: 1px solid rgba(255,255,255,0.07); padding: 18px 14px;">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; letter-spacing: 0.14em;">AEGIS<span style="color: #00E5CC;">&nbsp;OPS</span></span>
+    </a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 8px 10px 6px;">OPERATIONS</div>
+    <a href="AdminGate.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⛉</span> Approvals <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #04130A; background: #F59E0B; padding: 1px 7px; border-radius: 100px;">3</span></a>
+    <a href="JobQueue.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.2);"><span style="width: 16px; text-align: center;">☰</span> Job queue</a>
+    <a href="AuditLog.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">▤</span> Audit log</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◷</span> Policies</a>
+    <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">◭</span> Agents</a>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 18px 10px 6px;">CRM</div>
+    <a href="Customers.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">⊞</span> Customers</a>
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 7px; font-size: 13.5px; color: #A1A1AA; transition: all .15s;" style-hover="color: #F2F2F5; background: rgba(255,255,255,0.04);"><span style="width: 16px; text-align: center;">↩</span> Customer view</a>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px 4px;">
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B, #00E5CC); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #04100E;">OP</span>
+      <div style="line-height: 1.2;"><div style="font-size: 13px; font-weight: 500;">Ops Console</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #F59E0B;">ADMINISTRATOR</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="display: flex; flex-direction: column; min-width: 0;">
+    <header style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(20px, 3vw, 38px); background: rgba(13,13,15,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #71717A;">ops / <span style="color: #F2F2F5;">job queue</span></div>
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A1A1AA; padding: 7px 12px; border: 1px solid rgba(255,255,255,0.09); border-radius: 6px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 6px #22C55E;"></span> 6 ACTIVE · 2 GATED</div>
+    </header>
+
+    <main style="padding: clamp(22px, 3vw, 38px); display: flex; flex-direction: column; gap: 22px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #00E5CC; margin-bottom: 10px;">// ALL CUSTOMER JOBS</div>
+        <h1 style="font-size: 28px; font-weight: 500; letter-spacing: -0.015em; margin: 0;">Job queue</h1>
+      </div>
+
+      <!-- stat row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+        <div style="padding: 16px 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A; margin-bottom: 8px;">QUEUED</div><div style="font-size: 24px; font-weight: 600; color: #3A7BFF;">2</div></div>
+        <div style="padding: 16px 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A; margin-bottom: 8px;">REFINING</div><div style="font-size: 24px; font-weight: 600; color: #00E5CC;">3</div></div>
+        <div style="padding: 16px 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(245,158,11,0.25);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A; margin-bottom: 8px;">AWAITING GATE</div><div style="font-size: 24px; font-weight: 600; color: #F59E0B;">2</div></div>
+        <div style="padding: 16px 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A; margin-bottom: 8px;">DONE TODAY</div><div style="font-size: 24px; font-weight: 600; color: #22C55E;">11</div></div>
+        <div style="padding: 16px 18px; border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A; margin-bottom: 8px;">SPARK LOAD</div><div style="font-size: 24px; font-weight: 600;">68%</div></div>
+      </div>
+
+      <!-- controls -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+            <button onClick="{{ f.select }}" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; padding: 7px 13px; border-radius: 5px; border: none; cursor: pointer; transition: all .15s; color: {{ f.color }}; background: {{ f.bg }};">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 8px 13px; border-radius: 8px; background: #16161A; border: 1px solid rgba(255,255,255,0.09); min-width: 240px;">
+          <span style="color: #71717A;">⌕</span><input placeholder="Search job ID, customer, domain…" style="flex: 1; background: transparent; border: none; outline: none; color: #F2F2F5; font-size: 13px;">
+        </div>
+      </div>
+
+      <!-- table -->
+      <div style="border-radius: 14px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 1.5fr 1.1fr 1fr 0.8fr 0.8fr 0.8fr 0.9fr; gap: 12px; padding: 12px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717A;">
+          <div>JOB</div><div>CUSTOMER</div><div>STATUS</div><div>COMPLEXITY</div><div>AGENT</div><div>REVENUE</div><div>SPEND</div>
+        </div>
+        <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+          <a href="{{ j.href }}" style="display: grid; grid-template-columns: 1.5fr 1.1fr 1fr 0.8fr 0.8fr 0.8fr 0.9fr; gap: 12px; align-items: center; padding: 15px 22px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background .15s;" style-hover="background: rgba(255,255,255,0.02);">
+            <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ j.name }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #71717A;">{{ j.id }}</div></div>
+            <div style="font-size: 13px; color: #A1A1AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ j.customer }}</div>
+            <div><span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.03em; padding: 4px 8px; border-radius: 5px; color: {{ j.statusColor }}; border: 1px solid {{ j.statusBorder }}; background: {{ j.statusBg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ j.statusColor }};"></span>{{ j.statusLabel }}</span></div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{ j.scoreColor }};">{{ j.score }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #A1A1AA;">{{ j.agent }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #22C55E;">{{ j.revenue }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{ j.spendColor }};">{{ j.spend }}</div>
+          </a>
+        </sc-for>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = { filter: 'all' };
+  setFilter(f) { this.setState({ filter: f }); }
+
+  renderVals() {
+    const theme = {
+      queued: { label: 'QUEUED', color: '#3A7BFF', border: 'rgba(58,123,255,0.4)', bg: 'rgba(58,123,255,0.08)', group: 'queued' },
+      refining: { label: 'REFINING', color: '#00E5CC', border: 'rgba(0,229,204,0.4)', bg: 'rgba(0,229,204,0.08)', group: 'refining' },
+      awaiting: { label: 'AWAITING GATE', color: '#F59E0B', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.08)', group: 'awaiting' },
+      complete: { label: 'COMPLETE', color: '#22C55E', border: 'rgba(34,197,94,0.4)', bg: 'rgba(34,197,94,0.08)', group: 'complete' },
+      halted: { label: 'HALTED', color: '#ef4444', border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.08)', group: 'complete' },
+    };
+    const scoreColor = { High: '#F59E0B', Med: '#00E5CC', Low: '#A1A1AA' };
+    const raw = [
+      { name: 'Support tickets → ChatML', id: 'JOB-2025-00147', customer: 'Nous Builder', status: 'awaiting', score: 'High', agent: 'Aegis-7B', revenue: '$20', spend: '$4.00', href: 'AdminGate.dc.html' },
+      { name: 'Entity enrichment set', id: 'JOB-2025-00149', customer: 'Hermes Labs', status: 'awaiting', score: 'High', agent: 'Aegis-12B', revenue: '$20', spend: '$9.50', href: 'AdminGate.dc.html' },
+      { name: 'Discord logs → ShareGPT', id: 'JOB-2025-00146', customer: 'Nous Builder', status: 'refining', score: 'Med', agent: 'Aegis-7B', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+      { name: 'Forum threads → QA', id: 'JOB-2025-00151', customer: 'Vector Co', status: 'refining', score: 'Med', agent: 'Aegis-7B', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+      { name: 'PDF manuals → instruct', id: 'JOB-2025-00152', customer: 'Solo Dev', status: 'refining', score: 'High', agent: 'Aegis-12B', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+      { name: 'Raw JSON → cleaned', id: 'JOB-2025-00153', customer: 'Hermes Labs', status: 'queued', score: 'Low', agent: '—', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+      { name: 'Scraped HTML → ChatML', id: 'JOB-2025-00154', customer: 'Vector Co', status: 'queued', score: 'Med', agent: '—', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+      { name: 'Scraped docs → ChatML', id: 'JOB-2025-00141', customer: 'Nous Builder', status: 'complete', score: 'Med', agent: 'Aegis-7B', revenue: '$20', spend: '$1.20', href: 'Certificate.dc.html' },
+      { name: 'Chat exports → ShareGPT', id: 'JOB-2025-00139', customer: 'Solo Dev', status: 'halted', score: 'Low', agent: 'Aegis-7B', revenue: '$20', spend: '$0.00', href: 'OrderDetail.dc.html' },
+    ];
+    let jobs = raw.map(j => {
+      const t = theme[j.status];
+      return { ...j, statusLabel: t.label, statusColor: t.color, statusBorder: t.border, statusBg: t.bg, group: t.group, scoreColor: scoreColor[j.score] || '#A1A1AA', spendColor: j.spend === '$0.00' ? '#71717A' : '#F59E0B' };
+    });
+    const f = this.state.filter;
+    if (f !== 'all') jobs = jobs.filter(j => j.group === f);
+
+    const defs = [
+      { key: 'all', label: 'ALL' },
+      { key: 'queued', label: 'QUEUED' },
+      { key: 'refining', label: 'REFINING' },
+      { key: 'awaiting', label: 'GATED' },
+      { key: 'complete', label: 'DONE' },
+    ];
+    const filters = defs.map(d => ({
+      label: d.label,
+      select: () => this.setFilter(d.key),
+      color: f === d.key ? '#00E5CC' : '#71717A',
+      bg: f === d.key ? 'rgba(0,229,204,0.12)' : 'transparent',
+    }));
+    return { jobs, filters };
+  }
+}
+</script>
+</body>
+</html>

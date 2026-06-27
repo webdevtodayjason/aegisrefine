@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; scroll-behavior: smooth; }
+  body { background: #0D0D0F; color: #F2F2F5; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: rgba(0,229,204,0.3); }
+  a { color: inherit; text-decoration: none; }
+</style>
+</helmet>
+
+<div style="position: relative; min-height: 100vh;">
+
+  <!-- NAV -->
+  <nav style="position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px clamp(20px, 5vw, 64px); background: rgba(13,13,15,0.82); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+    <a href="Landing.dc.html" style="display: flex; align-items: center; gap: 11px;">
+      <img src="assets/shield.svg" alt="Aegis" style="width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgba(0,229,204,0.4));">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; letter-spacing: 0.16em;">AEGIS<span style="color: #00E5CC;">&nbsp;REFINE</span></span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <div style="display: flex; align-items: center; gap: 26px; font-size: 14px; color: #A1A1AA;">
+        <a href="HowItWorks.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">How it works</a>
+        <a href="Docs.dc.html" style="color: #00E5CC;">Docs</a>
+        <a href="Pricing.dc.html" style="transition: color .15s;" style-hover="color: #F2F2F5;">Pricing</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="Login.dc.html" style="font-size: 14px; color: #A1A1AA; padding: 8px 4px; white-space: nowrap;" style-hover="color: #F2F2F5;">Log in</a>
+        <a href="NewOrder.dc.html" style="font-size: 13.5px; font-weight: 500; color: #04100E; background: #00E5CC; padding: 9px 16px; border-radius: 4px; box-shadow: 0 0 18px rgba(0,229,204,0.35); transition: box-shadow .2s;" style-hover="box-shadow: 0 0 26px rgba(0,229,204,0.55);">Start a job</a>
+      </div>
+    </div>
+  </nav>
+
+  <div style="display: grid; grid-template-columns: 240px 1fr; max-width: 1240px; margin: 0 auto;">
+
+    <!-- TOC -->
+    <aside style="position: sticky; top: 61px; align-self: start; height: calc(100vh - 61px); overflow-y: auto; padding: 32px 18px; border-right: 1px solid rgba(255,255,255,0.06);">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 6px 10px;">GET STARTED</div>
+      <a href="#overview" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #00E5CC; background: rgba(0,229,204,0.08);">Overview</a>
+      <a href="#quickstart" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">Quickstart</a>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 16px 10px 6px;">CONCEPTS</div>
+      <a href="#conductor" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">The Conductor loop</a>
+      <a href="#models" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">Data models</a>
+      <a href="#gate" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">Spend gate policy</a>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: #52525B; padding: 16px 10px 6px;">REFERENCE</div>
+      <a href="#certificate" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">Audit certificate</a>
+      <a href="#api" style="display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; color: #A1A1AA;" style-hover="color: #F2F2F5;">API (preview)</a>
+    </aside>
+
+    <!-- CONTENT -->
+    <main style="padding: clamp(32px, 4vw, 56px) clamp(22px, 4vw, 64px); max-width: 820px;">
+
+      <div id="overview" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #00E5CC; margin-bottom: 14px;">// DOCUMENTATION</div>
+      <h1 style="font-size: clamp(30px, 4vw, 44px); font-weight: 500; letter-spacing: -0.02em; margin: 0 0 16px;">Aegis Refine docs</h1>
+      <p style="font-size: 16px; line-height: 1.7; color: #A1A1AA; margin: 0 0 20px;">Aegis is a Conductor-governed autonomous dataset refinery. It turns messy, unstructured data into clean ShareGPT / ChatML datasets — with a human gate on every external spend and a signed audit certificate for every job.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 48px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00E5CC; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3);">FastAPI · Python</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00E5CC; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3);">PostgreSQL</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00E5CC; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3);">Stripe</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00E5CC; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,229,204,0.3);">NVIDIA DGX Spark</span>
+      </div>
+
+      <!-- quickstart -->
+      <h2 id="quickstart" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 18px; padding-top: 8px;">Quickstart</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 48px;">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+          <div style="display: flex; gap: 14px; padding: 16px 18px; border-radius: 10px; background: #16161A; border: 1px solid rgba(255,255,255,0.07);">
+            <span style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; border: 1px solid rgba(0,229,204,0.4); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00E5CC;">{{ s.n }}</span>
+            <div><div style="font-size: 14.5px; font-weight: 500; margin-bottom: 3px;">{{ s.title }}</div><div style="font-size: 13.5px; color: #A1A1AA; line-height: 1.5;">{{ s.body }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- conductor -->
+      <h2 id="conductor" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 14px; padding-top: 8px;">The Conductor loop</h2>
+      <p style="font-size: 15px; line-height: 1.7; color: #A1A1AA; margin: 0 0 16px;">Every meaningful action passes through Conductor's orchestration loop. Conductor is not infrastructure — it is the product.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 48px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; padding: 8px 13px; border-radius: 6px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">triage</span>
+        <span style="color: #52525B; align-self: center;">→</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; padding: 8px 13px; border-radius: 6px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">score</span>
+        <span style="color: #52525B; align-self: center;">→</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; padding: 8px 13px; border-radius: 6px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">route</span>
+        <span style="color: #52525B; align-self: center;">→</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; padding: 8px 13px; border-radius: 6px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">propose</span>
+        <span style="color: #52525B; align-self: center;">→</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #04130A; padding: 8px 13px; border-radius: 6px; background: #22C55E; border: 1px solid rgba(34,197,94,0.5);">human_gate</span>
+        <span style="color: #52525B; align-self: center;">→</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A1A1AA; padding: 8px 13px; border-radius: 6px; background: #16161A; border: 1px solid rgba(255,255,255,0.08);">aar</span>
+      </div>
+
+      <!-- data models -->
+      <h2 id="models" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 14px; padding-top: 8px;">Data models</h2>
+      <p style="font-size: 15px; line-height: 1.7; color: #A1A1AA; margin: 0 0 22px;">Core MVP entities. These map directly to the PostgreSQL schema.</p>
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 48px;">
+        <sc-for list="{{ models }}" as="m" hint-placeholder-count="4">
+          <div style="border-radius: 12px; background: #16161A; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+              <span style="color: #00E5CC;">▢</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;">{{ m.name }}</span>
+              <span style="font-size: 12px; color: #71717A; margin-left: auto;">{{ m.note }}</span>
+            </div>
+            <div style="padding: 6px 18px;">
+              <sc-for list="{{ m.fields }}" as="f" hint-placeholder-count="3">
+                <div style="display: flex; align-items: baseline; gap: 14px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'JetBrains Mono', monospace; font-size: 12.5px;">
+                  <span style="color: #00E5CC; width: 150px; flex-shrink: 0;">{{ f.name }}</span>
+                  <span style="color: #F59E0B; width: 110px; flex-shrink: 0;">{{ f.type }}</span>
+                  <span style="color: #A1A1AA; font-family: 'Space Grotesk', sans-serif; font-size: 12.5px;">{{ f.desc }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- gate policy -->
+      <h2 id="gate" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 14px; padding-top: 8px;">Spend gate policy</h2>
+      <p style="font-size: 15px; line-height: 1.7; color: #A1A1AA; margin: 0 0 16px;">No outbound spend executes without passing the gate. The policy is evaluated on every <span style="font-family: 'JetBrains Mono', monospace; color: #00E5CC;">SpendTicket</span>.</p>
+      <pre style="margin: 0 0 48px; padding: 20px; border-radius: 12px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.8; color: #A1A1AA; overflow-x: auto;"><span style="color: #52525B;"># POLICY-DATA-REFINE-01</span>
+<span style="color: #3A7BFF;">if</span> ticket.amount <span style="color: #00E5CC;">&lt;=</span> job.auto_approve_threshold:
+    execute() <span style="color: #52525B;"># logged, no human needed</span>
+<span style="color: #3A7BFF;">else</span>:
+    <span style="color: #F59E0B;">require_human_approval()</span>  <span style="color: #52525B;"># pauses at gate</span>
+<span style="color: #3A7BFF;">always</span>:
+    audit_log.append(action, actor, details)</pre>
+
+      <!-- certificate -->
+      <h2 id="certificate" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 14px; padding-top: 8px;">Audit certificate</h2>
+      <p style="font-size: 15px; line-height: 1.7; color: #A1A1AA; margin: 0 0 18px;">Every completed job produces a signed certificate — the deliverable customers pay for. Available as JSON and PDF.</p>
+      <div style="display: flex; gap: 4px; padding: 4px; background: #16161A; border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; width: fit-content; margin-bottom: 16px;">
+        <button onClick="{{ tabSchema }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ schemaColor }}; background: {{ schemaBg }};">SCHEMA</button>
+        <button onClick="{{ tabSample }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all .15s; color: {{ sampleColor }}; background: {{ sampleBg }};">SAMPLE</button>
+      </div>
+      <sc-if value="{{ showSchema }}" hint-placeholder-val="{{ true }}">
+        <pre style="margin: 0 0 20px; padding: 20px; border-radius: 12px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.8; color: #A1A1AA; overflow-x: auto;"><span style="color: #00E5CC;">cert_id</span>        <span style="color: #F59E0B;">string</span>     <span style="color: #52525B;"># cert_7a2b9c4d81</span>
+<span style="color: #00E5CC;">job_id</span>         <span style="color: #F59E0B;">string</span>     <span style="color: #52525B;"># JOB-2025-00147</span>
+<span style="color: #00E5CC;">issued_at</span>      <span style="color: #F59E0B;">datetime</span>
+<span style="color: #00E5CC;">ledger</span>         <span style="color: #F59E0B;">object</span>     <span style="color: #52525B;"># revenue, gated_spend, approvals</span>
+<span style="color: #00E5CC;">decisions[]</span>    <span style="color: #F59E0B;">array</span>      <span style="color: #52525B;"># action, actor, amount</span>
+<span style="color: #00E5CC;">dataset</span>        <span style="color: #F59E0B;">object</span>     <span style="color: #52525B;"># rows, quality, pii_masked</span>
+<span style="color: #00E5CC;">signature</span>      <span style="color: #F59E0B;">string</span>     <span style="color: #52525B;"># ed25519</span></pre>
+      </sc-if>
+      <sc-if value="{{ showSample }}" hint-placeholder-val="{{ false }}">
+        <pre style="margin: 0 0 20px; padding: 20px; border-radius: 12px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.75; color: #A1A1AA; overflow-x: auto;"><span style="color: #52525B;">{</span>
+  <span style="color: #00E5CC;">"cert_id"</span>: <span style="color: #d6dee8;">"cert_7a2b9c4d81"</span>,
+  <span style="color: #00E5CC;">"job_id"</span>: <span style="color: #d6dee8;">"JOB-2025-00147"</span>,
+  <span style="color: #00E5CC;">"ledger"</span>: <span style="color: #52525B;">{</span> <span style="color: #00E5CC;">"revenue_usd"</span>: <span style="color: #F59E0B;">20.00</span>, <span style="color: #00E5CC;">"gated_spend_usd"</span>: <span style="color: #F59E0B;">4.00</span>, <span style="color: #00E5CC;">"human_approvals"</span>: <span style="color: #F59E0B;">1</span> <span style="color: #52525B;">}</span>,
+  <span style="color: #00E5CC;">"dataset"</span>: <span style="color: #52525B;">{</span> <span style="color: #00E5CC;">"rows"</span>: <span style="color: #F59E0B;">128540</span>, <span style="color: #00E5CC;">"quality"</span>: <span style="color: #F59E0B;">94.7</span> <span style="color: #52525B;">}</span>,
+  <span style="color: #00E5CC;">"signature"</span>: <span style="color: #d6dee8;">"ed25519:9f3a…c2e1"</span>
+<span style="color: #52525B;">}</span></pre>
+      </sc-if>
+      <a href="Certificate.dc.html" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: #00E5CC; border: 1px solid rgba(0,229,204,0.4); padding: 11px 18px; border-radius: 7px; margin-bottom: 48px; transition: background .2s;" style-hover="background: rgba(0,229,204,0.08);">View a rendered certificate ↗</a>
+
+      <!-- api -->
+      <h2 id="api" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 14px; padding-top: 8px;">API <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #F59E0B; padding: 3px 9px; border-radius: 5px; border: 1px solid rgba(245,158,11,0.4); vertical-align: middle;">PREVIEW</span></h2>
+      <p style="font-size: 15px; line-height: 1.7; color: #A1A1AA; margin: 0 0 16px;">A REST API for creating jobs, polling status, and approving spend tickets is coming with Team &amp; Volume plans.</p>
+      <pre style="margin: 0 0 20px; padding: 20px; border-radius: 12px; background: #0D0D0F; border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.85; color: #A1A1AA; overflow-x: auto;"><span style="color: #22C55E;">POST</span>   /v1/jobs                <span style="color: #52525B;"># create + pay</span>
+<span style="color: #3A7BFF;">GET</span>    /v1/jobs/:id            <span style="color: #52525B;"># status + gate state</span>
+<span style="color: #22C55E;">POST</span>   /v1/spend_tickets/:id/approve
+<span style="color: #3A7BFF;">GET</span>    /v1/jobs/:id/certificate</pre>
+      <div style="height: 40px;"></div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:1400}}">
+class Component extends DCLogic {
+  state = { certTab: 'schema' };
+  setCertTab(t) { this.setState({ certTab: t }); }
+
+  renderVals() {
+    const steps = [
+      { n: '1', title: 'Upload your raw data', body: 'Drop a ZIP of Discord logs, PDFs, scraped HTML, or raw JSON, and describe the dataset you want.' },
+      { n: '2', title: 'Pay the flat fee', body: '$20 via Stripe Checkout starts the job. A webhook creates the Job record and triggers Conductor triage.' },
+      { n: '3', title: 'Approve any proposed spend', body: 'If the agent needs a paid external step, it proposes a SpendTicket. Approve or reject from your dashboard.' },
+      { n: '4', title: 'Download dataset + certificate', body: 'Get clean JSONL plus a signed audit certificate proving exactly what happened.' },
+    ];
+    const models = [
+      { name: 'Job', note: 'the unit of work', fields: [
+        { name: 'id', type: 'uuid', desc: 'primary key' },
+        { name: 'user_id', type: 'uuid', desc: 'owner' },
+        { name: 'status', type: 'enum', desc: 'triage · refining · awaiting_gate · complete · halted' },
+        { name: 'complexity_score', type: 'float', desc: '0–1 from Conductor score node' },
+        { name: 'estimated_cost', type: 'decimal', desc: 'flat fee + projected spend' },
+        { name: 'input/output_path', type: 'string', desc: 'source ZIP and delivered JSONL' },
+      ] },
+      { name: 'SpendTicket', note: 'the gate', fields: [
+        { name: 'id', type: 'uuid', desc: 'primary key' },
+        { name: 'job_id', type: 'uuid', desc: 'parent job' },
+        { name: 'amount', type: 'decimal', desc: 'proposed external spend' },
+        { name: 'description', type: 'string', desc: 'reason / rationale' },
+        { name: 'status', type: 'enum', desc: 'proposed · approved · rejected · executed' },
+        { name: 'stripe_pi_id', type: 'string', desc: 'set once executed' },
+      ] },
+      { name: 'AuditLog', note: 'immutable', fields: [
+        { name: 'id', type: 'uuid', desc: 'primary key' },
+        { name: 'job_id', type: 'uuid', desc: 'parent job' },
+        { name: 'action', type: 'string', desc: 'propose_spend · human_approve · execute …' },
+        { name: 'actor', type: 'string', desc: 'system / agent / human email' },
+        { name: 'details', type: 'jsonb', desc: 'structured event payload' },
+      ] },
+      { name: 'AuditCertificate', note: 'the deliverable', fields: [
+        { name: 'id', type: 'uuid', desc: 'primary key' },
+        { name: 'job_id', type: 'uuid', desc: 'parent job' },
+        { name: 'json_path', type: 'string', desc: 'signed JSON certificate' },
+        { name: 'pdf_path', type: 'string', desc: 'rendered PDF' },
+        { name: 'signature', type: 'string', desc: 'ed25519 signature' },
+      ] },
+    ];
+    const t = this.state.certTab;
+    const ab = 'rgba(0,229,204,0.12)';
+    return {
+      steps, models,
+      showSchema: t === 'schema', showSample: t === 'sample',
+      tabSchema: () => this.setCertTab('schema'), tabSample: () => this.setCertTab('sample'),
+      schemaColor: t === 'schema' ? '#00E5CC' : '#A1A1AA', schemaBg: t === 'schema' ? ab : 'transparent',
+      sampleColor: t === 'sample' ? '#00E5CC' : '#A1A1AA', sampleBg: t === 'sample' ? ab : 'transparent',
+    };
+  }
+}
+</script>
+</body>
+</html>

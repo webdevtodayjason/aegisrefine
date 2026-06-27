@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Audit log · Aegis Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  /* page-specific only — design-system classes live in app.css */
+  .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+  .exportbtn{font-family:var(--mono);font-size:12px;color:var(--teal);padding:8px 14px;border-radius:6px;border:1px solid var(--teal-line);background:transparent;cursor:pointer;transition:background .2s}
+  .exportbtn:hover{background:rgba(0,229,204,0.08)}
+  .exportbtn:disabled{opacity:.4;cursor:not-allowed}
+
+  .controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+  .filterbar{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .fchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.03em;padding:7px 12px;border-radius:5px;border:none;cursor:pointer;transition:all .15s;color:var(--muted-2);background:transparent}
+  .fchip:hover{color:var(--text)}
+  .fchip.active{color:var(--teal);background:rgba(0,229,204,0.12)}
+  .fchip i{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .searchbox{display:flex;align-items:center;gap:9px;padding:0 13px;border-radius:8px;background:var(--panel);border:1px solid var(--line-2);min-width:260px}
+  .searchbox span{color:var(--muted-2)}
+  .searchbox input{flex:1;background:transparent;border:0;outline:none;color:var(--text);font-size:13px;padding:9px 0;width:auto;border-radius:0}
+
+  .logtable{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .loghead,.logrow{display:grid;grid-template-columns:128px 168px 1.6fr 1fr 116px;gap:12px;align-items:center}
+  .loghead{padding:12px 22px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2)}
+  .logrow{padding:13px 22px;border-bottom:1px solid rgba(255,255,255,0.05)}
+  .logrow:last-child{border-bottom:0}
+  .logrow:hover{background:rgba(255,255,255,0.02)}
+  .ts .tt{font-family:var(--mono);font-size:11.5px;color:var(--text)}
+  .ts .td{font-family:var(--mono);font-size:10px;color:var(--muted-3);margin-top:2px}
+  .evt{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px}
+  .evt i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .det .sum{font-size:12.5px;color:var(--muted);line-height:1.4}
+  .dtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .dtag{font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;color:var(--muted-2);background:var(--panel-3);border:1px solid var(--line);border-radius:4px;padding:2px 6px}
+  .actor{font-family:var(--mono);font-size:11.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jobid{font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .logfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:14px 22px;font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .logfoot .ap{display:inline-flex;align-items:center;gap:7px;color:var(--green)}
+  .logfoot .ap i{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .empty{padding:40px 22px;text-align:center;color:var(--muted-2);font-size:13px}
+
+  @media(max-width:860px){
+    .loghead,.logrow{grid-template-columns:108px 1fr 120px}
+    .loghead .h-det,.loghead .h-actor,.logrow .c-det,.logrow .c-actor{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <!-- page header -->
+      <div class="pagehead">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">// IMMUTABLE SYSTEM TRAIL</div>
+          <h1 style="font-size:28px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Audit log</h1>
+          <p class="muted" style="font-size:14px;margin:0">Every governed action across every job — append-only and exportable, newest first.
+            <span class="mono muted2" id="evtCount">loading…</span></p>
+          <p class="mono muted2" style="font-size:11px;margin:8px 0 0;line-height:1.5">Details are redacted to a whitelist — no dataset URLs, emails, paths, or PANs. Outbound spend is a test stub; amounts shown are authorizations, not real transfers.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px">
+          <span class="sbadge mono" style="display:inline-flex;align-items:center;gap:7px;color:var(--teal);border:1px solid var(--teal-line);background:var(--teal-dim);padding:6px 11px;border-radius:6px;font-size:11px"><span class="dot"></span> LIVE</span>
+          <button class="exportbtn" id="csvBtn" onclick="exportCSV()">↓ EXPORT CSV</button>
+          <button class="exportbtn" id="jsonBtn" onclick="exportJSON()">↓ JSON</button>
+        </div>
+      </div>
+
+      <!-- controls: filter chips + search -->
+      <div class="controls">
+        <div class="filterbar" id="filters"></div>
+        <div class="searchbox">
+          <span>⌕</span>
+          <input id="search" placeholder="Search actor, action, job, details…" autocomplete="off" spellcheck="false" oninput="render()"/>
+        </div>
+      </div>
+
+      <!-- log table -->
+      <div class="logtable">
+        <div class="loghead">
+          <div>TIMESTAMP</div>
+          <div>EVENT</div>
+          <div class="h-det">DETAILS</div>
+          <div class="h-actor">ACTOR</div>
+          <div>JOB</div>
+        </div>
+        <div id="logbody">
+          <div class="empty mono" style="padding:40px 22px">Loading immutable trail…</div>
+        </div>
+        <div class="logfoot" id="logfoot">
+          <span id="footCount"></span>
+          <span class="ap"><i></i> APPEND-ONLY · never edited or deleted · AAR certificates are Ed25519-signed</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("audit-log", "audit log");
+
+// ---- helpers -----------------------------------------------------------
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString("en-US",{hour12:false}); } catch { return "--:--:--"; } };
+const fmtDate = iso => { try { return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric"}); } catch { return ""; } };
+const jobLabel = id => (id == null || id === "") ? "—" : "JOB-" + String(id).padStart(5,"0");
+
+// real backend action set (per API_CONTRACT.md) -> color + label
+const ACT = {
+  job_created:    { color:"#3A7BFF", label:"JOB_CREATED" },
+  triage:         { color:"#3A7BFF", label:"TRIAGE" },
+  quality:        { color:"#00E5CC", label:"QUALITY" },
+  spend_decision: { color:"#A1A1AA", label:"SPEND_DECISION" },
+  spend_proposed: { color:"#F59E0B", label:"SPEND_PROPOSED" },
+  spend_approved: { color:"#22C55E", label:"SPEND_APPROVED" },
+  spend_rejected: { color:"#ef4444", label:"SPEND_REJECTED" },
+  spend_executed: { color:"#F59E0B", label:"SPEND_EXECUTED" },
+  aar_issued:     { color:"#22C55E", label:"AAR_ISSUED" },
+};
+const actMeta = a => ACT[a] || { color:"#A1A1AA", label:String(a||"event").toUpperCase() };
+
+// filter chips: ALL + the canonical action types
+const FILTERS = [
+  { key:"all", label:"ALL", color:"#A1A1AA" },
+  { key:"job_created" }, { key:"triage" }, { key:"quality" },
+  { key:"spend_proposed" }, { key:"spend_approved" }, { key:"spend_rejected" },
+  { key:"spend_executed" }, { key:"aar_issued" },
+];
+
+// format a single detail value (sha shortened, amounts as money, objects stringified)
+function fmtVal(k, v) {
+  if (v == null) return "";
+  if (typeof v === "number" && /amount|cost|usd|fee/i.test(k)) return "$" + v.toFixed(2);
+  let s = (typeof v === "object") ? JSON.stringify(v) : String(v);
+  if (/sha|hash|sig/i.test(k) && s.length > 16) s = s.slice(0,8) + "…" + s.slice(-4);
+  if (s.length > 40) s = s.slice(0,37) + "…";
+  return s;
+}
+function detailTags(d) {
+  if (!d || typeof d !== "object") return "";
+  const tags = Object.entries(d).map(([k,v]) => {
+    const val = fmtVal(k, v);
+    return `<span class="dtag">${esc(k)}${val !== "" ? " " + esc(val) : ""}</span>`;
+  });
+  return tags.length ? `<div class="dtags">${tags.join("")}</div>` : "";
+}
+
+// ---- state -------------------------------------------------------------
+let allEvents = [];
+let activeFilter = "all";
+
+// ---- filter chips ------------------------------------------------------
+function renderFilters() {
+  document.getElementById("filters").innerHTML = FILTERS.map(f => {
+    const m = f.key === "all" ? { color:f.color, label:f.label } : actMeta(f.key);
+    return `<button class="fchip ${f.key === activeFilter ? "active" : ""}" data-key="${f.key}" onclick="setFilter('${f.key}')">`+
+      `<i style="background:${m.color}"></i>${m.label}</button>`;
+  }).join("");
+}
+function setFilter(k) {
+  activeFilter = k;
+  document.querySelectorAll(".fchip").forEach(el => el.classList.toggle("active", el.dataset.key === k));
+  render();
+}
+
+// ---- render the table --------------------------------------------------
+function render() {
+  const body = document.getElementById("logbody");
+  const term = (document.getElementById("search").value || "").trim().toLowerCase();
+
+  let rows = allEvents;
+  if (activeFilter !== "all") rows = rows.filter(e => e.action === activeFilter);
+  if (term) rows = rows.filter(e => {
+    const hay = [e.action, e.actor, e.summary, jobLabel(e.job_id), e.job_id,
+      e.details ? JSON.stringify(e.details) : ""].join(" ").toLowerCase();
+    return hay.indexOf(term) !== -1;
+  });
+
+  if (!allEvents.length) {
+    body.innerHTML = `<div class="empty mono">No activity recorded yet — the trail fills as jobs run.</div>`;
+  } else if (!rows.length) {
+    body.innerHTML = `<div class="empty mono">No events match this filter / search.</div>`;
+  } else {
+    body.innerHTML = rows.map(e => {
+      const m = actMeta(e.action);
+      return `<div class="logrow">`+
+        `<div class="ts"><div class="tt">${esc(fmtTime(e.at))}</div><div class="td">${esc(fmtDate(e.at))}</div></div>`+
+        `<div><span class="evt" style="color:${m.color}"><i style="background:${m.color};box-shadow:0 0 6px ${m.color}"></i>${esc(m.label)}</span></div>`+
+        `<div class="det c-det"><div class="sum">${esc(e.summary || (e.action||"event").replace(/_/g," "))}</div>${detailTags(e.details)}</div>`+
+        `<div class="actor c-actor">${esc(e.actor || "system")}</div>`+
+        `<div class="jobid">${esc(jobLabel(e.job_id))}</div>`+
+      `</div>`;
+    }).join("");
+  }
+
+  document.getElementById("footCount").textContent =
+    `Showing ${rows.length} of ${allEvents.length} loaded events`;
+}
+
+// ---- export (client-side, from the loaded + filtered view) -------------
+function currentView() {
+  const term = (document.getElementById("search").value || "").trim().toLowerCase();
+  let rows = allEvents;
+  if (activeFilter !== "all") rows = rows.filter(e => e.action === activeFilter);
+  if (term) rows = rows.filter(e => {
+    const hay = [e.action, e.actor, e.summary, jobLabel(e.job_id), e.job_id,
+      e.details ? JSON.stringify(e.details) : ""].join(" ").toLowerCase();
+    return hay.indexOf(term) !== -1;
+  });
+  return rows;
+}
+function download(name, type, data) {
+  const blob = new Blob([data], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportJSON() {
+  download("aegis-audit-log.json", "application/json", JSON.stringify(currentView(), null, 2));
+}
+function exportCSV() {
+  const rows = currentView();
+  const cols = ["at","action","actor","job_id","summary","details"];
+  const cell = v => {
+    let s = (v == null) ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [cols.join(",")].concat(rows.map(e => cols.map(c => cell(e[c])).join(",")));
+  download("aegis-audit-log.csv", "text/csv", lines.join("\n"));
+}
+
+// ---- data flow ---------------------------------------------------------
+async function load() {
+  try {
+    const feed = await Aegis.activity(200);
+    allEvents = Array.isArray(feed) ? feed : [];
+    const n = allEvents.length;
+    document.getElementById("evtCount").textContent =
+      n ? (n >= 200 ? "most recent 200 events" : n + (n === 1 ? " event" : " events")) : "0 events";
+    render();
+  } catch (e) {
+    document.getElementById("logbody").innerHTML =
+      `<div class="err" style="padding:24px 22px">✗ Could not load the audit trail: ${esc(e.message || e)}</div>`;
+    document.getElementById("evtCount").textContent = "unavailable";
+  }
+}
+
+renderFilters();
+load();
+// the trail is append-only — poll for newly appended events, preserving filter + search
+setInterval(load, 8000);
+</script>
+</body>
+</html>
