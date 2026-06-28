@@ -144,8 +144,10 @@ async def simulate_payment(req: SimulatedPayment, db: Session = Depends(get_db))
 
 
 @app.get("/jobs/{job_id}/verify")
-async def verify_aar(job_id: int):
-    """Run the public zero-dep aar.mjs verifier on the job's cert — the badge the site shows."""
+async def verify_aar(job_id: int, db: Session = Depends(get_db)):
+    """Verify the job's cert: (1) the Ed25519 signature + L2 via the public aar.mjs verifier,
+    AND (2) RE-RUN the data guarantees on the delivered file (PII=0 / dedup / schema). The
+    second part is what makes the certificate a guarantee you can check, not a claim."""
     cert = CERTS_DIR / f"job-{job_id}.aar.json"
     if not cert.exists():
         raise HTTPException(status_code=404, detail="no certificate for this job")
@@ -155,8 +157,14 @@ async def verify_aar(job_id: int):
     for line in r.stdout.splitlines():
         if "conformance:" in line:
             level = line.split("conformance:")[-1].strip()
-    return {"job_id": job_id, "level": level, "ok": r.returncode == 0 and level != "FAIL",
+    resp = {"job_id": job_id, "level": level, "ok": r.returncode == 0 and level != "FAIL",
             "output": r.stdout.strip()}
+    from app.models.job import Job as _Job
+    from app.curate import engine as _ce
+    job = db.query(_Job).filter(_Job.id == job_id).first()
+    if job and job.output_file_path and os.path.exists(job.output_file_path):
+        resp["guarantees_recheck"] = _ce.verify_output(job.output_file_path)
+    return resp
 
 
 # --- static mounts LAST: brand assets, then the branded site at root (same-origin, no CORS) ---

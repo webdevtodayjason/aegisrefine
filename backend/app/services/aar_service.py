@@ -54,9 +54,12 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build_aar(job_id: int, claim: str, output: bytes, reason: str) -> dict:
-    """Build an L2-capable AAR with a REAL response_sha256 over the job's actual output."""
-    return {
+def build_aar(job_id: int, claim: str, output: bytes, reason: str,
+              economics: dict | None = None, guarantees: dict | None = None) -> dict:
+    """Build an L2-capable AAR with a REAL response_sha256 over the job's actual output.
+    Optional economics (quote/spent/margin — the agent's audited books) + guarantees
+    (re-checkable data properties) blocks."""
+    rec = {
         "aar": "0.02",
         "subject": SUBJECT,
         "principal": PRINCIPAL,
@@ -74,6 +77,11 @@ def build_aar(job_id: int, claim: str, output: bytes, reason: str) -> dict:
         "verifier": {"id": VERIFIER, "model": "conductor-deterministic", "independence": "same_principal"},
         "issued": _now(),
     }
+    if economics:
+        rec["economics"] = economics
+    if guarantees:
+        rec["guarantees"] = guarantees
+    return rec
 
 
 def sign_record(record: dict, out_path: Path) -> dict:
@@ -88,9 +96,13 @@ def sign_record(record: dict, out_path: Path) -> dict:
     return json.loads(out_path.read_text())
 
 
-def issue_certificate(db: Session, job_id: int, claim: str, output: bytes, reason: str) -> dict:
-    """Build + sign + store the signed AAR for a job; record it on the audit trail."""
-    record = build_aar(job_id, claim, output, reason)
+def issue_certificate(db: Session, job_id: int, claim: str, output: bytes, reason: str,
+                      economics: dict | None = None, guarantees: dict | None = None) -> dict:
+    """Build + sign + store the signed AAR for a job; record it on the audit trail.
+    cap_respected is an ISSUANCE PRECONDITION — we refuse to sign a job that overspent its cap."""
+    if economics and not economics.get("cap_respected", True):
+        raise ValueError(f"refusing to sign job {job_id}: spent ${economics.get('spent_usd')} exceeds cap ${economics.get('cap_usd')}")
+    record = build_aar(job_id, claim, output, reason, economics, guarantees)
     cert_path = CERTS_DIR / f"job-{job_id}.aar.json"
     signed = sign_record(record, cert_path)
     cert = AuditCertificate(job_id=job_id, json_path=str(cert_path), signature=signed["sig"]["value"])

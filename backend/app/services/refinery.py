@@ -84,7 +84,9 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
     Prefers the bytes the engine produced (job.output_file_path); the client-supplied `output`
     is only a transitional fallback. The claim carries real, re-checkable numbers.
     """
+    from app.services import budget_service
     out_path = getattr(job, "output_file_path", None)
+    guarantees = None
     if out_path and os.path.exists(out_path):
         output = open(out_path, "rb").read()
         v = curate_engine.verify_output(out_path)
@@ -92,10 +94,33 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
                           f"{v['pii_residual']}, dupes residual {v['dupes_residual']}, "
                           f"schema {'valid' if v['schema_valid'] else 'INVALID'}")
         evidence = "Aegis-14B-governed local curation; signed bytes ARE the produced dataset; checks re-runnable"
+        guarantees = {"rows": v["rows"], "pii_residual": v["pii_residual"],
+                      "dupes_residual": v["dupes_residual"], "schema_valid": v["schema_valid"],
+                      "output_format": "sharegpt"}
     else:
         output = output or b""
         claim = claim or f"refined job {job.id} into clean training data"
         evidence = "refinement governed by Aegis-14B; output hash committed as evidence"
+
+    # the agent's audited books for this job (the leaderboard's per-job P&L)
+    economics = None
+    if job.quote_amount is not None:
+        L = budget_service.ledger(db, job)
+        spent = float(L["executed"]) or float(L["committed"])
+        cap = float(L["cap"])
+        fee = round(job.quote_amount * 0.029 + 0.30, 2)
+        margin = round(job.quote_amount - spent - fee, 2)
+        economics = {
+            "currency": "usd", "quoted_usd": job.quote_amount, "cap_usd": cap,
+            "revenue_collected_usd": job.revenue_collected or job.quote_amount,
+            "spent_usd": round(spent, 2), "stripe_fee_usd": fee, "margin_usd": margin,
+            "realized_margin_pct": round(100 * margin / job.quote_amount, 1) if job.quote_amount else 0.0,
+            "target_margin_pct": round((job.target_margin_pct or 0.65) * 100, 1),
+            "cap_respected": spent <= cap + 0.005,
+        }
+        job.actual_cost = round(spent, 2)
+
     job.status = "completed"
     db.commit()
-    return aar_service.issue_certificate(db, job.id, claim, output, evidence)
+    return aar_service.issue_certificate(db, job.id, claim, output, evidence,
+                                         economics=economics, guarantees=guarantees)
