@@ -9,3 +9,7 @@ secrets/
 certs/
 *.db
 *.zip
+local.env
+*.swp
+*.swo
+*~
