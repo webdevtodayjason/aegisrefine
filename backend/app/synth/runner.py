@@ -11,10 +11,16 @@ from app.services.refinery import complete_job
 OUT_DIR = os.environ.get("SYNTH_OUT_DIR", "/tmp/aegis-synth")
 
 
+SYNTH_DEMO_CAP = int(os.environ.get("SYNTH_DEMO_CAP", "8"))  # bound rows so a job finishes in minutes
+
+
 def run_synth_job(db, job, *, topic, target_kept=10, reference="", roles=None,
                   real_rows=0, _call=None):
     """`reference` empty -> generate-from-seed; non-empty -> augment (ground in a curated set).
     `real_rows` is the curated-input count for augment mode (0 for from-seed)."""
+    target_kept = min(int(target_kept or SYNTH_DEMO_CAP), SYNTH_DEMO_CAP)
+    job.status = "processing"  # surface that work has started (else the UI shows 'pending')
+    db.commit()
     cap = float(budget_service.ledger(db, job)["cap"]) if job.quote_amount else 1.0
     res = synthesize(topic=topic, target_kept=target_kept, reference=reference,
                      roles=roles, cap_usd=cap * 0.8, _call=_call)  # buffer keeps cap_respected true

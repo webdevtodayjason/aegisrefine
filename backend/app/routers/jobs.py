@@ -116,8 +116,11 @@ def _job_brief(j: Job) -> dict:
 
 @router.get("/")
 async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    """Recent jobs, newest first (Dashboard)."""
-    rows = db.query(Job).order_by(Job.id.desc()).limit(max(1, min(limit, 200))).all()
+    """Recent jobs, newest first (Dashboard) — scoped to the signed-in account (admins see all)."""
+    q = db.query(Job)
+    if not user.is_admin:
+        q = q.filter(Job.user_id == user.id)
+    rows = q.order_by(Job.id.desc()).limit(max(1, min(limit, 200))).all()
     return [_job_brief(j) for j in rows]
 
 
@@ -125,7 +128,7 @@ async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User =
 async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """One job + its spend tickets + certificate (OrderDetail / Certificate)."""
     j = db.query(Job).filter(Job.id == job_id).first()
-    if not j:
+    if not j or (not user.is_admin and j.user_id != user.id):
         raise HTTPException(status_code=404, detail="job not found")
     tickets = db.query(SpendTicket).filter(SpendTicket.job_id == job_id).order_by(SpendTicket.id).all()
     cert = (db.query(AuditCertificate).filter(AuditCertificate.job_id == job_id)
@@ -145,6 +148,8 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
 async def download_dataset(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Download the produced dataset JSONL (refined OR synthesized) — from the in-DB copy."""
     j = db.query(Job).filter(Job.id == job_id).first()
+    if j and not user.is_admin and j.user_id != user.id:
+        raise HTTPException(status_code=404, detail="no dataset output yet")
     headers = {"Content-Disposition": f'attachment; filename="aegis-dataset-{job_id}.jsonl"'}
     if j and j.output_data:                          # DB copy survives redeploys
         return Response(content=j.output_data, media_type="application/x-ndjson", headers=headers)

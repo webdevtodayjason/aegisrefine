@@ -103,7 +103,9 @@ app.include_router(auth.router)
 app.include_router(scoreboard.router)
 
 
-_CUSTOMER_PAGES = {"/dashboard.html", "/new-order.html", "/order-detail.html",
+# new-order.html is intentionally PUBLIC — a logged-out visitor can build a quote; auth is
+# collected in-flow (the wizard prompts account creation when /jobs/quote returns 401).
+_CUSTOMER_PAGES = {"/dashboard.html", "/order-detail.html",
                    "/certificate.html", "/billing.html", "/settings.html", "/marketplace.html"}
 _ADMIN_PAGES = {"/ops.html", "/job-queue.html", "/audit-log.html", "/customers.html",
                 "/policies.html", "/agents.html"}

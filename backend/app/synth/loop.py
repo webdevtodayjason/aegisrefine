@@ -10,7 +10,9 @@ from app.curate.canonical import record
 
 # Default roles — verified-working paid arsenal models; all overridable per job.
 # weak must be genuinely weaker than strong for Delta to mean something.
-ROLES = {"challenger": "glm-4.6", "weak": "MiniMax-M2", "strong": "glm-4.6", "judge": "MiniMax-M2"}
+# Fast demo config: a genuine weak/strong gap (grok-3-mini fails where glm-4.6 solves) with only
+# ONE slow reasoning role (strong), so a capped job completes in minutes, not hours.
+ROLES = {"challenger": "grok-3-mini", "weak": "grok-3-mini", "strong": "glm-4.6", "judge": "grok-3-mini"}
 
 MAX_ROUNDS = 20
 
