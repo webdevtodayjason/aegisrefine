@@ -144,20 +144,27 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
     # the agent's audited books for this job (the leaderboard's per-job P&L)
     economics = None
     if job.quote_amount is not None:
+        from app.models.spend_ticket import SpendTicket
         L = budget_service.ledger(db, job)
         spent = float(L["executed"]) or float(L["committed"])
         cap = float(L["cap"])
         fee = round(job.quote_amount * 0.029 + 0.30, 2)
         margin = round(job.quote_amount - spent - fee, 2)
+        tickets = db.query(SpendTicket).filter(
+            SpendTicket.job_id == job.id, SpendTicket.status.in_(["approved", "executed"])).all()
+        providers = [{"name": t.provider,
+                      "cost_usd": round(float(t.actual_amount if t.actual_amount is not None else t.amount), 6),
+                      "kind": t.kind, "source": t.cost_source} for t in tickets if t.provider]
         economics = {
             "currency": "usd", "quoted_usd": job.quote_amount, "cap_usd": cap,
             "revenue_collected_usd": job.revenue_collected or job.quote_amount,
-            "spent_usd": round(spent, 2), "stripe_fee_usd": fee, "margin_usd": margin,
+            "spent_usd": round(spent, 6), "stripe_fee_usd": fee, "margin_usd": margin,
             "realized_margin_pct": round(100 * margin / job.quote_amount, 1) if job.quote_amount else 0.0,
             "target_margin_pct": round((job.target_margin_pct or 0.65) * 100, 1),
             "cap_respected": spent <= cap + 0.005,
+            "providers": providers,
         }
-        job.actual_cost = round(spent, 2)
+        job.actual_cost = round(spent, 6)
 
     job.status = "completed"
     db.commit()
