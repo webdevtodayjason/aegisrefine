@@ -8,31 +8,47 @@ import tempfile
 import urllib.request
 
 from app.curate import detect as _detect
-from app.curate.parsers import dataset as _ds, tabular as _tab
+from app.curate.parsers import dataset as _ds, tabular as _tab, documents as _docs
 from app.curate.clean.normalize import normalize_record
 from app.curate.clean.pii import mask_record, residual_count
 from app.curate.clean.dedupe import dedupe
 from app.curate.format import valid_record, write_jsonl
 from app.curate.stats import Stats
+from app.services import storage
 
 
-def _read(source: str):
+def _read_bytes(source: str) -> bytes:
+    """Read the raw source bytes. A source is ONE of: an R2 key (starts with 'users/', read via
+    storage when R2 is configured), an https URL, or a local filesystem path."""
+    if source.startswith("users/") and storage.enabled():
+        return storage.get_bytes(source)
     if source.startswith(("http://", "https://")):
         with urllib.request.urlopen(source, timeout=30) as r:
-            return r.read().decode("utf-8", "replace")
-    with open(source, "r", encoding="utf-8", errors="replace") as f:
+            return r.read()
+    with open(source, "rb") as f:
         return f.read()
 
 
 def run(source: str, out_dir: str | None = None) -> dict:
-    text = _read(source)
-    fmt = _detect.detect(source, text[:512].encode("utf-8", "replace"))
-    if fmt == "json":
-        recs = _ds.parse_json(text, source)
-    elif fmt in ("csv", "tsv"):
-        recs = _tab.parse_csv(text, source, "\t" if fmt == "tsv" else ",")
-    else:
-        recs = _ds.parse_jsonl(text, source)
+    raw = _read_bytes(source)
+    fmt = _detect.detect(source, raw[:512])
+    extra: dict = {}
+    if fmt == "pdf":                                   # binary -> keep raw bytes
+        recs, extra = _docs.parse_pdf(raw, source)
+    elif fmt == "docx":                                # binary -> keep raw bytes
+        recs = _docs.parse_docx(raw, source)
+    else:                                              # text formats -> decode utf-8
+        text = raw.decode("utf-8", "replace")
+        if fmt == "json":
+            recs = _ds.parse_json(text, source)
+        elif fmt in ("csv", "tsv"):
+            recs = _tab.parse_csv(text, source, "\t" if fmt == "tsv" else ",")
+        elif fmt == "yaml":
+            recs = _docs.parse_yaml(text, source)
+        elif fmt == "txt":
+            recs = _docs.parse_txt(text, source)
+        else:
+            recs = _ds.parse_jsonl(text, source)
 
     st = Stats(rows_in=len(recs))
     recs = [normalize_record(r) for r in recs]
@@ -51,13 +67,17 @@ def run(source: str, out_dir: str | None = None) -> dict:
     write_jsonl(good, sg_path, "sharegpt")
     write_jsonl(good, cm_path, "chatml")
 
+    stats = st.as_dict()
+    if extra:                       # e.g. {"needs_ocr": True, "pages": N} from a scanned PDF
+        stats.update(extra)
     return {
         "format_in": fmt,
         "output_path": sg_path,
         "chatml_path": cm_path,
         "output_sha256": _sha256_file(sg_path),
-        "stats": st.as_dict(),
+        "stats": stats,
         "records": good,
+        "needs_ocr": bool(extra.get("needs_ocr")),
     }
 
 

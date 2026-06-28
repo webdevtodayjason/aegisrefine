@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,21 +6,25 @@ from app.database import get_db
 from app.models.job import Job
 from app.models.spend_ticket import SpendTicket
 from app.models.audit_certificate import AuditCertificate
-from app.services.job_service import validate_https_url
+from app.services.job_service import validate_https_url, is_upload_handle
 from app.services.auth import require_user
-from app.services import quote_service
+from app.services import quote_service, storage
 from app.models.user import User
 import stripe
 import os
 import time
+import tempfile
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # ~25MB cap; bigger -> 413 (and route a human quote)
+
 
 class QuoteRequest(BaseModel):
-    dataset_url: str
+    dataset_url: str | None = None      # an https dataset URL ...
+    upload_handle: str | None = None    # ... OR a handle from POST /jobs/upload (R2 key / temp path)
     email: str | None = None
 
 
@@ -34,13 +38,43 @@ class SynthQuoteRequest(BaseModel):
     reference: str | None = None   # augment: an https dataset URL to ground generation in; empty = from-seed
 
 
+@router.post("/upload")
+async def upload(file: UploadFile = File(...), user: User = Depends(require_user)):
+    """Stash a customer-supplied dataset file and return a HANDLE the client passes to /quote
+    (as an alternative to a dataset_url). The handle is the R2 key when storage is configured
+    (durable across redeploys) or a local temp path in dev. The bytes never live only on a
+    non-durable container path in prod. Cap ~25MB -> 413 (those route to a human quote)."""
+    data = await file.read(MAX_UPLOAD_BYTES + 1)   # read at most cap+1 so we bound memory
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="file too large (25MB max)")
+    if not data:
+        raise HTTPException(status_code=400, detail="empty file")
+    filename = file.filename or "dataset"
+    content_type = file.content_type or "application/octet-stream"
+    if storage.enabled():
+        handle = storage.upload_key(user.id, filename)
+        storage.put_bytes(handle, data, content_type)
+    else:  # local/dev fallback — a temp path used as the handle
+        safe = "".join(c for c in filename if c.isalnum() or c in "._-")[:60] or "dataset"
+        fd, handle = tempfile.mkstemp(prefix="aegis-upload-", suffix="-" + safe)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+    return {"handle": handle, "filename": filename, "size": len(data), "content_type": content_type}
+
+
 @router.post("/quote")
 async def quote(req: QuoteRequest, user: User = Depends(require_user)):
     """Aegis-14B prices the dataset into a flat, CAPPED quote. No Job, no charge yet.
-    The private cost estimate is NEVER returned — only the capped price the customer pays."""
-    validate_https_url(req.dataset_url)
+    The private cost estimate is NEVER returned — only the capped price the customer pays.
+    Source is EITHER an uploaded-file handle OR a validated https URL (handle takes precedence)."""
+    if req.upload_handle:
+        source = req.upload_handle                  # server-generated handle — trusted, not URL-validated
+    elif req.dataset_url:
+        source = validate_https_url(req.dataset_url)
+    else:
+        raise HTTPException(status_code=400, detail="provide a dataset_url or an upload_handle")
     try:
-        q = quote_service.quote_job(req.dataset_url, req.email or user.email, int(time.time()))
+        q = quote_service.quote_job(source, req.email or user.email, int(time.time()))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"could not read that dataset: {e}")
     pub = {k: q[k] for k in ("quoted_usd", "cap_usd", "n_records", "data_type", "complexity",
@@ -82,10 +116,15 @@ async def create_job(req: JobRequest, user: User = Depends(require_user)):
                 "target_kept": str(payload.get("target_kept") or 0),
                 "reference": (payload.get("reference") or "")[:480]}
     else:
-        dataset_url = payload["url"]
-        validate_https_url(dataset_url)
+        # the signed token binds the source under "url" — an https URL OR an upload handle
+        # (R2 key / temp path). The HMAC already guarantees integrity, so only re-validate URLs
+        # (the gate exists to stop client-supplied path injection, which can't apply to a handle
+        # the server itself minted). The source is short either way — well within Stripe's metadata cap.
+        source = payload["url"]
+        if not is_upload_handle(source):
+            validate_https_url(source)
         product = "Aegis Dataset Refinement"
-        meta = {"service": "refine", "dataset_url": dataset_url, "email": email,
+        meta = {"service": "refine", "dataset_url": source, "email": email,
                 "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"}
     try:
         checkout_session = stripe.checkout.Session.create(

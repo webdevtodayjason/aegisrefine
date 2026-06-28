@@ -82,6 +82,8 @@ async def stripe_webhook(request: Request, background: BackgroundTasks, db: Sess
                                   synth={"topic": meta.get("topic"), "target_kept": meta.get("target_kept"),
                                          "reference": meta.get("reference")})
         else:
+            # the SOURCE — an https URL OR an upload handle (R2 key / temp path); short either way,
+            # so it fits Stripe's ~500-char metadata limit. It becomes job.input_file_path verbatim.
             dataset_url = meta.get("dataset_url")
             if not dataset_url or not email:
                 raise HTTPException(status_code=400, detail="missing dataset_url/email in checkout session")

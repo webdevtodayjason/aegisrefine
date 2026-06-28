@@ -7,11 +7,31 @@ and ships a signed AAR on completion. Aegis-14B governs while the deterministic 
 engine produces the REAL cleaned dataset that the AAR then signs.
 """
 import os
+import json
 from sqlalchemy.orm import Session
 from app.models.job import Job
-from app.services import agent, spend_service, aar_service, budget_service, escalation
+from app.services import agent, spend_service, aar_service, budget_service, escalation, storage
 from app.services.audit import log_action
 from app.curate import engine as curate_engine
+
+
+def _persist_outputs_to_r2(db: Session, job: Job, dataset_bytes: bytes, cert: dict) -> None:
+    """R2 is the durable home for produced outputs too. Best-effort: the in-DB blob
+    (job.output_data) and the signed AuditCertificate row stay the source of truth, so an R2
+    hiccup never fails a job that already completed + signed. No-op when R2 isn't configured."""
+    if not storage.enabled():
+        return
+    try:
+        storage.put_bytes(storage.job_key(job.user_id, job.id, "dataset.jsonl"),
+                          dataset_bytes, "application/x-ndjson")
+        storage.put_bytes(storage.job_key(job.user_id, job.id, "certificate.aar.json"),
+                          json.dumps(cert).encode("utf-8"), "application/json")
+        log_action(db, job.id, "outputs_persisted_r2", "system", {"dataset_bytes": len(dataset_bytes)})
+    except Exception as e:  # never crash a completed, signed job on a storage hiccup
+        try:
+            log_action(db, job.id, "r2_persist_error", "system", {"error": str(e)[:160]})
+        except Exception:
+            pass
 
 
 def _triage_task(job: Job, sample: str) -> str:
@@ -176,5 +196,9 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
 
     job.status = "completed"
     db.commit()
-    return aar_service.issue_certificate(db, job.id, claim, output, evidence,
+    cert = aar_service.issue_certificate(db, job.id, claim, output, evidence,
                                          economics=economics, guarantees=guarantees)
+    # push the produced dataset + signed cert to R2 too (durable beyond the container fs / DB blob).
+    # Covers BOTH refine and synthesis — the synth runner completes through this same path.
+    _persist_outputs_to_r2(db, job, output or b"", cert)
+    return cert

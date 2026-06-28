@@ -15,6 +15,25 @@
   .opt.on{border-color:var(--teal-line);background:var(--teal-dim)}
   .opt.disabled{cursor:not-allowed;opacity:.55}
   .opt .ix{font-family:var(--mono);color:var(--teal);margin-right:4px}
+  /* file upload drop zone */
+  .dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;border:1.5px dashed var(--line-2);border-radius:13px;background:var(--panel-2);padding:26px 18px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
+  .dropzone:hover{border-color:var(--teal-line);background:var(--teal-dim)}
+  .dropzone.over{border-color:var(--teal);background:var(--teal-dim);box-shadow:0 0 0 3px var(--teal-dim)}
+  .dropzone.busy{cursor:progress;border-style:solid;border-color:var(--teal-line);background:var(--panel-2)}
+  .dropzone .dz-ic{font-size:22px;color:var(--teal);line-height:1}
+  .dropzone .dz-main{font-size:14px;font-weight:600;color:var(--text)}
+  .dropzone .dz-sub{font-size:11px;color:var(--muted-2);font-family:var(--mono);letter-spacing:.02em}
+  .filehl{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--teal-line);background:var(--teal-dim);border-radius:13px;padding:13px 15px}
+  .filehl .fmeta{display:flex;align-items:center;gap:11px;min-width:0}
+  .filehl .ficon{font-size:18px;color:var(--teal);flex:0 0 auto;line-height:1}
+  .filehl .fname{font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .filehl .fsize{font-size:11px;color:var(--muted-2);font-family:var(--mono);margin-top:2px}
+  .filehl .fx{flex:0 0 auto;background:transparent;border:1px solid var(--line-2);color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s}
+  .filehl .fx:hover{border-color:var(--red);color:var(--red)}
+  .urlalt summary{font-family:var(--mono);font-size:11px;color:var(--muted-2);letter-spacing:.04em;cursor:pointer;list-style:none;user-select:none;display:inline-flex;align-items:center;gap:6px}
+  .urlalt summary::-webkit-details-marker{display:none}
+  .urlalt summary:hover{color:var(--teal)}
+  .urlalt[open] summary{color:var(--text);margin-bottom:9px}
 </style>
 </head>
 <body>
@@ -97,8 +116,11 @@ let PURPOSE = null;   // only "ft" (fine-tuning) is live
 let START = null;     // "refine" | "augment" | "synth"
 let QUOTE = null;     // last quote — refine OR synth; BOTH carry a .token for /jobs
 let PENDING = null;   // action to retry after in-flow account creation (set on a 401)
+let UPLOAD = null;    // { handle, name, size } once a file is uploaded for refine/augment; null = use URL
 
 const SERVICE_LABEL = { refine: "Clean my data", augment: "Expand my data", synth: "Generate a dataset" };
+const ACCEPT = ".json,.jsonl,.csv,.tsv,.yaml,.yml,.txt,.pdf,.docx";
+const MAX_UPLOAD = 50 * 1024 * 1024;  // 50 MB client-side guard — bigger files: host + paste a URL
 
 // --- STEP 1: purpose -----------------------------------------------------------
 function pickPurpose(p){
@@ -111,6 +133,7 @@ function pickPurpose(p){
 // --- STEP 2: starting point ----------------------------------------------------
 function pickStart(s){
   START = s;
+  UPLOAD = null;   // switching starting point clears any pending upload
   document.querySelectorAll('#step2 .opt[data-start]').forEach(b=>b.classList.toggle("on", b.dataset.start===s));
   renderStartFields(s);
   resetQuote();
@@ -120,15 +143,86 @@ function field(label, inner, hint){
   return `<div><div class="label" style="margin-bottom:10px">${label}</div>${inner}${hint?`<div class="mono muted2" style="font-size:11px;margin-top:8px">${hint}</div>`:""}</div>`;
 }
 
+// drop-zone + file-picker block (refine ① / augment ②). Keeps a hidden #dataset URL input
+// inside a collapsed "or paste an https URL" details so power users / the URL flow still work.
+function uploadBlock(label, hint){
+  return `<div>
+    <div class="label" style="margin-bottom:10px">${label}</div>
+    <div id="uploadZone"></div>
+    <input id="fileInput" type="file" accept="${ACCEPT}" style="display:none" onchange="onFilePick(this.files)"/>
+    <div id="uploadErr"></div>
+    <details class="urlalt" style="margin-top:10px">
+      <summary>or paste an https URL</summary>
+      <input id="dataset" placeholder="https://…/your-dataset.jsonl"/>
+    </details>
+    ${hint?`<div class="mono muted2" style="font-size:11px;margin-top:8px">${hint}</div>`:""}
+  </div>`;
+}
+
+function fmtSize(b){
+  if(b < 1024) return b + " B";
+  if(b < 1048576) return (b/1024).toFixed(1) + " KB";
+  return (b/1048576).toFixed(1) + " MB";
+}
+
+// paint #uploadZone for the current state: "uploading", a chosen file, or the empty drop target
+function renderDrop(state){
+  const z = document.getElementById("uploadZone");
+  if(!z) return;
+  if(state === "uploading"){
+    z.innerHTML = `<div class="dropzone busy"><div class="dz-ic">⟳</div><div class="dz-main">Uploading…</div><div class="dz-sub">securing your file</div></div>`;
+    return;
+  }
+  if(UPLOAD){
+    z.innerHTML = `<div class="filehl"><div class="fmeta"><span class="ficon">⛁</span><div style="min-width:0"><div class="fname">${esc(UPLOAD.name)}</div><div class="fsize">${esc(fmtSize(UPLOAD.size))} · uploaded</div></div></div><button type="button" class="fx" title="Remove file" onclick="removeUpload()">×</button></div>`;
+    return;
+  }
+  z.innerHTML = `<div class="dropzone" onclick="document.getElementById('fileInput').click()" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)"><div class="dz-ic">⤓</div><div class="dz-main">Drop your file here, or click to choose</div><div class="dz-sub">JSON · JSONL · CSV · TSV · YAML · TXT · PDF · DOCX</div></div>`;
+}
+
+function uploadErr(m){ const e = document.getElementById("uploadErr"); if(e) e.innerHTML = m ? `<div class="err">✗ ${esc(m)}</div>` : ""; }
+function dzOver(e){ e.preventDefault(); e.currentTarget.classList.add("over"); }
+function dzLeave(e){ e.currentTarget.classList.remove("over"); }
+function dzDrop(e){ e.preventDefault(); e.currentTarget.classList.remove("over"); onFilePick(e.dataTransfer.files); }
+function removeUpload(){ UPLOAD = null; const fi = document.getElementById("fileInput"); if(fi) fi.value = ""; uploadErr(""); renderDrop(); resetQuote(); }
+
+// validate, then POST the file as multipart to /jobs/upload; store the returned {handle}
+async function onFilePick(files){
+  const f = files && files[0];
+  if(!f) return;
+  const name = f.name.toLowerCase();
+  if(!ACCEPT.split(",").some(ext => name.endsWith(ext))){
+    uploadErr("Unsupported file type. Use JSON, JSONL, CSV, TSV, YAML, TXT, PDF, or DOCX."); return;
+  }
+  if(f.size > MAX_UPLOAD){
+    uploadErr("File is over 50 MB — host it and paste an https URL instead."); return;
+  }
+  uploadErr("");
+  renderDrop("uploading");
+  try{
+    const fd = new FormData();
+    fd.append("file", f, f.name);
+    const r = await fetch("/jobs/upload", {method:"POST", credentials:"include", body: fd});
+    if(r.status === 401){ UPLOAD = null; renderDrop(); needAuth(() => onFilePick(files)); return; }
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.handle) throw new Error(d.detail || "upload failed — try again");
+    UPLOAD = {handle: d.handle, name: f.name, size: f.size};
+    renderDrop();
+    resetQuote();
+  }catch(e){
+    UPLOAD = null; renderDrop(); uploadErr(e.message || "upload failed — try again");
+  }
+}
+
 function renderStartFields(s){
   const el = document.getElementById("startFields");
   if(s === "refine"){
     el.innerHTML =
-      field("Source data (https URL)", `<input id="dataset" placeholder="https://…/your-dataset.jsonl"/>`, "Discord logs · PDFs · scraped HTML · raw JSON") +
+      uploadBlock("Source data", "Discord logs · PDFs · scraped HTML · raw JSON — upload a file or paste a URL") +
       field("Customer email", `<input id="email" value="judge@aegisrefine.com"/>`);
   } else if(s === "augment"){
     el.innerHTML =
-      field("Source data to ground on (https URL)", `<input id="dataset" placeholder="https://…/your-dataset.jsonl"/>`, "New examples are generated grounded in this dataset") +
+      uploadBlock("Source data to ground on", "New examples are generated grounded in this dataset") +
       field("What should the new examples cover?", `<input id="synthTopic" placeholder="e.g. harder multi-step variants, edge cases"/>`) +
       field("Target rows to add", `<input id="synthRows" type="number" min="1" step="1" value="100"/>`, "Aegis over-generates, then keeps only rows that pass the Δ-filter");
   } else { // synth
@@ -139,6 +233,7 @@ function renderStartFields(s){
   if(s !== "refine"){
     el.innerHTML += `<div class="card"><div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="teal">✦</span><span style="font-size:15px;font-weight:600">Synthetic · labeled · signed</span></div><p class="muted" style="font-size:13px;margin:0">Every generated row is labeled <span class="teal">synthetic</span> and ships in the same Ed25519-signed certificate, with full provenance — models, candidates, yield, real spend.</p></div>`;
   }
+  if(s === "refine" || s === "augment") renderDrop();   // paint the drop zone now that #uploadZone exists
 }
 
 function resetQuote(){
@@ -157,15 +252,18 @@ function onQuote(){
 // --- card ① CLEAN MY DATA (refine) — the existing flow, unchanged plumbing ------
 async function getQuote(){
   out().innerHTML = "";
-  const url = document.getElementById("dataset").value.trim();
+  const urlEl = document.getElementById("dataset");
+  const url = urlEl ? urlEl.value.trim() : "";
   const emailEl = document.getElementById("email");
   const email = emailEl ? emailEl.value.trim() : "";
-  if(!url){ err("Enter your dataset URL first."); return; }
+  if(!UPLOAD && !url){ err("Upload a file or paste an https URL first."); return; }
   const box = document.getElementById("quoteBox");
   box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis-14B is reading your dataset…</p>`;
   try{
+    // uploaded file → carry its R2/local handle as the source; otherwise the https URL
+    const body = UPLOAD ? {upload_handle: UPLOAD.handle, email} : {dataset_url: url, email};
     const r = await fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"include", body: JSON.stringify({dataset_url:url, email})});
+      credentials:"include", body: JSON.stringify(body)});
     if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
@@ -198,17 +296,20 @@ async function getSynthQuote(){
   const topicEl = document.getElementById("synthTopic"), rowsEl = document.getElementById("synthRows");
   const topic = topicEl ? topicEl.value.trim() : "";
   const rows  = rowsEl ? parseInt(rowsEl.value, 10) : NaN;
-  // ② augment grounds on the dataset URL; ③ generate-from-seed sends no reference
+  // ② augment grounds on the dataset (uploaded file OR URL); ③ generate-from-seed sends no reference
   const refEl = document.getElementById("dataset");
   const reference = START === "augment" ? (refEl ? refEl.value.trim() : "") : "";
-  if(START === "augment" && !reference){ err("Enter the dataset URL to ground on."); return; }
+  if(START === "augment" && !UPLOAD && !reference){ err("Upload a file or paste the https URL to ground on."); return; }
   if(!topic){ err(START === "augment" ? "Describe what the new examples should cover." : "Enter a topic / domain to generate."); return; }
   if(!rows || rows < 1){ err(`Enter how many rows to ${START === "augment" ? "add" : "keep"} (1 or more).`); return; }
   const box = document.getElementById("quoteBox");
   box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis is pricing your job…</p>`;
   try{
+    // augment with an uploaded file carries the handle; otherwise the URL reference (synth sends neither)
+    const body = {topic, target_kept: rows, reference};
+    if(START === "augment" && UPLOAD){ body.upload_handle = UPLOAD.handle; body.reference = ""; }
     const r = await fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"include", body: JSON.stringify({topic, target_kept: rows, reference})});
+      credentials:"include", body: JSON.stringify(body)});
     if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getSynthQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that job");

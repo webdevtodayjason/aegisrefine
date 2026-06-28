@@ -28,6 +28,15 @@ Base.metadata.create_all(bind=engine)
 _seq = {"n": 0}
 
 
+@pytest.fixture(autouse=True)
+def _storage_off(monkeypatch):
+    """Tests must NEVER touch real R2 (creds may be present in the dev shell). Default object
+    storage to disabled so completing-job tests don't write to the live bucket; tests that
+    exercise the R2 path opt in by monkeypatching storage.enabled()->True + stubbing put_bytes."""
+    from app.services import storage
+    monkeypatch.setattr(storage, "enabled", lambda: False)
+
+
 @pytest.fixture()
 def db():
     s = SessionLocal()

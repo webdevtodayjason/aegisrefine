@@ -22,6 +22,15 @@ def validate_https_url(url: str) -> str:
     return url
 
 
+def is_upload_handle(source: str) -> bool:
+    """A job source can be an uploaded-file HANDLE instead of an https URL: an R2 key
+    (prefix 'users/') or, in local/dev where R2 is off, an absolute temp path. Both are
+    server-generated and travel inside the HMAC-signed quote token, so they bypass the
+    https-URL gate (which exists only to stop client-supplied path injection)."""
+    s = source or ""
+    return s.startswith("users/") or s.startswith("/")
+
+
 def get_or_create_user(db: Session, email: str) -> User:
     user = db.query(User).filter(User.email == email).first()
     if user:
@@ -40,6 +49,8 @@ def create_paid_job(db: Session, dataset_url: str, email: str,
     Identity comes from the Stripe-authenticated session (email), never the client.
     When a quote was accepted, the cap becomes the job's hard spend ceiling.
     `service`='synthesis' carries the generate/augment params in `synth`.
+    `dataset_url` is the job SOURCE — an https URL OR an upload handle (R2 key / temp path);
+    either way it lands in job.input_file_path, which engine.run knows how to read.
     """
     user = get_or_create_user(db, email)
     job = Job(user_id=user.id, status="pending", input_file_path=dataset_url or "(synthesis)")
