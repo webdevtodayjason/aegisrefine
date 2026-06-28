@@ -9,7 +9,7 @@ engine produces the REAL cleaned dataset that the AAR then signs.
 import os
 from sqlalchemy.orm import Session
 from app.models.job import Job
-from app.services import agent, spend_service, aar_service
+from app.services import agent, spend_service, aar_service, budget_service, escalation
 from app.services.audit import log_action
 from app.curate import engine as curate_engine
 
@@ -46,6 +46,28 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
     log_action(db, job.id, "quality", "agent",
                {"quality_score": quality.get("quality_score"), "noise_level": quality.get("noise_level")})
     summary["quality"] = quality
+
+    # real paid escalation — agent reaches off free local Aegis-14B ONLY when it flags a hard
+    # evaluation AND a provider key exists AND there's a cap to spend against. No key -> stays local.
+    try:
+        qs = float(quality.get("quality_score") or 1)
+        qs = qs / 10 if qs > 1 else qs
+        hard = (not triage.get("can_run_locally", True)) or qs < 0.6
+        if hard and escalation.available() and job.approved_cap:
+            prov = escalation.available()[0]
+            decision, ticket = budget_service.request_spend(
+                db, job, provider=prov, units=escalation.estimate_cost(prov),
+                reason="hard evaluation: escalate to a more capable model",
+                capability="inference", source=escalation.source(prov))
+            if decision != "gated":
+                res = escalation.escalate([{"role": "user", "content": _quality_task(sample)}])
+                if res:
+                    spend_service.execute_spend_ticket(db, ticket.id, actual_amount=res["cost_usd"])
+                    log_action(db, job.id, "escalated_inference", "agent",
+                               {"provider": res["provider"], "model": res["model"], "cost_usd": res["cost_usd"]})
+                    summary["escalation"] = {"provider": res["provider"], "cost_usd": res["cost_usd"]}
+    except Exception as e:  # a provider hiccup must never crash the job
+        summary["escalation_error"] = str(e)[:200]
 
     job.status = "processing"
     db.commit()
