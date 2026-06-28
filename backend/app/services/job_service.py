@@ -33,14 +33,25 @@ def get_or_create_user(db: Session, email: str) -> User:
     return user
 
 
-def create_paid_job(db: Session, dataset_url: str, email: str) -> Job:
+def create_paid_job(db: Session, dataset_url: str, email: str,
+                    quote_amount: float | None = None, target_margin_pct: float = 0.65) -> Job:
     """Create the Job for a completed payment and record it on the audit trail.
     Identity comes from the Stripe-authenticated session (email), never the client.
+    When a quote was accepted, the cap becomes the job's hard spend ceiling.
     """
     user = get_or_create_user(db, email)
     job = Job(user_id=user.id, status="pending", input_file_path=dataset_url)
+    if quote_amount is not None:
+        from datetime import datetime, timezone
+        job.quote_amount = quote_amount
+        job.approved_cap = quote_amount
+        job.revenue_collected = quote_amount
+        job.quote_status = "accepted"
+        job.target_margin_pct = target_margin_pct
+        job.quote_accepted_at = datetime.now(timezone.utc)
     db.add(job)
     db.commit()
     db.refresh(job)
-    log_action(db, job.id, "job_created", "system", {"dataset_url": dataset_url, "email": email})
+    log_action(db, job.id, "job_created", "system",
+               {"dataset_url": dataset_url, "email": email, "quote_amount": quote_amount})
     return job

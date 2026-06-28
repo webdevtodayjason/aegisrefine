@@ -7,43 +7,65 @@ from app.models.spend_ticket import SpendTicket
 from app.models.audit_certificate import AuditCertificate
 from app.services.job_service import validate_https_url
 from app.services.auth import require_user
+from app.services import quote_service
 from app.models.user import User
 import stripe
 import os
+import time
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 
-class JobRequest(BaseModel):
+class QuoteRequest(BaseModel):
     dataset_url: str
-    email: str
+    email: str | None = None
+
+
+class JobRequest(BaseModel):
+    quote_token: str
+
+
+@router.post("/quote")
+async def quote(req: QuoteRequest, user: User = Depends(require_user)):
+    """Aegis-14B prices the dataset into a flat, CAPPED quote. No Job, no charge yet.
+    The private cost estimate is NEVER returned — only the capped price the customer pays."""
+    validate_https_url(req.dataset_url)
+    try:
+        q = quote_service.quote_job(req.dataset_url, req.email or user.email, int(time.time()))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"could not read that dataset: {e}")
+    pub = {k: q[k] for k in ("quoted_usd", "cap_usd", "n_records", "data_type", "complexity",
+                             "complexity_scored_by", "target_margin_pct", "requires_human_quote")}
+    if not q["requires_human_quote"]:
+        pub["token"] = q["token"]
+    return pub
 
 
 @router.post("/")
 async def create_job(req: JobRequest, user: User = Depends(require_user)):
-    """Start a refinement order: validate the dataset URL and open a Stripe Checkout.
-    No Job is created here and no client user_id is accepted — the Job is created by the
-    webhook AFTER payment, with identity taken from the Stripe-authenticated session.
-    """
-    validate_https_url(req.dataset_url)
+    """Accept a signed quote and open a Stripe Checkout for EXACTLY the capped amount.
+    No Job is created here — the webhook creates it AFTER payment (identity from Stripe)."""
+    payload = quote_service.verify_quote_token(req.quote_token, int(time.time()))
+    if not payload:
+        raise HTTPException(status_code=400, detail="quote expired or invalid — please re-quote")
+    quoted = float(payload["q"])
+    dataset_url, email = payload["url"], payload["email"]
+    validate_https_url(dataset_url)
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {"name": "Aegis Dataset Refinement"},
-                    "unit_amount": 2000,  # $20.00
-                },
-                "quantity": 1,
-            }],
+            line_items=[{"price_data": {"currency": "usd",
+                                        "product_data": {"name": "Aegis Dataset Refinement"},
+                                        "unit_amount": int(round(quoted * 100))},  # the HARD cap
+                         "quantity": 1}],
             mode="payment",
-            customer_email=req.email,
-            success_url="https://aegisrefine.com/jobs?success=true",
-            cancel_url="https://aegisrefine.com/new-order?canceled=true",
-            metadata={"dataset_url": req.dataset_url, "email": req.email},
+            customer_email=email,
+            success_url="https://aegisrefine.com/dashboard.html?paid=1",
+            cancel_url="https://aegisrefine.com/new-order.html?canceled=1",
+            metadata={"dataset_url": dataset_url, "email": email,
+                      "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"},
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
