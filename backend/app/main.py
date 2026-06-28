@@ -219,6 +219,16 @@ async def debug_reach(k: str = ""):
         except Exception as e:
             info.update({"error": type(e).__name__ + ": " + str(e)[:140], "secs": round(_t.time() - t0, 1)})
         out[name] = info
+    # also exercise the ACTUAL synth code path (the escalation adapter) for the grok roles
+    try:
+        from app.services import escalation
+        for m in ("grok-3-mini", "grok-3"):
+            t0 = _t.time()
+            r = escalation.escalate([{"role": "user", "content": "hi"}], model=m, max_tokens=5)
+            out["escalate_" + m] = {"ok": bool(r), "secs": round(_t.time() - t0, 1),
+                                    "cost": r.get("cost_usd") if r else None}
+    except Exception as e:
+        out["escalate_error"] = type(e).__name__ + ": " + str(e)[:160]
     return out
 
 
