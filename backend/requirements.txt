@@ -8,3 +8,7 @@ python-dotenv
 python-multipart
 alembic
 openai
+boto3
+pyyaml
+pdfplumber
+python-docx
