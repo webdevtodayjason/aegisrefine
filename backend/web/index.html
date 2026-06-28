@@ -15,6 +15,10 @@
   @keyframes ag-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
   @keyframes ag-blink{0%,100%{opacity:1}50%{opacity:.2}}
   @keyframes ag-ring{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+  /* hero: layers float down and assemble the stack on load (bottom plane lands first) */
+  @keyframes ag-build0{from{transform:translateZ(150px);opacity:0}to{transform:translateZ(0);opacity:1}}
+  @keyframes ag-build1{from{transform:translateZ(200px);opacity:0}to{transform:translateZ(48px);opacity:1}}
+  @keyframes ag-build2{from{transform:translateZ(250px);opacity:0}to{transform:translateZ(96px);opacity:1}}
   .lp{position:relative;min-height:100vh;overflow-x:hidden;background:var(--bg)}
   .lp a{transition:color .15s}
   .lp-fx1{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('assets/grid-texture.png');background-size:cover;background-position:center;opacity:.10}
@@ -63,8 +67,8 @@
         <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:ag-pulse 2s infinite"></span>
         <span class="mono muted" style="font-size:11.5px;letter-spacing:.16em;white-space:nowrap">REFINE + SYNTHESIZE · FLAT CAPPED QUOTE · SIGNED PROOF</span>
       </div>
-      <h1 style="font-size:clamp(40px,5.6vw,72px);line-height:1.03;font-weight:500;letter-spacing:-.02em;margin:0 0 22px">Your messy data.<br><span class="teal">A clean training set + signed proof — one flat price, quoted up front and capped.</span></h1>
-      <p class="muted" style="font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:540px;margin:0 0 32px">Give us your data in any format — Discord logs, PDFs, scraped HTML — and get back a clean ShareGPT / ChatML dataset. Or hand us a topic and we'll <span style="color:var(--text)">generate</span> new training examples. You see a flat, capped price before any work starts. Accept it, and the agent runs autonomously within that budget on NVIDIA DGX Spark, then hands you the dataset and a certificate you can re-verify. You're only pinged if a job would exceed the cap you approved.</p>
+      <h1 style="font-size:clamp(44px,6vw,78px);line-height:1.02;font-weight:500;letter-spacing:-.02em;margin:0 0 22px">Messy data in.<br><span class="teal">Signed training data out.</span></h1>
+      <p class="muted" style="font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:500px;margin:0 0 32px">Refine your data or synthesize new examples — one flat price, quoted up front and capped, with a certificate you can re-verify.</p>
       <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:40px">
         <a class="lp-cta" href="new-order.html" style="font-size:15px;padding:13px 22px">Get my quote &nbsp;→</a>
         <a class="lp-ghost" href="certificate.html" style="font-size:15px;padding:13px 22px">See a live certificate</a>
@@ -81,11 +85,11 @@
     <div class="lp-hud" style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center">
       <div style="position:absolute;width:280px;height:280px;border-radius:50%;border:1px solid rgba(0,229,204,.12);animation:ag-pulse 4s infinite"></div>
       <div style="position:absolute;width:360px;height:360px;border-radius:50%;border:1px solid rgba(0,229,204,.07)"></div>
-      <div style="perspective:1100px;animation:ag-float 6s ease-in-out infinite">
+      <div style="perspective:1100px;animation:ag-float 6s ease-in-out 2s infinite">
         <div style="transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(45deg);position:relative;width:200px;height:200px">
-          <div style="position:absolute;inset:0;transform:translateZ(0px);border:1px solid rgba(0,229,204,.35);background:rgba(0,229,204,.04);background-image:linear-gradient(rgba(0,229,204,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.18) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 30px rgba(0,229,204,.15)"></div>
-          <div style="position:absolute;inset:0;transform:translateZ(48px);border:1px solid rgba(0,229,204,.55);background:rgba(0,229,204,.07);background-image:linear-gradient(rgba(0,229,204,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.22) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 40px rgba(0,229,204,.25)"></div>
-          <div style="position:absolute;inset:0;transform:translateZ(96px);border:1px solid rgba(0,229,204,.9);background:rgba(0,229,204,.10);background-image:linear-gradient(rgba(0,229,204,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.3) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 60px rgba(0,229,204,.4)">
+          <div style="position:absolute;inset:0;animation:ag-build0 .8s cubic-bezier(.2,.75,.25,1) .15s both;transform:translateZ(0px);border:1px solid rgba(0,229,204,.35);background:rgba(0,229,204,.04);background-image:linear-gradient(rgba(0,229,204,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.18) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 30px rgba(0,229,204,.15)"></div>
+          <div style="position:absolute;inset:0;animation:ag-build1 .8s cubic-bezier(.2,.75,.25,1) .5s both;transform:translateZ(48px);border:1px solid rgba(0,229,204,.55);background:rgba(0,229,204,.07);background-image:linear-gradient(rgba(0,229,204,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.22) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 40px rgba(0,229,204,.25)"></div>
+          <div style="position:absolute;inset:0;animation:ag-build2 .8s cubic-bezier(.2,.75,.25,1) .85s both;transform:translateZ(96px);border:1px solid rgba(0,229,204,.9);background:rgba(0,229,204,.10);background-image:linear-gradient(rgba(0,229,204,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.3) 1px,transparent 1px);background-size:25px 25px;box-shadow:0 0 60px rgba(0,229,204,.4)">
             <div style="position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--teal);box-shadow:0 0 24px 6px rgba(0,229,204,.8);animation:ag-pulse 2.2s infinite"></div>
           </div>
         </div>
