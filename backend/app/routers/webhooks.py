@@ -1,10 +1,29 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.job_service import create_paid_job
 import stripe
 import json
 import os
+
+
+def _auto_run_job(job_id: int):
+    """Payment kicks off the whole pipeline by itself — the autonomous business: the agent
+    curates the dataset and signs its certificate without a human in the loop."""
+    from app.database import SessionLocal
+    from app.models.job import Job
+    from app.services import refinery
+    db = SessionLocal()
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if not job:
+            return
+        refinery.process_job(db, job, sample="auto-run on payment")
+        refinery.complete_job(db, job)
+    except Exception:
+        pass  # the job stays at its last good state; governance/curation log the reason
+    finally:
+        db.close()
 
 try:
     from stripe import SignatureVerificationError
@@ -17,7 +36,7 @@ WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 
 @router.post("/stripe")
-async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+async def stripe_webhook(request: Request, background: BackgroundTasks, db: Session = Depends(get_db)):
     """Stripe-authenticated entry point. A verified checkout.session.completed is the
     ONLY thing that creates a Job — payment, not the client, drives job creation."""
     payload = await request.body()
@@ -43,6 +62,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="amount_total does not match the quoted cap")
         job = create_paid_job(db, dataset_url, email, quote_amount=quoted,
                               target_margin_pct=float(meta.get("target_margin_pct") or 0.65))
+        background.add_task(_auto_run_job, job.id)   # pay -> the agent runs the pipeline itself
         return {"received": True, "job_id": job.id}
 
     return {"received": True}
