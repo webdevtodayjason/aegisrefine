@@ -101,11 +101,11 @@
               <span class="mono" id="delivStatus" style="font-size:11px;color:var(--muted-2)">LOCKED UNTIL COMPLETE</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:10px">
-              <div class="deliv" id="delivData" style="opacity:.45">
+              <a class="deliv" id="delivData" href="#" style="opacity:.45">
                 <span class="ico">▤</span>
                 <div style="flex:1"><div style="font-size:14px;font-weight:500">Refined dataset</div><div class="mono muted2" id="delivDataMeta" style="font-size:11px">awaiting completion</div></div>
                 <span class="mono" id="delivDataChip" style="font-size:11px;color:var(--muted-3);padding:7px 13px;border-radius:6px;border:1px solid var(--line-2)">⛒ LOCKED</span>
-              </div>
+              </a>
               <a class="deliv" id="delivCert" href="#" style="opacity:.45">
                 <span class="ico">⛉</span>
                 <div style="flex:1"><div style="font-size:14px;font-weight:500">Signed AAR certificate</div><div class="mono muted2" id="delivCertMeta" style="font-size:11px">awaiting completion</div></div>
@@ -113,6 +113,9 @@
               </a>
             </div>
           </div>
+
+          <!-- SIGNED CERTIFICATE (economics + guarantees + synthesis provenance) — appears when completed -->
+          <div id="certWrap" style="display:flex;flex-direction:column;gap:20px"></div>
 
           <!-- ACTIVITY / AUDIT TRAIL -->
           <div class="card">
@@ -167,6 +170,10 @@ const num = n => Number(n).toLocaleString("en-US");
 const tokens = n => { n = Number(n) || 0; return n >= 1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"") + "M" : num(n); };
 const hhmmss = iso => { try { return new Date(iso).toLocaleTimeString("en-US",{hour12:false}); } catch { return "--:--:--"; } };
 const errBox = (el, e) => el.innerHTML = `<div class="err">✗ ${esc(e && e.message ? e.message : e)}</div>`;
+// usd: show sub-cent real spend honestly (up to 6dp), else 2dp
+const usd = n => { n = Number(n) || 0; return (n > 0 && n < 0.01) ? "$" + n.toFixed(6).replace(/0+$/,"").replace(/\.$/,"") : "$" + n.toFixed(2); };
+const shortSig = s => { s = String(s || ""); return s.length > 22 ? s.slice(0,12) + "…" + s.slice(-6) : (s || "—"); };
+let AAR_CACHE = null;
 
 // gate / status theming -------------------------------------------------------
 const THEME = {
@@ -192,6 +199,7 @@ async function load() {
     JOB = await Aegis.getJob(JOB_ID);
     render(JOB);
     loadActivity();
+    loadCert();
   } catch (e) {
     $("title").textContent = "Job not found";
     $("subtitle").innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
@@ -339,8 +347,15 @@ function renderDeliverables(job, completed, cert) {
 
   const data = $("delivData"), dataChip = $("delivDataChip");
   data.style.opacity = completed ? "1" : ".45";
-  $("delivDataMeta").textContent = completed ? "refined · ChatML JSONL" : "awaiting completion";
-  if (completed) { dataChip.textContent = "↓ DOWNLOAD"; dataChip.style.color = "var(--teal)"; dataChip.style.borderColor = "var(--teal-line)"; }
+  $("delivDataMeta").textContent = completed ? "refined · JSONL" : "awaiting completion";
+  if (completed) {
+    data.href = `/jobs/${job.id}/download`;
+    data.setAttribute("download", "");
+    dataChip.textContent = "↓ DOWNLOAD"; dataChip.style.color = "var(--teal)"; dataChip.style.borderColor = "var(--teal-line)";
+  } else {
+    data.href = "#";
+    data.removeAttribute("download");
+  }
 
   const certEl = $("delivCert"), certChip = $("delivCertChip");
   certEl.style.opacity = ready ? "1" : ".45";
@@ -398,6 +413,7 @@ async function runAegis() {
     JOB = await Aegis.getJob(JOB_ID);
     render(JOB);
     loadActivity();
+    loadCert();
   } catch (e) {
     errBox(out, e);
   } finally {
@@ -503,6 +519,124 @@ async function loadActivity() {
     }).join("");
   } catch (e) {
     el.innerHTML = `<div class="err">✗ ${esc(e.message || e)}</div>`;
+  }
+}
+
+// ---- SIGNED CERTIFICATE (economics + guarantees + synthesis provenance) ------
+async function loadCert() {
+  const wrap = $("certWrap");
+  if (!wrap) return;
+  if (!JOB || JOB.status !== "completed" || !JOB.certificate) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `<div class="card"><div class="mono muted2" style="display:flex;align-items:center;gap:10px;font-size:12.5px"><span class="spinner" style="width:18px;height:18px;border-width:2px"></span> Loading signed certificate…</div></div>`;
+  try {
+    AAR_CACHE = await Aegis.aar(JOB_ID);
+    renderCertCard(AAR_CACHE);
+  } catch (e) {
+    wrap.innerHTML = `<div class="card"><div class="err">✗ ${esc(e.message || e)}</div></div>`;
+  }
+}
+
+function renderCertCard(aar) {
+  const ec = aar.economics || {};
+  const g = aar.guarantees || {};
+  const syn = g.synthesis || null;
+  const sig = aar.sig || {};
+  const capOk = ec.cap_respected !== false;
+  const verified = String(aar.verdict || "").toLowerCase() === "verified";
+
+  let synBlock = "";
+  if (syn) {
+    const m = syn.models || {};
+    const byModel = (syn.by_model_usd && typeof syn.by_model_usd === "object")
+      ? Object.entries(syn.by_model_usd).map(([k, v]) => `<div class="kv"><span class="k">${esc(k)}</span><span class="v amber">${usd(v)}</span></div>`).join("")
+      : "";
+    const modelRows = ["challenger", "weak", "strong", "judge"]
+      .filter(k => m[k]).map(k => `<div class="kv"><span class="k">${k[0].toUpperCase() + k.slice(1)}</span><span class="v">${esc(m[k])}</span></div>`).join("");
+    synBlock = `
+      <div style="margin-top:18px">
+        <div class="label" style="margin-bottom:10px">SYNTHETIC PROVENANCE</div>
+        <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+          <div class="kv"><span class="k">Method</span><span class="v" style="max-width:62%;text-align:right">${esc(syn.method || "—")}</span></div>
+          ${syn.mode ? `<div class="kv"><span class="k">Mode</span><span class="v teal">${esc(syn.mode)}</span></div>` : ""}
+          <div class="kv"><span class="k">Candidates generated</span><span class="v">${num(syn.candidates_generated || 0)}</span></div>
+          <div class="kv"><span class="k">Kept synthetic</span><span class="v green">${num(syn.kept_synthetic || 0)}</span></div>
+          <div class="kv"><span class="k">Yield</span><span class="v teal">${syn.yield_pct != null ? syn.yield_pct + "%" : "—"}</span></div>
+          <div class="kv"><span class="k">Real vs synthetic rows</span><span class="v">${num(syn.real_rows || 0)} real · ${num(syn.synthetic_rows || 0)} synthetic</span></div>
+          <div class="kv"><span class="k">Synthesis spend</span><span class="v amber">${usd(syn.spent_usd)}</span></div>
+        </div>
+        ${modelRows ? `<div style="margin-top:10px"><div class="label" style="margin-bottom:8px">MODELS</div><div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">${modelRows}</div></div>` : ""}
+        ${byModel ? `<div style="margin-top:10px"><div class="label" style="margin-bottom:8px">COST BY MODEL</div><div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">${byModel}</div></div>` : ""}
+        ${syn.labeled_synthetic ? `<div class="mono muted2" style="margin-top:12px;font-size:11px"><span class="green">✓</span> Every row labeled synthetic · provenance signed</div>` : ""}
+      </div>`;
+  }
+
+  $("certWrap").innerHTML = `
+  <div class="card rise">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:9px"><span class="teal">⛉</span><h2 style="font-size:16px;font-weight:600;margin:0">Signed AAR certificate</h2></div>
+      <span class="pill ${verified ? "ok" : "warn"}">${esc(String(aar.verdict || "issued").toUpperCase())}</span>
+    </div>
+    <p class="muted" style="font-size:13px;margin:0 0 16px">The agent's audited books + re-checkable data guarantees, Ed25519-signed.${syn ? ' This job <span class="teal">synthesized</span> data — provenance below.' : ""}</p>
+
+    <div class="label" style="margin-bottom:10px">ECONOMICS</div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      <div class="kv"><span class="k">Quoted (capped)</span><span class="v green">${usd(ec.quoted_usd)}</span></div>
+      <div class="kv"><span class="k">Real spend</span><span class="v amber">${usd(ec.spent_usd)}</span></div>
+      <div class="kv"><span class="k">Margin</span><span class="v teal">${usd(ec.margin_usd)}</span></div>
+      <div class="kv"><span class="k">Cap respected</span><span class="v ${capOk ? "green" : "amber"}">${capOk ? "✓ yes" : "✗ no"}</span></div>
+    </div>
+
+    <div class="label" style="margin:18px 0 10px">GUARANTEES</div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      <div class="kv"><span class="k">Rows</span><span class="v">${num(g.rows || 0)}</span></div>
+      <div class="kv"><span class="k">PII residual</span><span class="v ${g.pii_residual === 0 ? "green" : "amber"}">${num(g.pii_residual || 0)}</span></div>
+      <div class="kv"><span class="k">Dupes residual</span><span class="v ${g.dupes_residual === 0 ? "green" : "amber"}">${num(g.dupes_residual || 0)}</span></div>
+      <div class="kv"><span class="k">Schema valid</span><span class="v ${g.schema_valid ? "green" : "amber"}">${g.schema_valid ? "✓ valid" : "✗ invalid"}</span></div>
+    </div>
+
+    ${synBlock}
+
+    <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:8px;background:var(--panel-3);border:1px solid var(--line)">
+      <span class="mono muted2" style="font-size:11px">SIGNATURE</span>
+      <span class="mono teal" style="font-size:11px" title="${esc(sig.value || "")}">${esc(sig.alg || "—")} · ${esc(shortSig(sig.value))}</span>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="reverifyBtn" style="flex:2" onclick="reverify()">⛉ &nbsp;Re-verify →</button>
+      <a class="btn ghost" href="certificate.html?job=${esc(String(JOB_ID))}" style="flex:1;text-decoration:none;white-space:nowrap">Full certificate ↗</a>
+    </div>
+    <div id="reverifyOut" style="margin-top:14px"></div>
+  </div>`;
+}
+
+async function reverify() {
+  const btn = $("reverifyBtn"), box = $("reverifyOut");
+  if (btn) btn.disabled = true;
+  box.innerHTML = `<div class="mono teal" style="display:flex;align-items:center;gap:10px;font-size:12.5px"><span class="spinner" style="width:18px;height:18px;border-width:2px"></span> Re-running signature + data guarantees…</div>`;
+  try {
+    const v = await Aegis.verify(JOB_ID);
+    const rc = v.guarantees_recheck || {};
+    const sigOk = v.ok && v.level !== "FAIL";
+    const dataOk = rc.ok !== false;
+    const ok = sigOk && dataOk;
+    const c = ok ? "var(--green)" : "var(--red)";
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:${ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)"};border:1px solid ${ok ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"};color:${c}">${ok ? "✓" : "✗"}</span>
+        <div>
+          <div style="font-size:15px;font-weight:600">${ok ? "Re-verified against reality" : "Verification failed"}</div>
+          <span class="pill ${sigOk ? "ok" : "bad"}">CONFORMANCE ${esc(v.level || "FAIL")}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+        <div class="kv"><span class="k">Signature ok</span><span class="v ${sigOk ? "green" : "amber"}">${sigOk ? "✓ yes" : "✗ no"}</span></div>
+        <div class="kv"><span class="k">Rows</span><span class="v">${rc.rows != null ? num(rc.rows) : "—"}</span></div>
+        <div class="kv"><span class="k">PII residual</span><span class="v ${rc.pii_residual === 0 ? "green" : "amber"}">${rc.pii_residual != null ? num(rc.pii_residual) : "—"}</span></div>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<div class="err">✗ ${esc(e.message || e)}</div>`;
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 </script>
