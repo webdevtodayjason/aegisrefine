@@ -53,14 +53,14 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
         qs = float(quality.get("quality_score") or 1)
         qs = qs / 10 if qs > 1 else qs
         hard = (not triage.get("can_run_locally", True)) or qs < 0.6
-        if hard and escalation.available() and job.approved_cap:
-            prov = escalation.available()[0]
+        model = escalation.pick_model("hard/reasoning") if (hard and job.approved_cap) else None
+        if model:
             decision, ticket = budget_service.request_spend(
-                db, job, provider=prov, units=escalation.estimate_cost(prov),
+                db, job, provider=model, units=escalation.estimate_cost(model),
                 reason="hard evaluation: escalate to a more capable model",
-                capability="inference", source=escalation.source(prov))
+                capability="inference", source=escalation.source(model))
             if decision != "gated":
-                res = escalation.escalate([{"role": "user", "content": _quality_task(sample)}])
+                res = escalation.escalate([{"role": "user", "content": _quality_task(sample)}], model=model)
                 if res:
                     spend_service.execute_spend_ticket(db, ticket.id, actual_amount=res["cost_usd"])
                     log_action(db, job.id, "escalated_inference", "agent",
