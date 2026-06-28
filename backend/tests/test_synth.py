@@ -43,3 +43,19 @@ def test_budget_cap_halts_the_loop():
     # overshoot by up to one batch — bounded, never runaway. The caller passes a buffered cap_usd
     # (below the job's hard cap) so the cert's cap_respected stays true.
     assert r["cap_hit"] and r["kept_count"] < 100 and r["spent_usd"] < 0.25
+
+
+def test_synth_runner_signs_provenance_cert(db, user):
+    import os
+    from app.models.job import Job
+    from app.synth.runner import run_synth_job
+    job = Job(user_id=user.id, status="processing", input_file_path="none", quote_amount=55.0,
+              approved_cap=20.0, revenue_collected=55.0, target_margin_pct=0.65)
+    db.add(job); db.commit(); db.refresh(job)
+    cert = run_synth_job(db, job, topic="geo", target_kept=2, _call=_mock())
+    assert os.path.exists(job.output_file_path)                       # labeled-synthetic JSONL written
+    g = cert["guarantees"]["synthesis"]
+    assert g["kept_synthetic"] == 2 and g["labeled_synthetic"] is True and g["spent_usd"] > 0
+    assert cert["guarantees"]["pii_residual"] == 0                    # synth output is PII-checked too
+    assert cert["economics"]["spent_usd"] > 0 and cert["economics"]["cap_respected"] is True
+    assert cert["sig"]["alg"] == "Ed25519"

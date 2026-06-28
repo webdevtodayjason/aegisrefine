@@ -117,11 +117,13 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
     return summary
 
 
-def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str | None = None) -> dict:
-    """Issue the signed AAR over the REAL curated output.
+def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str | None = None,
+                 provenance: dict | None = None) -> dict:
+    """Issue the signed AAR over the REAL produced output (curated OR synthesized).
 
     Prefers the bytes the engine produced (job.output_file_path); the client-supplied `output`
-    is only a transitional fallback. The claim carries real, re-checkable numbers.
+    is only a transitional fallback. `provenance` (synthesis stats) is merged into the cert's
+    guarantees. The claim carries real, re-checkable numbers.
     """
     from app.services import budget_service
     out_path = getattr(job, "output_file_path", None)
@@ -165,6 +167,9 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
             "providers": providers,
         }
         job.actual_cost = round(spent, 6)
+
+    if provenance:
+        guarantees = {**(guarantees or {}), "synthesis": provenance}
 
     job.status = "completed"
     db.commit()
