@@ -102,10 +102,12 @@ def issue_certificate(db: Session, job_id: int, claim: str, output: bytes, reaso
     cap_respected is an ISSUANCE PRECONDITION — we refuse to sign a job that overspent its cap."""
     if economics and not economics.get("cap_respected", True):
         raise ValueError(f"refusing to sign job {job_id}: spent ${economics.get('spent_usd')} exceeds cap ${economics.get('cap_usd')}")
+    import json as _json
     record = build_aar(job_id, claim, output, reason, economics, guarantees)
     cert_path = CERTS_DIR / f"job-{job_id}.aar.json"
     signed = sign_record(record, cert_path)
-    cert = AuditCertificate(job_id=job_id, json_path=str(cert_path), signature=signed["sig"]["value"])
+    cert = AuditCertificate(job_id=job_id, json_path=str(cert_path), signature=signed["sig"]["value"],
+                            content=_json.dumps(signed))
     db.add(cert)
     db.commit()
     db.refresh(cert)

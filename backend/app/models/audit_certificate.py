@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from ..database import Base
 
@@ -10,4 +10,5 @@ class AuditCertificate(Base):
     json_path = Column(String)
     pdf_path = Column(String)
     signature = Column(String)   # detached signature over the AAR (hex/base64)
+    content = Column(Text)       # the full signed AAR JSON, persisted so /aar survives redeploys
     created_at = Column(DateTime(timezone=True), server_default=func.now())

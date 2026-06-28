@@ -19,9 +19,11 @@ async def get_job_aar(job_id: int, db: Session = Depends(get_db)):
         .order_by(AuditCertificate.id.desc())
         .first()
     )
-    if not cert or not Path(cert.json_path).exists():
-        raise HTTPException(status_code=404, detail="no certificate for this job")
-    return JSONResponse(content=json.loads(Path(cert.json_path).read_text()))
+    if cert and cert.content:                       # DB copy survives redeploys
+        return JSONResponse(content=json.loads(cert.content))
+    if cert and cert.json_path and Path(cert.json_path).exists():
+        return JSONResponse(content=json.loads(Path(cert.json_path).read_text()))
+    raise HTTPException(status_code=404, detail="no certificate for this job")
 
 
 @router.get("/.well-known/did.json")

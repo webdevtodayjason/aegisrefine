@@ -143,6 +143,9 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
         claim = claim or f"refined job {job.id} into clean training data"
         evidence = "refinement governed by Aegis-14B; output hash committed as evidence"
 
+    # persist the produced dataset IN-DB so download + re-verify survive container redeploys
+    job.output_data = (output or b"").decode("utf-8", "replace")
+
     # the agent's audited books for this job (the leaderboard's per-job P&L)
     economics = None
     if job.quote_amount is not None:

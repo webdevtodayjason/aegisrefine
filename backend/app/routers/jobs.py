@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -140,9 +140,12 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
 
 @router.get("/{job_id}/download")
 async def download_dataset(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    """Download the produced dataset JSONL (refined OR synthesized)."""
+    """Download the produced dataset JSONL (refined OR synthesized) — from the in-DB copy."""
     j = db.query(Job).filter(Job.id == job_id).first()
-    if not j or not j.output_file_path or not os.path.exists(j.output_file_path):
-        raise HTTPException(status_code=404, detail="no dataset output yet")
-    return FileResponse(j.output_file_path, media_type="application/x-ndjson",
-                        filename=f"aegis-dataset-{job_id}.jsonl")
+    headers = {"Content-Disposition": f'attachment; filename="aegis-dataset-{job_id}.jsonl"'}
+    if j and j.output_data:                          # DB copy survives redeploys
+        return Response(content=j.output_data, media_type="application/x-ndjson", headers=headers)
+    if j and j.output_file_path and os.path.exists(j.output_file_path):
+        return FileResponse(j.output_file_path, media_type="application/x-ndjson",
+                            filename=f"aegis-dataset-{job_id}.jsonl")
+    raise HTTPException(status_code=404, detail="no dataset output yet")

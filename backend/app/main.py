@@ -32,11 +32,13 @@ _REQUIRED_COLUMNS = {
              ("requires_human_quote", "BOOLEAN DEFAULT false"),
              ("quote_accepted_at", "TIMESTAMPTZ"),
              ("service", "VARCHAR DEFAULT 'refine'"), ("synth_topic", "VARCHAR"),
-             ("synth_target_kept", "INTEGER"), ("synth_reference", "VARCHAR")],
+             ("synth_target_kept", "INTEGER"), ("synth_reference", "VARCHAR"),
+             ("output_data", "TEXT")],
     "spend_tickets": [("kind", "VARCHAR DEFAULT 'gated'"), ("gate_reason", "VARCHAR"),
                       ("provider", "VARCHAR"), ("units", "DOUBLE PRECISION"),
                       ("unit_price_usd", "DOUBLE PRECISION"), ("cost_source", "VARCHAR"),
                       ("actual_amount", "DOUBLE PRECISION")],
+    "audit_certificates": [("content", "TEXT")],
 }
 
 
@@ -151,10 +153,21 @@ async def verify_aar(job_id: int, db: Session = Depends(get_db)):
     """Verify the job's cert: (1) the Ed25519 signature + L2 via the public aar.mjs verifier,
     AND (2) RE-RUN the data guarantees on the delivered file (PII=0 / dedup / schema). The
     second part is what makes the certificate a guarantee you can check, not a claim."""
-    cert = CERTS_DIR / f"job-{job_id}.aar.json"
-    if not cert.exists():
+    import tempfile
+    from app.models.audit_certificate import AuditCertificate as _AC
+    from app.models.job import Job as _Job
+    from app.curate import engine as _ce
+    _tmp = []
+    cert_row = db.query(_AC).filter(_AC.job_id == job_id).order_by(_AC.id.desc()).first()
+    cert_path = None
+    if cert_row and cert_row.content:                # DB copy survives redeploys
+        tf = tempfile.NamedTemporaryFile("w", suffix=".aar.json", delete=False)
+        tf.write(cert_row.content); tf.close(); cert_path = tf.name; _tmp.append(cert_path)
+    elif (CERTS_DIR / f"job-{job_id}.aar.json").exists():
+        cert_path = str(CERTS_DIR / f"job-{job_id}.aar.json")
+    if not cert_path:
         raise HTTPException(status_code=404, detail="no certificate for this job")
-    r = subprocess.run(["node", str(AAR_MJS), "verify", str(cert), "--did-json", str(DID_JSON)],
+    r = subprocess.run(["node", str(AAR_MJS), "verify", cert_path, "--did-json", str(DID_JSON)],
                        cwd=str(BACKEND_DIR), capture_output=True, text=True)
     level = "FAIL"
     for line in r.stdout.splitlines():
@@ -162,11 +175,20 @@ async def verify_aar(job_id: int, db: Session = Depends(get_db)):
             level = line.split("conformance:")[-1].strip()
     resp = {"job_id": job_id, "level": level, "ok": r.returncode == 0 and level != "FAIL",
             "output": r.stdout.strip()}
-    from app.models.job import Job as _Job
-    from app.curate import engine as _ce
     job = db.query(_Job).filter(_Job.id == job_id).first()
-    if job and job.output_file_path and os.path.exists(job.output_file_path):
-        resp["guarantees_recheck"] = _ce.verify_output(job.output_file_path)
+    ds_path = None
+    if job and job.output_data:                      # re-run guarantees on the in-DB dataset
+        df = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        df.write(job.output_data); df.close(); ds_path = df.name; _tmp.append(ds_path)
+    elif job and job.output_file_path and os.path.exists(job.output_file_path):
+        ds_path = job.output_file_path
+    if ds_path:
+        resp["guarantees_recheck"] = _ce.verify_output(ds_path)
+    for p in _tmp:
+        try:
+            os.unlink(p)
+        except OSError:
+            pass
     return resp
 
 

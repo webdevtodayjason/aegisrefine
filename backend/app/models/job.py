@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean, JSON, Text
 from sqlalchemy.sql import func
 from ..database import Base
 
@@ -33,3 +33,6 @@ class Job(Base):
     synth_topic = Column(String)
     synth_target_kept = Column(Integer)
     synth_reference = Column(String)
+
+    # produced dataset (JSONL) persisted IN-DB so download + re-verify survive container redeploys
+    output_data = Column(Text)
