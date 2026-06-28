@@ -10,9 +10,11 @@ from app.curate.canonical import record
 
 # Default roles — verified-working paid arsenal models; all overridable per job.
 # weak must be genuinely weaker than strong for Delta to mean something.
-# Fast config: all xAI (grok-3 ~3s vs glm-4.6 ~30-40s), with a genuine weak/strong gap —
-# grok-3-mini fails where the full grok-3 solves. A capped job completes in ~1-2 min, not hours.
-ROLES = {"challenger": "grok-3-mini", "weak": "grok-3-mini", "strong": "grok-3", "judge": "grok-3-mini"}
+# Roles must use providers the DEPLOYED container can actually reach: MiniMax + ZAI work; xAI/grok
+# does NOT (calls time out from the R750 container). grok-3-mini→grok-3 is the fast, good-yield gap
+# but is only usable where xAI is reachable (e.g. a local seed run). In prod: glm weak/strong gap.
+# ponytail: container can't reach xAI — revisit roles if/when the R750 egress to api.x.ai is opened.
+ROLES = {"challenger": "glm-4.5-air", "weak": "glm-4.5-air", "strong": "glm-4.6", "judge": "MiniMax-M2"}
 
 MAX_ROUNDS = 20
 
