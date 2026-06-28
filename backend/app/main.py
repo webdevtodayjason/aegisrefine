@@ -76,12 +76,30 @@ def _seed_admin():
         db.close()
 
 
+def _sweep_orphaned():
+    """A redeploy kills in-flight background tasks, leaving jobs stuck 'processing'. Any job still
+    'processing' at boot was run by the now-dead old container -> mark it failed (no silent zombies)."""
+    db = SessionLocal()
+    try:
+        from app.models.job import Job
+        stuck = db.query(Job).filter(Job.status == "processing").all()
+        for j in stuck:
+            j.status = "failed"
+        if stuck:
+            db.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ponytail: create_all + a tiny idempotent ALTER covers the demo; Alembic if this grows.
     Base.metadata.create_all(bind=engine)
     _ensure_columns()
     _seed_admin()
+    _sweep_orphaned()
     yield
 
 

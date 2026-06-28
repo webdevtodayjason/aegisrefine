@@ -2,6 +2,7 @@
 which is injectable so tests run with no real spend. Budget is tracked + capped here; the caller
 records the aggregate spend on the ledger and signs the cert."""
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from app.services import escalation
@@ -15,7 +16,9 @@ from app.curate.canonical import record
 # so a capped synth job completes in ~1-2 min in prod.
 ROLES = {"challenger": "grok-3-mini", "weak": "grok-3-mini", "strong": "grok-3", "judge": "grok-3-mini"}
 
-MAX_ROUNDS = 20
+# ~96 model calls at 6 rounds (xAI rate-limits the concurrent batch so calls run ~serially,
+# ~3s each) -> a live synth job bounds to ~5 min. Override with SYNTH_MAX_ROUNDS.
+MAX_ROUNDS = int(os.environ.get("SYNTH_MAX_ROUNDS", "6"))
 
 
 def _ask(messages, model, max_tokens=400, _call=None):
