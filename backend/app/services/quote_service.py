@@ -104,6 +104,15 @@ def sign_quote_token(quote: dict, dataset_url: str, email: str, now: int) -> str
     return f"{body}.{sig}"
 
 
+def sign_synth_token(quote: dict, topic: str, target_kept: int, reference: str, email: str, now: int) -> str:
+    """Same HMAC+TTL envelope as a refine token, but binds the synthesis job params instead of a url."""
+    body = _b64(json.dumps({"q": quote["quote_usd"], "service": "synthesis", "topic": topic,
+                            "target_kept": int(target_kept), "reference": reference, "email": email,
+                            "exp": now + TOKEN_TTL}, sort_keys=True).encode())
+    sig = _b64(hmac.new(_SECRET, body.encode(), hashlib.sha256).digest())
+    return f"{body}.{sig}"
+
+
 def verify_quote_token(token: str, now: int):
     try:
         body, sig = token.split(".")

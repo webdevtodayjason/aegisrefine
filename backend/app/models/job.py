@@ -27,3 +27,9 @@ class Job(Base):
     revenue_collected = Column(Float)
     requires_human_quote = Column(Boolean, default=False)
     quote_accepted_at = Column(DateTime(timezone=True))
+
+    # --- synthesis (synthesize / augment service) ---
+    service = Column(String, default="refine")   # refine | synthesis
+    synth_topic = Column(String)
+    synth_target_kept = Column(Integer)
+    synth_reference = Column(String)

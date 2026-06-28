@@ -34,13 +34,20 @@ def get_or_create_user(db: Session, email: str) -> User:
 
 
 def create_paid_job(db: Session, dataset_url: str, email: str,
-                    quote_amount: float | None = None, target_margin_pct: float = 0.65) -> Job:
+                    quote_amount: float | None = None, target_margin_pct: float = 0.65,
+                    service: str = "refine", synth: dict | None = None) -> Job:
     """Create the Job for a completed payment and record it on the audit trail.
     Identity comes from the Stripe-authenticated session (email), never the client.
     When a quote was accepted, the cap becomes the job's hard spend ceiling.
+    `service`='synthesis' carries the generate/augment params in `synth`.
     """
     user = get_or_create_user(db, email)
-    job = Job(user_id=user.id, status="pending", input_file_path=dataset_url)
+    job = Job(user_id=user.id, status="pending", input_file_path=dataset_url or "(synthesis)")
+    job.service = service
+    if synth:
+        job.synth_topic = synth.get("topic")
+        job.synth_target_kept = int(synth.get("target_kept") or 0) or None
+        job.synth_reference = synth.get("reference") or ""
     if quote_amount is not None:
         from datetime import datetime, timezone
         job.quote_amount = quote_amount

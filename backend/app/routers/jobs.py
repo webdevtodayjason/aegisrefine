@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -27,6 +28,12 @@ class JobRequest(BaseModel):
     quote_token: str
 
 
+class SynthQuoteRequest(BaseModel):
+    topic: str
+    target_kept: int = 100
+    reference: str | None = None   # augment: an https dataset URL to ground generation in; empty = from-seed
+
+
 @router.post("/quote")
 async def quote(req: QuoteRequest, user: User = Depends(require_user)):
     """Aegis-14B prices the dataset into a flat, CAPPED quote. No Job, no charge yet.
@@ -43,29 +50,55 @@ async def quote(req: QuoteRequest, user: User = Depends(require_user)):
     return pub
 
 
+@router.post("/synth-quote")
+async def synth_quote(req: SynthQuoteRequest, user: User = Depends(require_user)):
+    """Price a synthesize/augment job into a flat CAPPED quote. The private COGS estimate is
+    NEVER returned — only the capped price. A reference URL (if given) makes it an augment job."""
+    if not (req.topic or "").strip():
+        raise HTTPException(status_code=400, detail="a topic/domain is required")
+    tk = max(1, min(int(req.target_kept or 100), 5000))
+    reference = (req.reference or "").strip()
+    if reference:
+        validate_https_url(reference)
+    q = quote_service.quote_synth(tk)
+    token = quote_service.sign_synth_token(q, req.topic.strip(), tk, reference, user.email, int(time.time()))
+    return {"quote_usd": q["quote_usd"], "target_kept": tk, "target_margin_pct": q["target_margin_pct"],
+            "service": "synthesis", "mode": "augment" if reference else "from-seed", "token": token}
+
+
 @router.post("/")
 async def create_job(req: JobRequest, user: User = Depends(require_user)):
-    """Accept a signed quote and open a Stripe Checkout for EXACTLY the capped amount.
-    No Job is created here — the webhook creates it AFTER payment (identity from Stripe)."""
+    """Accept a signed quote (refine OR synthesis) and open a Stripe Checkout for EXACTLY the
+    capped amount. No Job is created here — the webhook creates it AFTER payment (identity from Stripe)."""
     payload = quote_service.verify_quote_token(req.quote_token, int(time.time()))
     if not payload:
         raise HTTPException(status_code=400, detail="quote expired or invalid — please re-quote")
     quoted = float(payload["q"])
-    dataset_url, email = payload["url"], payload["email"]
-    validate_https_url(dataset_url)
+    email = payload["email"]
+    if payload.get("service") == "synthesis":
+        product = "Aegis Dataset Synthesis"
+        meta = {"service": "synthesis", "email": email, "quoted_usd": f"{quoted:.2f}",
+                "target_margin_pct": "0.65", "topic": (payload.get("topic") or "")[:480],
+                "target_kept": str(payload.get("target_kept") or 0),
+                "reference": (payload.get("reference") or "")[:480]}
+    else:
+        dataset_url = payload["url"]
+        validate_https_url(dataset_url)
+        product = "Aegis Dataset Refinement"
+        meta = {"service": "refine", "dataset_url": dataset_url, "email": email,
+                "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"}
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{"price_data": {"currency": "usd",
-                                        "product_data": {"name": "Aegis Dataset Refinement"},
+                                        "product_data": {"name": product},
                                         "unit_amount": int(round(quoted * 100))},  # the HARD cap
                          "quantity": 1}],
             mode="payment",
             customer_email=email,
             success_url="https://aegisrefine.com/dashboard.html?paid=1",
             cancel_url="https://aegisrefine.com/new-order.html?canceled=1",
-            metadata={"dataset_url": dataset_url, "email": email,
-                      "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"},
+            metadata=meta,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -100,5 +133,16 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
         "spend_tickets": [{"id": t.id, "amount": t.amount, "description": t.description,
                            "status": t.status, "approved_by": t.approved_by} for t in tickets],
         "certificate": ({"id": cert.id, "aar": f"/jobs/{job_id}/aar"} if cert else None),
+        "service": getattr(j, "service", "refine"),
     })
     return out
+
+
+@router.get("/{job_id}/download")
+async def download_dataset(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """Download the produced dataset JSONL (refined OR synthesized)."""
+    j = db.query(Job).filter(Job.id == job_id).first()
+    if not j or not j.output_file_path or not os.path.exists(j.output_file_path):
+        raise HTTPException(status_code=404, detail="no dataset output yet")
+    return FileResponse(j.output_file_path, media_type="application/x-ndjson",
+                        filename=f"aegis-dataset-{job_id}.jsonl")

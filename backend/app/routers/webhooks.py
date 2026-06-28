@@ -18,8 +18,14 @@ def _auto_run_job(job_id: int):
         job = db.query(Job).filter(Job.id == job_id).first()
         if not job:
             return
-        refinery.process_job(db, job, sample="auto-run on payment")
-        refinery.complete_job(db, job)
+        if getattr(job, "service", "refine") == "synthesis":
+            from app.synth.runner import run_synth_job
+            run_synth_job(db, job, topic=job.synth_topic or "",
+                          target_kept=int(job.synth_target_kept or 50),
+                          reference=job.synth_reference or "")
+        else:
+            refinery.process_job(db, job, sample="auto-run on payment")
+            refinery.complete_job(db, job)
     except Exception:
         pass  # the job stays at its last good state; governance/curation log the reason
     finally:
@@ -51,17 +57,26 @@ async def stripe_webhook(request: Request, background: BackgroundTasks, db: Sess
     if event.get("type") == "checkout.session.completed":
         session = event["data"]["object"]
         meta = session.get("metadata") or {}
-        dataset_url = meta.get("dataset_url")
+        service = meta.get("service") or "refine"
         email = meta.get("email") or (session.get("customer_details") or {}).get("email")
-        if not dataset_url or not email:
-            raise HTTPException(status_code=400, detail="missing dataset_url/email in checkout session")
         quoted = float(meta.get("quoted_usd") or 0) or None
         # defense in depth: Stripe must have charged EXACTLY the quoted cap
         amount_total = session.get("amount_total")
         if quoted is not None and amount_total is not None and int(amount_total) != int(round(quoted * 100)):
             raise HTTPException(status_code=400, detail="amount_total does not match the quoted cap")
-        job = create_paid_job(db, dataset_url, email, quote_amount=quoted,
-                              target_margin_pct=float(meta.get("target_margin_pct") or 0.65))
+        margin = float(meta.get("target_margin_pct") or 0.65)
+        if service == "synthesis":
+            if not email or not meta.get("topic"):
+                raise HTTPException(status_code=400, detail="missing topic/email in synthesis session")
+            job = create_paid_job(db, None, email, quote_amount=quoted, target_margin_pct=margin,
+                                  service="synthesis",
+                                  synth={"topic": meta.get("topic"), "target_kept": meta.get("target_kept"),
+                                         "reference": meta.get("reference")})
+        else:
+            dataset_url = meta.get("dataset_url")
+            if not dataset_url or not email:
+                raise HTTPException(status_code=400, detail="missing dataset_url/email in checkout session")
+            job = create_paid_job(db, dataset_url, email, quote_amount=quoted, target_margin_pct=margin)
         background.add_task(_auto_run_job, job.id)   # pay -> the agent runs the pipeline itself
         return {"received": True, "job_id": job.id}
 
