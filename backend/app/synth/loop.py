@@ -2,6 +2,7 @@
 which is injectable so tests run with no real spend. Budget is tracked + capped here; the caller
 records the aggregate spend on the ledger and signs the cert."""
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from app.services import escalation
 from app.curate.clean.pii import mask_text
@@ -29,6 +30,28 @@ def _correct(task, answer, judge_model, _call=None):
             "Is the answer correct AND complete for the task? Reply exactly YES or NO."}]
     text, cost = _ask(msg, judge_model, max_tokens=5, _call=_call)
     return (1 if text and text.strip().upper().startswith("Y") else 0), cost
+
+
+def _eval_task(task, roles, _call=None):
+    """Solve a task with weak+strong, judge both -> (kept_record_or_None, cost_usd, by_model)."""
+    cost, bm = 0.0, {}
+
+    def m(model, c):
+        nonlocal cost
+        cost += c
+        bm[model] = round(bm.get(model, 0.0) + c, 6)
+
+    w, cw = _ask([{"role": "user", "content": task}], roles["weak"], _call=_call); m(roles["weak"], cw)
+    s, cs = _ask([{"role": "user", "content": task}], roles["strong"], _call=_call); m(roles["strong"], cs)
+    iw, cjw = _correct(task, w, roles["judge"], _call=_call); m(roles["judge"], cjw)
+    is_, cjs = _correct(task, s, roles["judge"], _call=_call); m(roles["judge"], cjs)
+    rec = None
+    if is_ - iw == 1:  # strong solved, weak failed -> Zone of Proximal Development
+        t_clean, _ = mask_text(task)
+        a_clean, _ = mask_text(s or "")
+        rec = record([{"role": "user", "content": t_clean},
+                      {"role": "assistant", "content": a_clean}], source="synthetic")
+    return rec, cost, bm
 
 
 def synthesize(*, topic, target_kept=10, reference="", roles=None, batch=4,
@@ -62,19 +85,17 @@ def synthesize(*, topic, target_kept=10, reference="", roles=None, batch=4,
         except Exception:
             tasks = [ln.strip("-*0123456789. ").strip() for ln in (ch_text or "").splitlines() if ln.strip()][:batch]
 
-        for task in tasks:
-            if not afford():
-                break
-            candidates += 1
-            w, cw = _ask([{"role": "user", "content": task}], roles["weak"], _call=_call); meter(roles["weak"], cw)
-            s, cs = _ask([{"role": "user", "content": task}], roles["strong"], _call=_call); meter(roles["strong"], cs)
-            iw, cjw = _correct(task, w, roles["judge"], _call=_call); meter(roles["judge"], cjw)
-            is_, cjs = _correct(task, s, roles["judge"], _call=_call); meter(roles["judge"], cjs)
-            if is_ - iw == 1:  # strong solved, weak failed -> Zone of Proximal Development
-                t_clean, _ = mask_text(task)
-                a_clean, _ = mask_text(s or "")
-                kept.append(record([{"role": "user", "content": t_clean},
-                                     {"role": "assistant", "content": a_clean}], source="synthetic"))
+        if not tasks:
+            continue
+        candidates += len(tasks)
+        # process the batch's tasks concurrently — each is 4 IO-bound model calls
+        with ThreadPoolExecutor(max_workers=min(8, len(tasks))) as ex:
+            for rec, cost, bm in ex.map(lambda t: _eval_task(t, roles, _call), tasks):
+                spent += cost
+                for mdl, mc in bm.items():
+                    by_model[mdl] = round(by_model.get(mdl, 0.0) + mc, 6)
+                if rec is not None and len(kept) < target_kept:
+                    kept.append(rec)
 
     return {
         "kept": kept,
