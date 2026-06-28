@@ -92,7 +92,7 @@ ARSENAL = {
     },
     "zai": {
         "env_var": "ZAI_API_KEY",
-        "base_url": "https://api.z.ai/api/paas/v4",
+        "base_url": "https://api.z.ai/api/coding/paas/v4",   # GLM Coding Plan subscription endpoint
         "pricing_url": "https://docs.z.ai/guides/overview/pricing",
         "models": {
             "glm-4.6":        {"px": [0.60, 2.20], "cap": "reasoning · flagship coding/reasoning, 200k ctx", "ctx": 200_000},
