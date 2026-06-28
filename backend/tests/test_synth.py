@@ -59,3 +59,12 @@ def test_synth_runner_signs_provenance_cert(db, user):
     assert cert["guarantees"]["pii_residual"] == 0                    # synth output is PII-checked too
     assert cert["economics"]["spent_usd"] > 0 and cert["economics"]["cap_respected"] is True
     assert cert["sig"]["alg"] == "Ed25519"
+
+
+def test_quote_synth_caps_with_margin():
+    from app.services.quote_service import quote_synth
+    q = quote_synth(100)        # 100 × $0.05 = $5 COGS -> floor $49
+    assert q["estimated_cost_usd"] == 5.0 and q["quote_usd"] == 49.0 and q["service"] == "synthesis"
+    q2 = quote_synth(2000)      # 2000 × $0.05 = $100 COGS -> $100/(1-0.65) cap
+    assert q2["quote_usd"] == round(100 / (1 - 0.65), 2) > q2["estimated_cost_usd"]
+    assert q2["target_margin_pct"] == 65.0

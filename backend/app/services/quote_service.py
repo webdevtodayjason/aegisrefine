@@ -77,6 +77,20 @@ def price_quote(*, n_records, complexity, data_type="jsonl", pages=0, ocr_profil
     }
 
 
+# synthesis COGS: ~4 reasoning-model calls per candidate, divided by yield -> per high-value (Δ=1) row.
+# ponytail: flat estimate; tune SYNTH_COST_PER_KEPT from real-run telemetry (by_model_usd / kept).
+SYNTH_COST_PER_KEPT = 0.05
+
+
+def quote_synth(target_kept: int, *, margin: float = MARGIN_TARGET) -> dict:
+    """Price a synthesize/augment job: target high-value rows -> est COGS -> capped flat quote.
+    More target rows => more compute => higher cap. estimated_cost is the private COGS bar."""
+    cogs = round(target_kept * SYNTH_COST_PER_KEPT, 2)
+    quote = round(max(FLOOR_BASE, cogs / (1 - margin)), 2)
+    return {"quote_usd": quote, "estimated_cost_usd": cogs, "target_kept": target_kept,
+            "target_margin_pct": round(margin * 100, 1), "service": "synthesis"}
+
+
 # --- tamper-proof quote token (HMAC over the binding fields + TTL) ---
 
 def _b64(b):
