@@ -92,6 +92,14 @@
       </form>
 
       <p id="switch" style="font-size:13px; color:#71717A; text-align:center; margin:26px 0 0;">New to Aegis? <a href="#" onclick="setMode('signup');return false;" style="color:#00E5CC;">Create an account</a></p>
+
+      <div style="display:flex; align-items:center; gap:12px; margin:24px 0 16px;">
+        <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#52525B;">OR</span>
+        <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+      </div>
+      <a href="/auth/try" style="display:flex; align-items:center; justify-content:center; gap:9px; width:100%; font-size:14px; font-weight:500; color:#00E5CC; background:rgba(0,229,204,0.06); border:1px solid rgba(0,229,204,0.3); border-radius:8px; padding:13px; transition:border-color .2s, background .2s;">Try the demo instantly →</a>
+
       <div style="display:flex; align-items:center; justify-content:center; gap:7px; margin-top:22px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#52525B;"><span style="color:#22C55E;">⛉</span> ENCRYPTED · POLICY-AUTH-01</div>
     </div>
   </div>
@@ -123,7 +131,7 @@
     try {
       const r = await fetch('/auth/' + mode, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin', body: JSON.stringify({ email, password })
+        credentials: 'include', body: JSON.stringify({ email, password })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || 'Something went wrong');

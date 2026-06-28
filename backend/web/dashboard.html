@@ -58,6 +58,9 @@
           </div>
         </div>
 
+        <!-- payment confirmation (?paid=1) + synthesis-in-progress hint -->
+        <div id="paidbanner"></div>
+
         <!-- attention banner (spend proposals awaiting the human gate) -->
         <div id="attention"></div>
 
@@ -107,6 +110,10 @@ const fmtDate = s => { if (!s) return "—"; const d = new Date(s); return isNaN
 const relTime = s => { const d = new Date(s); if (isNaN(d)) return ""; let x = (Date.now()-d)/1000; if (x<0) x=0;
   if (x<60) return Math.floor(x)+"s"; if (x<3600) return Math.floor(x/60)+"m"; if (x<86400) return Math.floor(x/3600)+"h"; return Math.floor(x/86400)+"d"; };
 const money = n => "$" + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+// real per-job economics from GET /jobs
+const num = v => { const n = Number(v); return (v == null || v === "" || isNaN(n)) ? null : n; };
+const jobPrice = j => { const q = num(j.quote_amount); return q != null ? q : (num(j.revenue_collected) || 0); }; // billed price
+const jobCap   = j => { const q = num(j.quote_amount); return q != null ? q : num(j.revenue_collected); };          // quoted cap (null if unknown)
 
 // status -> [label, color, borderRGBA, bgRGBA]; unknown statuses fall back gracefully
 const STATUS = {
@@ -144,7 +151,7 @@ function renderStats(jobs, activity){
   const active    = jobs.filter(j => isActive(j.status)).length;
   const delivered = jobs.filter(j => isDone(j.status)).length;
   const total     = jobs.length;
-  const billed    = total * 20; // $20 flat per order; a Job exists only post-checkout
+  const billed    = jobs.reduce((s,j) => s + jobPrice(j), 0); // real gross: sum of quote_amount (fallback revenue_collected)
   // outbound spend is a TEST STUB — count authorizations, sum stubbed amounts, label honestly
   let approvals = 0, spendSum = 0;
   for (const a of activity){
@@ -154,7 +161,7 @@ function renderStats(jobs, activity){
   const cards = [
     ["ACTIVE JOBS", String(active), active ? "in triage / refining / at gate" : "nothing running", "var(--teal)"],
     ["DATASETS DELIVERED", String(delivered), delivered ? "signed AAR issued" : "none yet", "var(--text)"],
-    ["GROSS BILLED", money(billed), total + " orders × $20 flat · Stripe test", "var(--text)"],
+    ["GROSS BILLED", money(billed), total + " order" + (total===1?"":"s") + " · Stripe test", "var(--text)"],
     ["SPEND AUTHORIZED (test)", money(spendSum), approvals + " approval" + (approvals===1?"":"s") + " · outbound is a stub", "var(--amber)"],
   ];
   document.getElementById("stats").innerHTML = cards.map(([k,v,sub,col]) =>
@@ -189,6 +196,49 @@ function renderAttention(activity){
     `</a>`;
 }
 
+function renderPaidBanner(jobs){
+  const el = document.getElementById("paidbanner");
+  if (!el) return;
+  const paid = new URLSearchParams(location.search).get("paid") === "1";
+  // newest job by created_at (fallback: first in the list)
+  let newest = null;
+  for (const j of jobs){
+    if (!newest){ newest = j; continue; }
+    const a = new Date(j.created_at), b = new Date(newest.created_at);
+    if (!isNaN(a) && (isNaN(b) || a > b)) newest = j;
+  }
+  // a synthesis job still in flight (queued / processing / refining — anything not finished)
+  const synthRunning = jobs.find(j => String(j.service||"").toLowerCase() === "synthesis" && isActive(j.status));
+  let html = "";
+  if (paid){
+    const href = newest ? `order-detail.html?job=${encodeURIComponent(newest.id)}` : "#";
+    const jid  = newest ? ` <span class="mono" style="color:var(--green)">#${esc(newest.id)}</span>` : "";
+    html +=
+      `<a class="attn" href="${href}" style="border-color:rgba(34,197,94,0.35);background:linear-gradient(90deg,rgba(34,197,94,0.08),rgba(34,197,94,0.02))">`+
+        `<span class="ico" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.4);color:var(--green);animation:none">✓</span>`+
+        `<div style="flex:1">`+
+          `<div style="font-size:15px;font-weight:600">Payment received — your job is queued</div>`+
+          `<div style="font-size:13px" class="muted">Job${jid} is in the refinery — open it to track progress.</div>`+
+        `</div>`+
+        `<span class="mono" style="font-size:12px;color:var(--green)">View job →</span>`+
+      `</a>`;
+  }
+  if (synthRunning){
+    html +=
+      `<div class="attn" style="border-color:var(--teal-line);background:var(--teal-dim);cursor:default">`+
+        `<span class="ico" style="background:var(--teal-dim);border-color:var(--teal-line);color:var(--teal);animation:none">⧗</span>`+
+        `<div style="flex:1">`+
+          `<div style="font-size:14px;font-weight:600">Synthesis in progress</div>`+
+          `<div style="font-size:13px" class="muted">Synthesis runs ~25–30 min — we'll email you when it's ready.</div>`+
+        `</div>`+
+      `</div>`;
+  }
+  el.innerHTML = html;
+  el.style.display = html ? "flex" : "";
+  el.style.flexDirection = "column";
+  el.style.gap = "14px";
+}
+
 function renderJobs(jobs){
   const meta = document.getElementById("jobsmeta");
   const box  = document.getElementById("jobs");
@@ -203,11 +253,14 @@ function renderJobs(jobs){
   box.innerHTML = jobs.map(j => {
     const [lbl,col,bd,bg] = theme(j.status);
     const [cx,cxCol] = complexity(j.complexity_score);
-    const cost = (j.estimated_cost == null || j.estimated_cost === "") ? "—" : (String(j.estimated_cost).startsWith("$") ? esc(j.estimated_cost) : money(j.estimated_cost));
-    const name = esc(j.input || "Refinement job");
+    const cap  = jobCap(j);
+    const cost = cap == null ? "—" : money(cap);   // EST. COST = the quoted cap, not a placeholder
+    const isSynth = String(j.service||"").toLowerCase() === "synthesis";
+    const name = esc(isSynth ? (j.synth_topic || "Synthetic dataset") : (j.input || "Refinement job"));
+    const svc  = j.service ? ` · ${esc(j.service)}` : "";
     return `<a class="jrow" href="order-detail.html?job=${encodeURIComponent(j.id)}">`+
       `<div style="min-width:0"><div class="ellip" style="font-size:14px;font-weight:500">${name}</div>`+
-        `<div class="mono muted2" style="font-size:10.5px">JOB-${esc(j.id)}</div></div>`+
+        `<div class="mono muted2" style="font-size:10.5px">JOB-${esc(j.id)}${svc}</div></div>`+
       `<div><span class="sbadge" style="color:${col};border:1px solid ${bd};background:${bg}"><i style="background:${col}"></i>${esc(lbl)}</span></div>`+
       `<div class="mono c-cx" style="font-size:12.5px;color:${cxCol}">${esc(cx)}</div>`+
       `<div class="mono c-cost" style="font-size:12.5px;color:var(--muted)">${cost}</div>`+
@@ -244,8 +297,8 @@ function renderFeed(activity){
 let lastJobs = [], lastActivity = [];
 
 async function loadJobs(){
-  try { lastJobs = await Aegis.listJobs(50) || []; renderJobs(lastJobs); }
-  catch(e){ document.getElementById("jobs").innerHTML = `<div class="err" style="padding:22px">✗ Could not load jobs: ${esc(e.message||e)}</div>`; }
+  try { lastJobs = await Aegis.listJobs(50) || []; renderJobs(lastJobs); renderPaidBanner(lastJobs); }
+  catch(e){ document.getElementById("jobs").innerHTML = `<div class="err" style="padding:22px">✗ Could not load jobs: ${esc(e.message||e)}</div>`; renderPaidBanner(lastJobs); }
 }
 async function loadActivity(){
   try { lastActivity = await Aegis.activity(50) || []; renderFeed(lastActivity); renderAttention(lastActivity); }

@@ -86,22 +86,22 @@
         <div class="pan show" id="pan-profile">
           <div class="card" style="padding:26px">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
-              <span class="avatar" id="avatar">NR</span>
+              <span class="avatar" id="avatar">—</span>
               <div>
-                <div style="font-size:16px;font-weight:600" id="profName">Nova Reyes</div>
-                <div class="mono muted2" style="font-size:12px" id="profEmail">nova@studio.ai</div>
+                <div style="font-size:16px;font-weight:600" id="profName">Loading…</div>
+                <div class="mono muted2" style="font-size:12px" id="profEmail">Loading…</div>
               </div>
-              <button class="btn ghost" id="avatarBtn" style="margin-left:auto;padding:8px 14px;font-size:13px;box-shadow:none">Change avatar</button>
+              <span class="pill teal" id="profRole" style="margin-left:auto">…</span>
             </div>
 
             <div class="formgrid">
               <div class="fld">
                 <label for="fName">Display name</label>
-                <input id="fName" value="Nova Reyes" autocomplete="name">
+                <input id="fName" value="" autocomplete="name">
               </div>
               <div class="fld">
                 <label for="fEmail">Email</label>
-                <input id="fEmail" type="email" value="nova@studio.ai" autocomplete="email">
+                <input id="fEmail" type="email" value="" autocomplete="email" readonly>
               </div>
             </div>
             <div class="fld" style="margin-bottom:20px">
@@ -112,7 +112,7 @@
             <button class="btn" id="saveProfile">Save changes</button>
             <div class="savednote">
               <span class="teal">⛉</span>
-              Representative profile — saved locally in this browser. Account sync ships with the API.
+              Email and role come from your signed-in account. Display name is saved locally in this browser.
             </div>
           </div>
         </div>
@@ -171,9 +171,12 @@ const LS = "aegis.settings.v1";
 
 // tiny local store (browser-only — honest: not a backend write) ----------------
 const store = Object.assign(
-  { name:"Nova Reyes", email:"nova@studio.ai", notif:{ gate:true, complete:true, billing:false, product:true } },
+  { name:"", notif:{ gate:true, complete:true, billing:false, product:true } },
   (() => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch { return {}; } })()
 );
+
+// Real signed-in identity from the backend — email + is_admin (not a hardcoded persona).
+let me = null;
 const save = () => { try { localStorage.setItem(LS, JSON.stringify(store)); } catch {} };
 
 let toastT;
@@ -195,25 +198,33 @@ $("tabs").addEventListener("click", e => {
 
 // ---------- profile ----------
 function paintProfile(){
-  $("fName").value = store.name;
-  $("fEmail").value = store.email;
-  $("profName").textContent = store.name || "—";
-  $("profEmail").textContent = store.email || "—";
-  $("avatar").textContent = initials(store.name);
+  const loading = me === null;
+  const email = me && me.email ? me.email : "";
+  const dispName = store.name || (email ? email.split("@")[0] : "");
+  $("fName").value = dispName;
+  $("fEmail").value = email;
+  $("profName").textContent = dispName || (loading ? "Loading…" : "—");
+  $("profEmail").textContent = email || (loading ? "Loading…" : "Not signed in");
+  $("avatar").textContent = loading ? "…" : initials(dispName || email);
+  $("profRole").textContent = loading ? "…" : (me && me.is_admin ? "ADMIN" : "MEMBER");
 }
 paintProfile();
 
-// live preview of the header card as you type
-$("fName").addEventListener("input", () => { $("profName").textContent = $("fName").value || "—"; $("avatar").textContent = initials($("fName").value); });
-$("fEmail").addEventListener("input", () => { $("profEmail").textContent = $("fEmail").value || "—"; });
+// fetch the real identity, then repaint (honest loading -> real / "Not signed in")
+fetch("/auth/me", { credentials:"include" })
+  .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then(data => { me = data || {}; })
+  .catch(() => { me = {}; })
+  .finally(paintProfile);
+
+// live preview of the header card as you type (display name is local-only)
+$("fName").addEventListener("input", () => { const v = $("fName").value; $("profName").textContent = v || "—"; $("avatar").textContent = initials(v || ($("fEmail").value)); });
 
 $("saveProfile").addEventListener("click", () => {
-  store.name = $("fName").value.trim() || store.name;
-  store.email = $("fEmail").value.trim() || store.email;
+  store.name = $("fName").value.trim();
   save(); paintProfile();
-  toast("Profile saved locally");
+  toast("Display name saved locally");
 });
-$("avatarBtn").addEventListener("click", () => toast("Avatar upload ships with account sync"));
 
 // ---------- api keys (display-only sandbox placeholders) ----------
 let keys = [

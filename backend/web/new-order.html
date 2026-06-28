@@ -96,6 +96,7 @@ const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":
 let PURPOSE = null;   // only "ft" (fine-tuning) is live
 let START = null;     // "refine" | "augment" | "synth"
 let QUOTE = null;     // last quote — refine OR synth; BOTH carry a .token for /jobs
+let PENDING = null;   // action to retry after in-flow account creation (set on a 401)
 
 const SERVICE_LABEL = { refine: "Clean my data", augment: "Expand my data", synth: "Generate a dataset" };
 
@@ -165,6 +166,7 @@ async function getQuote(){
   try{
     const r = await fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
       credentials:"include", body: JSON.stringify({dataset_url:url, email})});
+    if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
     if(q.requires_human_quote){
@@ -207,6 +209,7 @@ async function getSynthQuote(){
   try{
     const r = await fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
       credentials:"include", body: JSON.stringify({topic, target_kept: rows, reference})});
+    if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getSynthQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that job");
     QUOTE = q; renderSynthQuote(q);
@@ -225,7 +228,8 @@ function renderSynthQuote(q){
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Service</span><span class="mono teal">${esc(SERVICE_LABEL[START] || "Synthesis")}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Target rows</span><span class="mono">${(Number(q.target_kept)||0).toLocaleString()}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Mode</span><span class="mono green">${esc(mode)}</span></div>
-    <p class="muted" style="font-size:12px;margin:10px 0 16px">Every row labeled <span class="teal">synthetic</span> · signed provenance. The most you'll ever pay — we eat any overage.</p>
+    <p class="muted" style="font-size:12px;margin:10px 0 14px">Every row labeled <span class="teal">synthetic</span> · signed provenance. The most you'll ever pay — we eat any overage.</p>
+    <div style="display:flex;gap:9px;align-items:flex-start;background:var(--teal-dim);border:1px solid var(--teal-line);border-radius:10px;padding:11px 13px;margin:0 0 16px"><span class="teal" style="font-size:13px;line-height:1.3">⏳</span><span class="muted" style="font-size:12px;line-height:1.45">Synthesis runs <span class="teal">~25–30&nbsp;min</span> as a background job — close this and we'll email you when it's ready.</span></div>
     <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${price.toFixed(2)} →</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
 }
@@ -237,10 +241,50 @@ async function accept(){
   try{
     const r = await fetch("/jobs/", {method:"POST", headers:{"Content-Type":"application/json"},
       credentials:"include", body: JSON.stringify({quote_token: QUOTE.token})});
+    if(r.status === 401){ needAuth(accept); return; }
     const d = await r.json();
     if(!r.ok) throw new Error(d.detail || "could not start checkout");
     window.location = d.checkout_url;
   }catch(e){ err(e); }
+}
+
+// --- in-flow account creation: a 401 means "not signed in yet" ------------------
+// Reveal a mini signup form; on success, resume the exact action that hit the 401.
+// The wizard inputs live in the left panel (untouched), so nothing is lost.
+function needAuth(retry){
+  PENDING = retry;
+  const e = document.getElementById("email");
+  const prefill = e && e.value ? esc(e.value.trim()) : "";
+  out().innerHTML = `
+    <div class="card" style="margin-top:14px;background:linear-gradient(180deg,rgba(0,229,204,0.05),#16161A);border-color:var(--teal-line)">
+      <div class="label" style="margin-bottom:8px">Create your account to continue</div>
+      <p class="muted" style="font-size:12.5px;margin:0 0 14px">You're not signed in yet — create an account and we'll pick up right where you left off. Your inputs are saved.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input id="suEmail" type="email" placeholder="you@company.com" autocomplete="email" value="${prefill}"/>
+        <input id="suPass" type="password" placeholder="Choose a password" autocomplete="new-password"/>
+      </div>
+      <button class="btn" style="width:100%;margin-top:12px" onclick="doSignup()">Create account &amp; continue →</button>
+      <div id="suErr"></div>
+    </div>`;
+}
+
+async function doSignup(){
+  const emEl = document.getElementById("suEmail"), pwEl = document.getElementById("suPass");
+  const email = emEl ? emEl.value.trim() : "", password = pwEl ? pwEl.value : "";
+  const se = document.getElementById("suErr");
+  const sErr = m => { if(se) se.innerHTML = `<div class="err">✗ ${esc(m)}</div>`; };
+  if(!email){ sErr("Enter your email."); return; }
+  if(!password){ sErr("Choose a password."); return; }
+  if(se) se.innerHTML = "";
+  try{
+    const r = await fetch("/auth/signup", {method:"POST", headers:{"Content-Type":"application/json"},
+      credentials:"include", body: JSON.stringify({email, password})});
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.detail || "could not create your account");
+    out().innerHTML = "";                       // clear the signup form
+    const retry = PENDING; PENDING = null;
+    if(typeof retry === "function") retry();     // resume the original action, inputs intact
+  }catch(e){ sErr(e.message || e); }
 }
 </script>
 </body>

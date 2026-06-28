@@ -126,6 +126,64 @@ function statCell(h, v, color) {
   return `<div class="stat"><div class="h">${h}</div><div class="v"${color ? ` style="color:${color}"` : ""}>${v}</div></div>`;
 }
 
+/* money helpers — REAL economics from aar.economics, never stubbed */
+const money = (v) => v == null || v === "" ? "—" : "$" + Number(v).toFixed(2);
+const fineUsd = (v) => v == null || v === "" ? "—" : "$" + Number(v).toFixed(Math.abs(Number(v)) < 0.01 && Number(v) !== 0 ? 4 : 2);
+
+/* the agent's audited books for this job — quoted fee, COGS, margin, cap discipline */
+function econHtml() {
+  const e = aar.economics;
+  if (!e) {
+    return `<div class="statgrid" style="grid-template-columns:1fr;margin-bottom:22px">
+      <div class="stat"><div class="h">ECONOMICS</div><div class="v muted2">NOT RECORDED FOR THIS JOB</div></div></div>`;
+  }
+  const margin = Number(e.margin_usd);
+  const capOk = e.cap_respected !== false;
+  return `<div class="statgrid" style="margin-bottom:22px">
+    ${statCell("QUOTED FEE", money(e.quoted_usd), "var(--green)")}
+    ${statCell("SPENT (COGS)", money(e.spent_usd), "var(--amber)")}
+    ${statCell("MARGIN", money(e.margin_usd), margin < 0 ? "var(--red)" : "var(--green)")}
+    ${statCell("BUDGET CAP", capOk ? "RESPECTED" : "EXCEEDED", capOk ? "var(--teal)" : "var(--red)")}
+  </div>`;
+}
+
+/* re-checkable data guarantees (+ synthetic provenance sub-card when present) */
+function guaranteesHtml() {
+  const g = aar.guarantees;
+  if (!g) return "";
+  const piiOk = Number(g.pii_residual) === 0;
+  const dupOk = Number(g.dupes_residual) === 0;
+  const rows = [
+    `<div class="attrow"><span class="k">Clean rows</span><span class="v teal">${esc(g.rows == null ? "—" : g.rows)}</span></div>`,
+    `<div class="attrow"><span class="k">PII residual</span><span class="v ${piiOk ? "green" : ""}"${piiOk ? "" : ' style="color:var(--red)"'}>${esc(g.pii_residual == null ? "—" : g.pii_residual)} ${piiOk ? "✓" : "✗"}</span></div>`,
+    `<div class="attrow"><span class="k">Duplicate residual</span><span class="v ${dupOk ? "green" : ""}"${dupOk ? "" : ' style="color:var(--red)"'}>${esc(g.dupes_residual == null ? "—" : g.dupes_residual)} ${dupOk ? "✓" : "✗"}</span></div>`,
+    `<div class="attrow"><span class="k">Schema valid</span><span class="v ${g.schema_valid ? "green" : ""}"${g.schema_valid ? "" : ' style="color:var(--red)"'}>${g.schema_valid ? "✓ valid" : "✗ invalid"}</span></div>`,
+  ];
+  if (g.output_format)
+    rows.push(`<div class="attrow"><span class="k">Output format</span><span class="v">${esc(g.output_format)}</span></div>`);
+  return `<div class="label" style="margin-bottom:12px">RE-CHECKABLE GUARANTEES</div>
+    <div class="declist" style="margin-bottom:26px">${rows.join("")}</div>
+    ${g.synthesis ? synthHtml(g.synthesis) : ""}`;
+}
+
+function synthHtml(s) {
+  const models = Array.isArray(s.models) ? s.models.join(", ") : (s.models || "—");
+  const byModel = s.by_model_usd && typeof s.by_model_usd === "object"
+    ? Object.entries(s.by_model_usd).map(([m, v]) =>
+        `<div class="attrow"><span class="k" style="padding-left:14px">↳ ${esc(m)}</span><span class="v amber">${esc(fineUsd(v))}</span></div>`).join("")
+    : "";
+  return `<div class="label" style="margin-bottom:12px">SYNTHETIC PROVENANCE</div>
+    <div class="declist" style="margin-bottom:26px">
+      <div class="attrow"><span class="k">Method</span><span class="v" style="text-align:right;word-break:break-word">${esc(s.method || "—")}</span></div>
+      <div class="attrow"><span class="k">Candidates generated</span><span class="v">${esc(s.candidates_generated == null ? "—" : s.candidates_generated)}</span></div>
+      <div class="attrow"><span class="k">Kept (synthetic)</span><span class="v teal">${esc(s.kept_synthetic == null ? "—" : s.kept_synthetic)}</span></div>
+      <div class="attrow"><span class="k">Yield</span><span class="v">${esc(s.yield_pct == null ? "—" : s.yield_pct)}%</span></div>
+      <div class="attrow"><span class="k">Real / synthetic rows</span><span class="v">${esc(s.real_rows == null ? 0 : s.real_rows)} real · ${esc(s.synthetic_rows == null ? (s.kept_synthetic == null ? 0 : s.kept_synthetic) : s.synthetic_rows)} synthetic</span></div>
+      <div class="attrow"><span class="k">Models</span><span class="v" style="word-break:break-word">${esc(models)}</span></div>
+      ${byModel ? `<div class="attrow"><span class="k">Cost by model</span><span class="v amber">${esc(fineUsd(s.spent_usd))}</span></div>${byModel}` : ""}
+    </div>`;
+}
+
 function decisionsHtml() {
   const rows = [];
   const tickets = (job && job.spend_tickets) || [];
@@ -161,7 +219,6 @@ function renderCert() {
   const sigAlg = (aar.sig && aar.sig.alg) || "—";
   const sigVal = (aar.sig && aar.sig.value) || "";
   const certId = (job && job.certificate && job.certificate.id) ? `cert_${job.certificate.id}` : (aar.task && aar.task.id) || `job-${jobId}`;
-  const revenue = job && job.estimated_cost != null ? `$${Number(job.estimated_cost).toFixed(2)}` : "$20.00";
 
   $("root").innerHTML = `
   <div class="cert rise">
@@ -186,12 +243,9 @@ function renderCert() {
       was governed by a Aegis-14B agent, every external spend held behind an explicit human gate, and the result hash committed as evidence for an independent verifier.
     </p>
 
-    <div class="statgrid" style="margin-bottom:22px">
-      ${statCell("JOB FEE (STRIPE)", revenue, "var(--green)")}
-      ${statCell("GATED SPEND", "AUTHORIZED (TEST)", "var(--amber)")}
-      ${statCell("VERIFIER", "INDEPENDENT", "var(--teal)")}
-      ${statCell("CONFORMANCE", "L2 TARGET", "var(--teal)")}
-    </div>
+    ${econHtml()}
+
+    ${guaranteesHtml()}
 
     <div class="label" style="margin-bottom:12px">GOVERNED DECISIONS</div>
     <div class="declist" style="margin-bottom:26px">${decisionsHtml()}</div>
@@ -263,6 +317,21 @@ async function runVerify() {
     const ok = v.ok && v.level !== "FAIL";
     const pill = ok ? "ok" : "bad";
     const icon = ok ? "✓" : "✗";
+    const rc = v.guarantees_recheck;
+    let recheckHtml = "";
+    if (rc) {
+      const piiOk = Number(rc.pii_residual) === 0;
+      const dupOk = Number(rc.dupes_residual) === 0;
+      const rcOk = rc.ok !== false;
+      recheckHtml = `
+        <div class="label" style="margin:18px 0 8px">GUARANTEES RE-CHECK <span class="${rcOk ? "green" : ""}"${rcOk ? "" : ' style="color:var(--red)"'}>${rcOk ? "✓ re-runs clean" : "✗ mismatch"}</span></div>
+        <div class="declist" style="margin-bottom:4px">
+          <div class="attrow"><span class="k">Clean rows</span><span class="v teal">${esc(rc.rows == null ? "—" : rc.rows)}</span></div>
+          <div class="attrow"><span class="k">PII residual</span><span class="v ${piiOk ? "green" : ""}"${piiOk ? "" : ' style="color:var(--red)"'}>${esc(rc.pii_residual == null ? "—" : rc.pii_residual)} ${piiOk ? "✓" : "✗"}</span></div>
+          <div class="attrow"><span class="k">Duplicate residual</span><span class="v ${dupOk ? "green" : ""}"${dupOk ? "" : ' style="color:var(--red)"'}>${esc(rc.dupes_residual == null ? "—" : rc.dupes_residual)} ${dupOk ? "✓" : "✗"}</span></div>
+          <div class="attrow"><span class="k">Schema valid</span><span class="v ${rc.schema_valid ? "green" : ""}"${rc.schema_valid ? "" : ' style="color:var(--red)"'}>${rc.schema_valid ? "✓ valid" : "✗ invalid"}</span></div>
+        </div>`;
+    }
     box.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <span style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:${ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)"};border:1px solid ${ok ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"};color:${ok ? "var(--green)" : "var(--red)"}">${icon}</span>
@@ -272,6 +341,7 @@ async function runVerify() {
           ${ok ? `<span class="pill teal" style="margin-left:6px">UNMODIFIED SINCE ISSUE</span>` : ""}
         </div>
       </div>
+      ${recheckHtml}
       <div class="label" style="margin-bottom:8px">RAW VERIFIER OUTPUT</div>
       <pre>${esc(v.output || "(no output)")}</pre>`;
   } catch (e) {

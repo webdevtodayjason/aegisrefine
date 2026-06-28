@@ -96,7 +96,7 @@
           <div class="card glow">
             <div class="label teal" style="margin-bottom:16px">Current plan</div>
             <div style="font-size:18px;font-weight:600;margin-bottom:4px">Per Job · On-demand</div>
-            <div class="mono muted" style="font-size:13px">$20 flat per job + gated spend</div>
+            <div class="mono muted" style="font-size:13px">Quoted per job + gated spend</div>
             <a href="marketplace.html" style="display:inline-block;font-size:13px;color:var(--teal);margin-top:14px">View plans →</a>
           </div>
         </div>
@@ -116,7 +116,7 @@
         <div class="ledger" id="invoicesPane">
           <div class="lh">
             <div class="ttl">Invoices</div>
-            <div class="note" id="invNote">Each paid order is one $20 invoice · Stripe test mode</div>
+            <div class="note" id="invNote">One invoice per paid order · Stripe test mode</div>
           </div>
           <div class="ihead">
             <div>INVOICE</div><div>JOB</div><div class="h-amt">AMOUNT</div><div class="h-stat">STATUS</div><div></div>
@@ -124,7 +124,7 @@
           <div id="invoices">
             <div class="lempty">Loading invoices…</div>
           </div>
-          <div class="footnote"><span class="teal">⛉</span> Orders are real Stripe test-mode charges ($20 flat). Downloadable PDF receipts are not generated in this build.</div>
+          <div class="footnote"><span class="teal">⛉</span> Orders are real Stripe test-mode charges at the quoted price. Receipt PDFs are not generated in this build (the ↓ PDF links are disabled).</div>
         </div>
 
         <!-- GATED SPEND LEDGER -->
@@ -160,6 +160,9 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp
 const money = n => "$" + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtDate = s => { if (!s) return "—"; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); };
 const invNo = id => "INV-" + String(id).padStart(5,"0");
+// real per-job economics from GET /jobs
+const num = v => { const n = Number(v); return (v == null || v === "" || isNaN(n)) ? null : n; };
+const jobPrice = j => { const q = num(j.quote_amount); return q != null ? q : (num(j.revenue_collected) || 0); };
 
 function note(msg){
   const t = document.createElement("div");
@@ -191,7 +194,7 @@ function setTab(t){
 // ---------- stats (live) ----------
 function renderStats(jobs, activity){
   const orders = jobs.length;
-  const billed = orders * 20;                       // $20 flat per order; a Job exists only post-checkout
+  const billed = jobs.reduce((s,j) => s + jobPrice(j), 0);   // real charges: sum of quote_amount (fallback revenue_collected)
   // gated spend: outbound payout is a TEST STUB — sum amounts the gate has authorized (executed)
   let gated = 0;
   for (const a of activity){
@@ -199,13 +202,14 @@ function renderStats(jobs, activity){
   }
   // this billing month
   const now = new Date();
-  const monthCount = jobs.filter(j => { const d = new Date(j.created_at); return !isNaN(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
+  const monthJobs = jobs.filter(j => { const d = new Date(j.created_at); return !isNaN(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+  const monthBilled = monthJobs.reduce((s,j) => s + jobPrice(j), 0);
 
   const cards = [
     ["TOTAL PAID", money(billed), orders + " order" + (orders===1?"":"s") + " · Stripe test", "var(--text)"],
-    ["JOB FEES (" + orders + ")", money(billed), "$20 flat per refinement job", "var(--green)"],
+    ["JOB FEES (" + orders + ")", money(billed), "quoted per refinement job", "var(--green)"],
     ["GATED SPEND (test)", money(gated), "authorized at the human gate", "var(--amber)"],
-    ["THIS MONTH", money(monthCount * 20), monthCount + " order" + (monthCount===1?"":"s") + " this period", "var(--text)"],
+    ["THIS MONTH", money(monthBilled), monthJobs.length + " order" + (monthJobs.length===1?"":"s") + " this period", "var(--text)"],
   ];
   $("stats").innerHTML = cards.map(([k,v,sub,col]) =>
     `<div class="stat rise"><div class="label" style="margin-bottom:10px">${k}</div>`+
@@ -214,23 +218,25 @@ function renderStats(jobs, activity){
   ).join("");
 }
 
-// ---------- invoices (live orders → one $20 invoice each) ----------
+// ---------- invoices (live orders → one invoice each, at the real charged price) ----------
 function renderInvoices(jobs){
   const box = $("invoices");
   let rows = jobs, sample = false;
   if (!rows.length){ rows = SAMPLE_INVOICES; sample = true; }
   $("invNote").innerHTML = sample
     ? `<span class="amber">SAMPLE DATA</span> · no live orders yet`
-    : `Each paid order is one $20 invoice · Stripe test mode`;
+    : `One invoice per paid order · Stripe test mode`;
   box.innerHTML = rows.map(j => {
-    const name = esc(j.input || "Refinement job");
+    const isSynth = String(j.service||"").toLowerCase() === "synthesis";
+    const name = esc(isSynth ? (j.synth_topic || "Synthetic dataset") : (j.input || "Refinement job"));
+    const amt  = sample ? "—" : money(jobPrice(j));   // real charged price, not a flat stub
     return `<div class="irow">`+
       `<div><div class="mono" style="font-size:12.5px">${invNo(j.id)}</div>`+
         `<div class="mono muted2" style="font-size:10.5px">${fmtDate(j.created_at)}</div></div>`+
       `<div class="ellip" style="font-size:13.5px" title="${name}">${name}</div>`+
-      `<div class="mono c-amt" style="font-size:13px">$20.00</div>`+
+      `<div class="mono c-amt" style="font-size:13px">${amt}</div>`+
       `<div class="c-stat"><span class="paid">✓ PAID</span></div>`+
-      `<div style="text-align:right"><button class="pdf" onclick="note('Receipt PDFs aren\\'t generated in this build — invoices are the live $20 Stripe test-mode orders.')">↓ PDF</button></div>`+
+      `<div style="text-align:right"><span class="mono" title="Receipt PDFs are not generated in this build" style="font-size:11.5px;color:var(--muted-3);opacity:.5;cursor:not-allowed;text-decoration:line-through">↓ PDF</span></div>`+
     `</div>`;
   }).join("");
 }
