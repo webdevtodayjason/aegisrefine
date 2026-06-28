@@ -28,13 +28,14 @@ def _spend_task(job: Job, hard_doc: str) -> str:
             f"Decide whether to call an external paid tool.")
 
 
-def _safe_decide(db: Session, job: Job, kind: str, task: str, default: dict) -> dict:
+def _safe_decide(db: Session, job: Job, kind: str, task: str, default: dict, summary: dict) -> dict:
     """Governance is best-effort: if Aegis-14B is unreachable (e.g. no Tailscale from the
-    deployed container), log it and fall back to a safe default so the REAL curation + signed
-    cert still ship. The curation itself is deterministic and never needs the model."""
+    deployed container), log it, flag governance_degraded, and fall back to a safe default so
+    the REAL curation + signed cert still ship. The curation itself never needs the model."""
     try:
         return agent.decide(kind, task)
     except Exception as e:
+        summary["governance_degraded"] = True
         log_action(db, job.id, "governance_unavailable", "system", {"job": kind, "error": str(e)[:160]})
         return default
 
@@ -44,7 +45,7 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
     summary: dict = {}
 
     triage = _safe_decide(db, job, "triage", _triage_task(job, sample),
-                          {"complexity": 0.3, "risk": "unknown", "can_run_locally": True})
+                          {"complexity": 0.3, "risk": "unknown", "can_run_locally": True}, summary)
     log_action(db, job.id, "triage", "agent",
                {"complexity": triage.get("complexity"), "risk": triage.get("risk"),
                 "can_run_locally": triage.get("can_run_locally")})
@@ -55,7 +56,7 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
     summary["triage"] = triage
 
     quality = _safe_decide(db, job, "quality", _quality_task(sample),
-                           {"quality_score": 0.8, "noise_level": "unknown"})
+                           {"quality_score": 0.8, "noise_level": "unknown"}, summary)
     log_action(db, job.id, "quality", "agent",
                {"quality_score": quality.get("quality_score"), "noise_level": quality.get("noise_level")})
     summary["quality"] = quality
@@ -65,7 +66,9 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
     try:
         qs = float(quality.get("quality_score") or 1)
         qs = qs / 10 if qs > 1 else qs
-        hard = (not triage.get("can_run_locally", True)) or qs < 0.6
+        # escalate when the agent flags a hard eval OR when its local judge (Aegis-14B) is
+        # unreachable — "can't judge locally → pay the cheapest capable judge, within cap."
+        hard = (not triage.get("can_run_locally", True)) or qs < 0.6 or summary.get("governance_degraded")
         model = escalation.pick_model("hard/reasoning") if (hard and job.approved_cap) else None
         if model:
             decision, ticket = budget_service.request_spend(
@@ -98,7 +101,7 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
 
     if hard_doc:
         spend = _safe_decide(db, job, "spend", _spend_task(job, hard_doc),
-                             {"recommendation": "deny", "tool": "none"})
+                             {"recommendation": "deny", "tool": "none"}, summary)
         log_action(db, job.id, "spend_decision", "agent",
                    {"recommendation": spend.get("recommendation"), "tool": spend.get("tool"),
                     "est_cost_usd": spend.get("est_cost_usd")})
