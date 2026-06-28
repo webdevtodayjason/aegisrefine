@@ -6,6 +6,8 @@ from app.models.job import Job
 from app.models.spend_ticket import SpendTicket
 from app.models.audit_certificate import AuditCertificate
 from app.services.job_service import validate_https_url
+from app.services.auth import require_user
+from app.models.user import User
 import stripe
 import os
 
@@ -20,7 +22,7 @@ class JobRequest(BaseModel):
 
 
 @router.post("/")
-async def create_job(req: JobRequest):
+async def create_job(req: JobRequest, user: User = Depends(require_user)):
     """Start a refinement order: validate the dataset URL and open a Stripe Checkout.
     No Job is created here and no client user_id is accepted — the Job is created by the
     webhook AFTER payment, with identity taken from the Stripe-authenticated session.
@@ -55,14 +57,14 @@ def _job_brief(j: Job) -> dict:
 
 
 @router.get("/")
-async def list_jobs(limit: int = 50, db: Session = Depends(get_db)):
+async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Recent jobs, newest first (Dashboard)."""
     rows = db.query(Job).order_by(Job.id.desc()).limit(max(1, min(limit, 200))).all()
     return [_job_brief(j) for j in rows]
 
 
 @router.get("/{job_id}")
-async def get_job(job_id: int, db: Session = Depends(get_db)):
+async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """One job + its spend tickets + certificate (OrderDetail / Certificate)."""
     j = db.query(Job).filter(Job.id == job_id).first()
     if not j:

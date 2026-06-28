@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.job import Job
 from app.services import refinery
+from app.services.auth import require_user
+from app.models.user import User
 
 router = APIRouter(prefix="/jobs", tags=["refinery"])
 
@@ -25,14 +27,14 @@ def _get_job(db: Session, job_id: int) -> Job:
 
 
 @router.post("/{job_id}/process")
-async def process(job_id: int, req: ProcessRequest, db: Session = Depends(get_db)):
+async def process(job_id: int, req: ProcessRequest, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Run Aegis-14B governance over the job; arms the human gate if it proposes a spend."""
     job = _get_job(db, job_id)
     return refinery.process_job(db, job, req.sample, req.hard_doc)
 
 
 @router.post("/{job_id}/complete")
-async def complete(job_id: int, req: CompleteRequest, db: Session = Depends(get_db)):
+async def complete(job_id: int, req: CompleteRequest, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Finish the job and issue its signed AAR certificate over the real output."""
     job = _get_job(db, job_id)
     signed = refinery.complete_job(db, job, req.output.encode("utf-8"))
