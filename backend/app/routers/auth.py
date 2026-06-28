@@ -1,5 +1,7 @@
 import os
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -47,6 +49,18 @@ async def logout(resp: Response):
     # attributes must match _set_session or the browser won't drop the cookie
     resp.delete_cookie(auth.COOKIE, path="/", samesite="lax", secure=SECURE, httponly=True)
     return {"ok": True}
+
+
+@router.get("/try")
+async def instant_try(db: Session = Depends(get_db)):
+    """Zero-friction tester access (magic link): provision a FRESH demo account, log in, and drop
+    straight into the wizard — no signup form. Each visit is its own clean workspace."""
+    email = f"tester-{secrets.token_hex(4)}@try.aegisrefine.com"
+    user = User(email=email, password_hash=auth.hash_password(secrets.token_urlsafe(18)), is_admin=False)
+    db.add(user); db.commit(); db.refresh(user)
+    redirect = RedirectResponse(url="/new-order.html", status_code=303)
+    _set_session(redirect, user)
+    return redirect
 
 
 @router.get("/me")
