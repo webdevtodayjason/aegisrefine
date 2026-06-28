@@ -13,7 +13,7 @@ from app.database import Base, engine, get_db, SessionLocal
 from app.models.user import User
 from app import models  # noqa: F401 — import so Base.metadata sees every table
 from fastapi.responses import RedirectResponse
-from app.routers import jobs, admin, webhooks, certificates, activity, refinery, auth
+from app.routers import jobs, admin, webhooks, certificates, activity, refinery, auth, scoreboard
 from app.services import auth as authsvc
 from app.services.job_service import create_paid_job
 from app.services.aar_service import AAR_MJS, DID_JSON, CERTS_DIR, BACKEND_DIR
@@ -96,6 +96,7 @@ app.include_router(certificates.router)
 app.include_router(activity.router)
 app.include_router(refinery.router)
 app.include_router(auth.router)
+app.include_router(scoreboard.router)
 
 
 _CUSTOMER_PAGES = {"/dashboard.html", "/new-order.html", "/order-detail.html",

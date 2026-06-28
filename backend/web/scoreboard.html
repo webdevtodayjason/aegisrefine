@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Agent Scoreboard · Aegis Refine</title>
+<meta name="description" content="The Aegis agent's audited books — quote, spend, and margin on every job it runs. A fully automated business with a P&L you can read."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{background:#0D0D0F;color:#F2F2F5;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .wrap{max-width:1100px;margin:0 auto;padding:48px clamp(20px,5vw,48px)}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;color:#00E5CC}
+  h1{font-size:clamp(28px,4vw,40px);font-weight:500;letter-spacing:-.02em;margin:10px 0 6px}
+  .muted{color:#A1A1AA} .muted2{color:#52525B}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:28px 0}
+  .card{background:#16161A;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px}
+  .k{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#71717A}
+  .v{font-size:30px;font-weight:600;letter-spacing:-.02em;margin-top:8px}
+  .teal{color:#00E5CC} .green{color:#22C55E} .amber{color:#F59E0B} .red{color:#F87171}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+  th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:#71717A;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+  td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:20px}
+  .pill.win{color:#22C55E;background:rgba(34,197,94,.1)} .pill.thin{color:#F59E0B;background:rgba(245,158,11,.1)} .pill.loss{color:#F87171;background:rgba(248,113,113,.1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="mono muted2" style="font-size:12px">← aegisrefine.com</a>
+  <div style="margin-top:20px" class="eyebrow">// THE AGENT'S BOOKS</div>
+  <h1>Agent Scoreboard</h1>
+  <p class="muted" style="font-size:15px;margin:0">Every job the agent quotes, runs, and proves — with the margin it actually booked. A fully automated business you can audit.</p>
+
+  <div class="cards" id="cards"><div class="card"><div class="k">LOADING…</div></div></div>
+
+  <div class="eyebrow" style="margin-top:8px">// RECENT JOBS</div>
+  <table id="tbl"><thead><tr><th>JOB</th><th>QUOTED</th><th>SPENT</th><th>MARGIN</th><th>MARGIN %</th><th>OUTCOME</th></tr></thead><tbody id="rows"></tbody></table>
+  <p class="mono muted2" id="empty" style="font-size:12px;margin-top:16px;display:none">No completed jobs yet — the agent hasn't played a hand.</p>
+</div>
+<script>
+function money(n){ return "$" + Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+async function load(){
+  const d = await (await fetch("/agent/scoreboard", {credentials:"same-origin"})).json();
+  const rec = d.record || {wins:0,thin:0,losses:0};
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="k">JOBS PLAYED</div><div class="v">${d.jobs}</div></div>
+    <div class="card"><div class="k">REVENUE</div><div class="v">${money(d.revenue_usd)}</div></div>
+    <div class="card"><div class="k">SPEND</div><div class="v">${money(d.spend_usd)}</div></div>
+    <div class="card"><div class="k">PROFIT</div><div class="v ${d.profit_usd>=0?'green':'red'}">${money(d.profit_usd)}</div></div>
+    <div class="card"><div class="k">AVG MARGIN</div><div class="v teal">${d.avg_margin_pct}%</div></div>
+    <div class="card"><div class="k">RECORD (W·T·L)</div><div class="v"><span class="green">${rec.wins}</span> · <span class="amber">${rec.thin}</span> · <span class="red">${rec.losses}</span></div></div>`;
+  const rows = d.recent || [];
+  document.getElementById("empty").style.display = rows.length ? "none" : "block";
+  document.getElementById("rows").innerHTML = rows.map(r => `
+    <tr><td class="mono">#${r.job_id}</td><td class="mono">${money(r.quoted_usd)}</td>
+    <td class="mono muted">${money(r.spent_usd)}</td>
+    <td class="mono ${r.margin_usd>=0?'green':'red'}">${money(r.margin_usd)}</td>
+    <td class="mono">${r.margin_pct}%</td>
+    <td><span class="pill ${r.outcome}">${r.outcome.toUpperCase()}</span></td></tr>`).join("");
+}
+load();
+</script>
+</body>
+</html>
