@@ -104,7 +104,7 @@
             <div style="display:flex;flex-direction:column;gap:10px">
               <a class="deliv" id="delivData" href="#" style="opacity:.45">
                 <span class="ico">▤</span>
-                <div style="flex:1"><div style="font-size:14px;font-weight:500">Refined dataset</div><div class="mono muted2" id="delivDataMeta" style="font-size:11px">awaiting completion</div></div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:500" id="delivDataLabel">Refined dataset</div><div class="mono muted2" id="delivDataMeta" style="font-size:11px">awaiting completion</div></div>
                 <span class="mono" id="delivDataChip" style="font-size:11px;color:var(--muted-3);padding:7px 13px;border-radius:6px;border:1px solid var(--line-2)">⛒ LOCKED</span>
               </a>
               <a class="deliv" id="delivCert" href="#" style="opacity:.45">
@@ -134,7 +134,7 @@
               <div style="display:flex;justify-content:space-between"><span class="muted">Status</span><span class="mono" id="jdStatus">—</span></div>
               <div style="display:flex;justify-content:space-between"><span class="muted">Complexity</span><span class="mono" id="jdComplexity">—</span></div>
               <div style="display:flex;justify-content:space-between"><span class="muted">Created</span><span class="mono" id="jdCreated">—</span></div>
-              <div style="display:flex;justify-content:space-between"><span class="muted">Inference</span><span class="mono green">DGX Spark</span></div>
+              <div style="display:flex;justify-content:space-between"><span class="muted">Inference</span><span class="mono green" id="jdInference">DGX Spark</span></div>
             </div>
           </div>
 
@@ -280,7 +280,7 @@ function renderGenCard(job, completed) {
       <div style="display:flex;align-items:center;gap:9px"><span class="teal">◎</span><span style="font-size:16px;font-weight:600">Synthetic generation</span></div>
       <span class="pill teal">DGX SPARK · LIVE</span>
     </div>
-    <p class="muted" style="font-size:13px;margin:0 0 18px">Aegis-14B generates candidate rows on your topic, keeps only the strong-solves, and signs a certificate — no source dataset required.</p>
+    <p class="muted" style="font-size:13px;margin:0 0 18px">Aegis governs the run and picks the cheapest capable models (shown in the certificate's provenance) to generate candidates, keeps only the strong-solves, and signs the result — no source dataset required.</p>
 
     <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:16px">
       <div class="kv"><span class="k">Topic</span><span class="v teal" style="max-width:62%;text-align:right;word-break:break-word">${esc(topic)}</span></div>
@@ -434,9 +434,11 @@ function renderDeliverables(job, completed, cert) {
   $("delivStatus").textContent = ready ? "READY" : "LOCKED UNTIL COMPLETE";
   $("delivStatus").style.color = ready ? "var(--green)" : "var(--muted-2)";
 
+  const synth = job.service === "synthesis";
   const data = $("delivData"), dataChip = $("delivDataChip");
   data.style.opacity = completed ? "1" : ".45";
-  $("delivDataMeta").textContent = completed ? "refined · JSONL" : "awaiting completion";
+  $("delivDataLabel").textContent = synth ? "Synthetic dataset" : "Refined dataset";
+  $("delivDataMeta").textContent = completed ? (synth ? "synthesized · JSONL" : "refined · JSONL") : "awaiting completion";
   if (completed) {
     data.href = `/jobs/${job.id}/download`;
     data.setAttribute("download", "");
@@ -466,6 +468,7 @@ function renderSidebar(job, ticket, completed) {
   $("jdComplexity").innerHTML = job.complexity_score != null
     ? `<span class="amber">${(Number(job.complexity_score)).toFixed(2)}</span>` : "—";
   $("jdCreated").textContent = job.created_at ? new Date(job.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—";
+  $("jdInference").textContent = synth ? "cheapest-good-enough (see provenance)" : "DGX Spark";
 
   // conductor pipeline current node
   let loop, th;
