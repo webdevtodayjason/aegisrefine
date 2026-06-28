@@ -26,7 +26,7 @@
 
           <div>
             <div class="label" style="margin-bottom:10px">Source data (https URL)</div>
-            <input id="dataset" value="https://data.example.com/discord-export.json"/>
+            <input id="dataset" placeholder="https://…/your-dataset.jsonl"/>
             <div class="mono muted2" style="font-size:11px;margin-top:8px">Discord logs · PDFs · scraped HTML · raw JSON</div>
           </div>
 
@@ -63,14 +63,12 @@
         <!-- RIGHT: summary (sticky) -->
         <div style="position:sticky;top:90px;display:flex;flex-direction:column;gap:18px">
           <div class="card">
-            <h2 style="font-size:16px;font-weight:600;margin:0 0 16px">Order summary</h2>
-            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">Flat job fee</span><span class="mono">$20.00</span></div>
-            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">External spend</span><span class="mono amber">gated · approve later</span></div>
-            <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.05)"><span class="muted">DGX Spark inference</span><span class="mono green">included</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 4px"><span style="font-size:14px;font-weight:600">Due today</span><span class="mono teal" style="font-size:24px;font-weight:600">$20.00</span></div>
-            <button class="btn" style="width:100%;margin-top:16px" onclick="payAndStart()">Pay $20 &amp; start job →</button>
-            <button class="btn ghost" style="width:100%;margin-top:10px" onclick="simulateAndStart()">Simulate paid → start job (dev)</button>
-            <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Secured by Stripe · no external spend without approval</div>
+            <h2 style="font-size:16px;font-weight:600;margin:0 0 6px">Your quote</h2>
+            <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B reads your data and returns ONE flat, capped price. No surprise bills.</p>
+            <div id="quoteBox">
+              <button class="btn" style="width:100%" onclick="getQuote()">Get my quote →</button>
+              <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>
+            </div>
             <div id="out"></div>
           </div>
         </div>
@@ -87,16 +85,53 @@ function pickFmt(f){ fmt=f; document.querySelectorAll(".fmt").forEach(b=>{const 
 function onThresh(){ const t=+document.getElementById("threshold").value; document.getElementById("thLabel").textContent="$"+t+".00";
   document.getElementById("thNote").textContent = t===0 ? "Every external spend pauses for human approval." : "Spends under $"+t+" auto-execute and log; anything above pauses for your approval."; }
 pickFmt("chatml"); onThresh();
-const err = e => document.getElementById("out").innerHTML = `<div class="err">✗ ${e.message||e}</div>`;
-async function payAndStart(){
-  try{ const d = await Aegis.createCheckout(document.getElementById("dataset").value, document.getElementById("email").value);
-    document.getElementById("out").innerHTML = `<p class="muted" style="font-size:12.5px;margin-top:14px">Redirecting to Stripe (test card 4242)…</p>`;
-    window.location = d.checkout_url;
-  }catch(e){ err(e); }
+const out = () => document.getElementById("out");
+const err = e => out().innerHTML = `<div class="err" style="margin-top:12px">✗ ${e.message||e}</div>`;
+let QUOTE = null;
+
+async function getQuote(){
+  out().innerHTML = "";
+  const url = document.getElementById("dataset").value.trim();
+  const email = document.getElementById("email").value.trim();
+  if(!url){ err("Enter your dataset URL first."); return; }
+  const box = document.getElementById("quoteBox");
+  box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis-14B is reading your dataset…</p>`;
+  try{
+    const r = await fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
+      credentials:"same-origin", body: JSON.stringify({dataset_url:url, email})});
+    const q = await r.json();
+    if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
+    if(q.requires_human_quote){
+      box.innerHTML = `<div style="text-align:center;padding:8px 0"><div class="mono amber" style="font-size:28px;font-weight:700">$${q.quoted_usd.toLocaleString()}</div><p class="muted" style="font-size:12.5px;margin:8px 0 0">Large job — a human confirms the price before anything runs.</p></div>`;
+      return;
+    }
+    QUOTE = q; renderQuote(q);
+  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="getQuote()">Get my quote →</button>`; err(e); }
 }
-async function simulateAndStart(){
-  try{ const d = await Aegis.simulatePaid(document.getElementById("dataset").value, document.getElementById("email").value);
-    window.location = `order-detail.html?job=${d.job_id}`;
+
+function renderQuote(q){
+  document.getElementById("quoteBox").innerHTML = `
+    <div style="text-align:center;padding:4px 0 12px">
+      <div class="mono teal" style="font-size:42px;font-weight:700;letter-spacing:-.02em">$${q.quoted_usd.toFixed(2)}</div>
+      <div class="mono muted2" style="font-size:10px;margin-top:2px">FLAT · CAPPED · NO SURPRISES</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Records detected</span><span class="mono">${q.n_records.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Format in</span><span class="mono">${q.data_type}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Priced by</span><span class="mono green">${q.complexity_scored_by}</span></div>
+    <p class="muted" style="font-size:12px;margin:10px 0 16px">The most you'll ever pay. We run on our own GPUs first and eat any overage — you won't.</p>
+    <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${q.quoted_usd.toFixed(2)} →</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="getQuote()">Re-quote</button>`;
+}
+
+async function accept(){
+  if(!QUOTE) return;
+  out().innerHTML = `<p class="muted" style="font-size:12.5px;margin-top:14px">Redirecting to Stripe (test card 4242 4242 4242 4242)…</p>`;
+  try{
+    const r = await fetch("/jobs/", {method:"POST", headers:{"Content-Type":"application/json"},
+      credentials:"same-origin", body: JSON.stringify({quote_token: QUOTE.token})});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || "could not start checkout");
+    window.location = d.checkout_url;
   }catch(e){ err(e); }
 }
 </script>
