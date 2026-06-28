@@ -45,6 +45,7 @@ def run(source: str, out_dir: str | None = None) -> dict:
     st.rows_out = len(good)
 
     out_dir = out_dir or tempfile.mkdtemp(prefix="aegis-curate-")
+    os.makedirs(out_dir, exist_ok=True)
     sg_path = os.path.join(out_dir, "dataset.sharegpt.jsonl")
     cm_path = os.path.join(out_dir, "dataset.chatml.jsonl")
     write_jsonl(good, sg_path, "sharegpt")
