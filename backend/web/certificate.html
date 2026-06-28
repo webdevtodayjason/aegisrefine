@@ -126,23 +126,20 @@ function statCell(h, v, color) {
   return `<div class="stat"><div class="h">${h}</div><div class="v"${color ? ` style="color:${color}"` : ""}>${v}</div></div>`;
 }
 
-/* money helpers — REAL economics from aar.economics, never stubbed */
+/* price helper — the QUOTED price the customer paid (never our cost/margin) */
 const money = (v) => v == null || v === "" ? "—" : "$" + Number(v).toFixed(2);
-const fineUsd = (v) => v == null || v === "" ? "—" : "$" + Number(v).toFixed(Math.abs(Number(v)) < 0.01 && Number(v) !== 0 ? 4 : 2);
 
-/* the agent's audited books for this job — quoted fee, COGS, margin, cap discipline */
+/* customer-facing economics: only the quoted price paid + budget-cap discipline.
+   COGS / margin / by-model costs stay in the signed JSON for verifiers, never rendered here. */
 function econHtml() {
   const e = aar.economics;
   if (!e) {
     return `<div class="statgrid" style="grid-template-columns:1fr;margin-bottom:22px">
-      <div class="stat"><div class="h">ECONOMICS</div><div class="v muted2">NOT RECORDED FOR THIS JOB</div></div></div>`;
+      <div class="stat"><div class="h">PRICE</div><div class="v muted2">NOT RECORDED FOR THIS JOB</div></div></div>`;
   }
-  const margin = Number(e.margin_usd);
   const capOk = e.cap_respected !== false;
-  return `<div class="statgrid" style="margin-bottom:22px">
-    ${statCell("QUOTED FEE", money(e.quoted_usd), "var(--green)")}
-    ${statCell("SPENT (COGS)", money(e.spent_usd), "var(--amber)")}
-    ${statCell("MARGIN", money(e.margin_usd), margin < 0 ? "var(--red)" : "var(--green)")}
+  return `<div class="statgrid" style="grid-template-columns:repeat(2,1fr);margin-bottom:22px">
+    ${statCell("QUOTED PRICE", money(e.quoted_usd), "var(--green)")}
     ${statCell("BUDGET CAP", capOk ? "RESPECTED" : "EXCEEDED", capOk ? "var(--teal)" : "var(--red)")}
   </div>`;
 }
@@ -168,10 +165,7 @@ function guaranteesHtml() {
 
 function synthHtml(s) {
   const models = Array.isArray(s.models) ? s.models.join(", ") : (s.models || "—");
-  const byModel = s.by_model_usd && typeof s.by_model_usd === "object"
-    ? Object.entries(s.by_model_usd).map(([m, v]) =>
-        `<div class="attrow"><span class="k" style="padding-left:14px">↳ ${esc(m)}</span><span class="v amber">${esc(fineUsd(v))}</span></div>`).join("")
-    : "";
+  // counts + provenance only — by_model_usd / spent_usd stay out of the customer view
   return `<div class="label" style="margin-bottom:12px">SYNTHETIC PROVENANCE</div>
     <div class="declist" style="margin-bottom:26px">
       <div class="attrow"><span class="k">Method</span><span class="v" style="text-align:right;word-break:break-word">${esc(s.method || "—")}</span></div>
@@ -180,7 +174,6 @@ function synthHtml(s) {
       <div class="attrow"><span class="k">Yield</span><span class="v">${esc(s.yield_pct == null ? "—" : s.yield_pct)}%</span></div>
       <div class="attrow"><span class="k">Real / synthetic rows</span><span class="v">${esc(s.real_rows == null ? 0 : s.real_rows)} real · ${esc(s.synthetic_rows == null ? (s.kept_synthetic == null ? 0 : s.kept_synthetic) : s.synthetic_rows)} synthetic</span></div>
       <div class="attrow"><span class="k">Models</span><span class="v" style="word-break:break-word">${esc(models)}</span></div>
-      ${byModel ? `<div class="attrow"><span class="k">Cost by model</span><span class="v amber">${esc(fineUsd(s.spent_usd))}</span></div>${byModel}` : ""}
     </div>`;
 }
 
