@@ -123,53 +123,55 @@
   <!-- HERO -->
   <header class="hero">
     <div class="eyebrow" style="margin-bottom:18px">// PRICING</div>
-    <h1>One flat fee. <span class="teal">Every dollar accounted for.</span></h1>
-    <p>$20 per job, on demand. External spends are always proposed, gated by your approval, and itemized on a signed certificate. No surprises, no auto-spend.</p>
+    <h1>One flat price. <span class="teal">Quoted up front, and capped.</span></h1>
+    <p>You see the number before any work starts, and the cap is the ceiling. No metering, no surprise bills. Refine your data or synthesize new examples — priced simply, capped either way.</p>
   </header>
 
   <!-- PLANS -->
   <section class="section" id="plans">
     <div class="plans">
       <div class="plan feat">
-        <div class="badge">ON-DEMAND</div>
-        <h3>Per Job</h3>
-        <p class="sub">One dataset, fully refined and certified.</p>
-        <div class="price"><span class="num">$20</span><span class="unit">flat / job</span></div>
-        <a class="act primary" href="new-order.html">Start a job →</a>
+        <div class="badge">FLAT · CAPPED</div>
+        <h3>Refine</h3>
+        <p class="sub">Your messy data, cleaned and certified. Priced by size, complexity &amp; data type.</p>
+        <div class="price"><span class="num">$20</span><span class="unit">flat — example</span></div>
+        <p class="mono muted2" style="font-size:11px;margin:-16px 0 22px">your number depends on the job — quoted before any work</p>
+        <a class="act primary" href="new-order.html">Get my quote →</a>
         <div class="feats">
           <div class="row"><span class="ck">✓</span> Clean ShareGPT / ChatML JSONL</div>
-          <div class="row"><span class="ck">✓</span> Signed audit certificate (JSON + PDF)</div>
-          <div class="row"><span class="ck">✓</span> Human gate on every external spend</div>
+          <div class="row"><span class="ck">✓</span> PII masking, dedup &amp; schema validation</div>
+          <div class="row"><span class="ck">✓</span> Runs autonomously within your cap</div>
           <div class="row"><span class="ck">✓</span> Local DGX Spark inference included</div>
-          <div class="row"><span class="ck">✓</span> PII masking &amp; deduplication</div>
+          <div class="row"><span class="ck">✓</span> Signed, re-verifiable certificate (JSON + PDF)</div>
           <div class="row"><span class="ck">✓</span> Unlimited certificate re-downloads</div>
         </div>
       </div>
       <div class="plan">
-        <h3>Team &amp; Volume</h3>
-        <p class="sub">For studios running many jobs.</p>
-        <div class="price"><span class="num dim">Custom</span></div>
-        <a class="act sec" href="#faq">Join the waitlist</a>
+        <h3>Synthesize / Augment</h3>
+        <p class="sub">New training examples, generated and filtered. Priced by target rows.</p>
+        <div class="price"><span class="num dim">by rows</span></div>
+        <p class="mono muted2" style="font-size:11px;margin:-16px 0 22px">quoted by target rows — capped, same as refine</p>
+        <a class="act sec" href="new-order.html">Get my quote →</a>
         <div class="feats">
-          <div class="row off"><span class="ck off">○</span> Volume pricing &amp; shared spend budgets</div>
-          <div class="row off"><span class="ck off">○</span> Multi-user approval policies</div>
-          <div class="row off"><span class="ck off">○</span> API access &amp; webhooks</div>
-          <div class="row off"><span class="ck off">○</span> Curated dataset marketplace</div>
-          <div class="row off"><span class="ck off">○</span> Centralized audit dashboard &amp; SSO</div>
+          <div class="row"><span class="ck">✓</span> Net-new examples for the cases your model fails</div>
+          <div class="row"><span class="ck">✓</span> AutoData Δ-filter — keeps only what a strong model solves and a weak one fails</div>
+          <div class="row"><span class="ck">✓</span> Every row labeled synthetic, with signed provenance</div>
+          <div class="row"><span class="ck">✓</span> Metered &amp; capped, just like refine</div>
+          <div class="row"><span class="ck">✓</span> Signed, re-verifiable certificate (JSON + PDF)</div>
         </div>
       </div>
     </div>
 
-    <!-- gated spend explainer -->
+    <!-- the cap explainer -->
     <div class="spendbox" id="how">
       <span class="ic">⛉</span>
       <div class="body">
-        <div class="t">How external spends work</div>
-        <p>Some jobs need paid APIs (OCR, enrichment). Aegis <span style="color:var(--text)">proposes</span> the spend with a reason — it never runs until you <span class="green">approve</span>. Each approved spend is <span class="amber">authorized under one human gate (test)</span> and itemized on your certificate.</p>
+        <div class="t">How the cap works</div>
+        <p>Your quote is flat and <span style="color:var(--text)">capped before any work</span>. Accepting it pre-authorizes the agent to run autonomously within that budget — it <span class="green">can’t bill you past the cap</span>. The only time it stops to ask is if finishing would exceed the cap; then you <span class="amber">approve a top-up or keep your cap</span>. Either way, what was quoted, spent, and the margin are itemized on your certificate.</p>
       </div>
       <div class="est">
-        <div class="lbl">TYPICAL EXTERNAL SPEND</div>
-        <div class="val">$0–$10</div>
+        <div class="lbl">WHAT YOU PAY</div>
+        <div class="val" style="color:var(--teal)">The quote</div>
       </div>
     </div>
   </section>
@@ -198,8 +200,8 @@
   <footer class="site">
     <div class="footwrap">
       <div class="footcta">
-        <h2>Refine your data. <span class="teal">Keep the receipts.</span></h2>
-        <a href="new-order.html">Start a job — $20 flat →</a>
+        <h2>Refine or synthesize. <span class="teal">Keep the receipts.</span></h2>
+        <a href="new-order.html">Get my quote →</a>
       </div>
       <div class="footbar">
         <a class="logo" href="dashboard.html"><img src="assets/shield.svg" alt="Aegis"><b>AEGIS<span class="teal">&nbsp;REFINE</span></b></a>
@@ -219,11 +221,11 @@
 <script>
 // Comparison rows (ported from blueprint renderVals)
 const rows = [
-  { label: 'High-quality structured output', a: 'Varies',    aColor: 'var(--muted)', b: 'Sometimes', bColor: 'var(--muted)', c: '✓' },
-  { label: 'Speed at scale',                 a: 'Slow',      aColor: 'var(--red)',   b: 'Fast',      bColor: 'var(--green)', c: '✓ Fast' },
-  { label: 'Human control over spend',       a: 'Full',      aColor: 'var(--green)', b: 'None',      bColor: 'var(--red)',   c: '✓ Gated' },
-  { label: 'Signed audit trail',             a: '✕',         aColor: 'var(--red)',   b: '✕',         bColor: 'var(--red)',   c: '✓' },
-  { label: 'Cost',                           a: '$$$ labor', aColor: 'var(--muted)', b: 'Unbounded', bColor: 'var(--red)',   c: '$20 flat' },
+  { label: 'High-quality structured output', a: 'Varies',    aColor: 'var(--muted)', b: 'Sometimes',        bColor: 'var(--muted)', c: '✓' },
+  { label: 'Speed at scale',                 a: 'Slow',      aColor: 'var(--red)',   b: 'Fast',             bColor: 'var(--green)', c: '✓ Fast' },
+  { label: 'Price known up front',           a: '✕',         aColor: 'var(--red)',   b: '✕ metered',        bColor: 'var(--red)',   c: '✓ Flat & capped' },
+  { label: 'Signed, re-verifiable proof',    a: '✕',         aColor: 'var(--red)',   b: '✕',                bColor: 'var(--red)',   c: '✓' },
+  { label: 'Can generate new data',          a: '✕',         aColor: 'var(--red)',   b: 'Sometimes',        bColor: 'var(--muted)', c: '✓ Synthesis' },
 ];
 document.getElementById('cmpRows').innerHTML = rows.map(r => `
   <div class="cell">${r.label}</div>
@@ -234,11 +236,12 @@ document.getElementById('cmpRows').innerHTML = rows.map(r => `
 
 // FAQ accordion (ported from blueprint; honest spend wording)
 const faqs = [
-  { q: 'What does the $20 flat fee actually cover?', a: 'A complete refinement job: triage, scoring, local refinement on DGX Spark, PII masking, deduplication, your clean JSONL dataset, and a signed audit certificate. Local inference is included at no marginal cost.' },
-  { q: 'When would I be charged more than $20?', a: 'Only when the agent proposes a paid external service (like OCR or enrichment) AND you explicitly approve it. Approved spends are authorized under one human gate (outbound spend is a test stub today) and itemized on your certificate. Nothing runs without your approval.' },
-  { q: 'What happens if I reject a proposed spend?', a: 'The job continues without that step. The affected records are skipped or handled locally where possible, no external spend is authorized, and the rejection is permanently recorded in the audit log.' },
-  { q: 'What formats do you output?', a: 'ShareGPT and ChatML JSONL, ready for fine-tuning and agent training. Schema is validated before delivery.' },
-  { q: 'Is my data sent to third parties?', a: 'Bulk work runs locally on NVIDIA DGX Spark for data residency. External APIs are only ever called for spends you have explicitly approved.' },
+  { q: 'How is a job priced?', a: 'You get one flat price, quoted before any work begins and capped. Refine is priced by the size, complexity, and type of your data; synthesis is priced by the number of target rows. Either way you see the number — and the ceiling — before you pay.' },
+  { q: 'Could I ever be charged more than my quote?', a: 'No. The quote is a capped ceiling and the agent runs autonomously within it — it cannot bill you past the cap on its own. The only way a job costs more is if YOU approve a cap top-up mid-job, which it proposes only when finishing would otherwise exceed the cap.' },
+  { q: 'What if I decline a cap top-up?', a: 'The agent delivers everything that fit within your approved cap — no overage and no surprise bill. The decision is recorded, and what was quoted and spent is itemized on your signed certificate.' },
+  { q: 'What’s the difference between Refine and Synthesize?', a: 'Refine cleans data you already have — any format — into a PII-masked, deduped, schema-valid ShareGPT / ChatML set. Synthesize generates new training examples and keeps only the ones a strong model solves that a weak one fails (the AutoData Δ-filter); every row is labeled synthetic with signed provenance. Both are flat and capped.' },
+  { q: 'What formats do you output?', a: 'ShareGPT and ChatML JSONL, ready for fine-tuning and agent training. Schema is validated before delivery, and every job ships an Ed25519-signed certificate you can re-verify.' },
+  { q: 'Is my data sent to third parties?', a: 'Bulk work runs locally on NVIDIA DGX Spark for data residency. Paid external APIs are only ever used within the budget you approved.' },
 ];
 const faqList = document.getElementById('faqList');
 faqList.innerHTML = faqs.map((f, i) => `

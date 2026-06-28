@@ -73,7 +73,7 @@
         <div style="position:sticky;top:90px;display:flex;flex-direction:column;gap:18px">
           <div class="card">
             <h2 style="font-size:16px;font-weight:600;margin:0 0 6px">Your quote</h2>
-            <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B reads your data and returns ONE flat, capped price. No surprise bills.</p>
+            <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B returns ONE flat, capped price before anything runs. No surprise bills.</p>
             <div id="quoteBox">
               <button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>
               <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>
@@ -89,132 +89,159 @@
 <script src="assets/shell.js"></script>
 <script>
 AppShell.mount("new-order", "new order");
-let fmt = "chatml";
-function pickFmt(f){ fmt=f; document.querySelectorAll(".fmt").forEach(b=>{const on=b.dataset.fmt===f;b.style.color=on?"var(--teal)":"var(--muted)";b.style.background=on?"rgba(0,229,204,0.12)":"transparent";}); }
-function onThresh(){ const t=+document.getElementById("threshold").value; document.getElementById("thLabel").textContent="$"+t+".00";
-  document.getElementById("thNote").textContent = t===0 ? "Every external spend pauses for human approval." : "Spends under $"+t+" auto-execute and log; anything above pauses for your approval."; }
-pickFmt("chatml"); onThresh();
 const out = () => document.getElementById("out");
 const err = e => out().innerHTML = `<div class="err" style="margin-top:12px">✗ ${e.message||e}</div>`;
-let QUOTE = null;
-let MODE = "refine";   // "refine" (existing) | "synth" (new)
-let SYNTH = null;      // last synth quote response
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 
-// dispatch the shared "Get my quote" button by current mode
-function onQuote(){ return MODE === "synth" ? getSynthQuote() : getQuote(); }
+let PURPOSE = null;   // only "ft" (fine-tuning) is live
+let START = null;     // "refine" | "augment" | "synth"
+let QUOTE = null;     // last quote — refine OR synth; BOTH carry a .token for /jobs
 
-function setMode(m){
-  MODE = m;
-  document.querySelectorAll(".modebtn").forEach(b=>{const on=b.dataset.mode===m;b.style.color=on?"var(--teal)":"var(--muted)";b.style.background=on?"rgba(0,229,204,0.12)":"transparent";});
-  const synth = m === "synth";
-  document.getElementById("refineFields").style.display = synth ? "none" : "flex";
-  document.getElementById("synthFields").style.display = synth ? "flex" : "none";
-  document.getElementById("eyebrow").textContent  = synth ? "// NEW SYNTHESIS JOB" : "// NEW REFINEMENT JOB";
-  document.getElementById("formTitle").textContent = synth ? "Synthesize or augment" : "Describe your data";
-  document.getElementById("formSub").textContent  = synth
-    ? "Tell Aegis a topic. It generates candidates, keeps only the high-value rows that pass the Δ-filter, and labels every row synthetic with signed provenance."
-    : "Point Aegis at a dataset, tell it what you need, and Aegis-14B triages it before anything runs.";
-  // reset the quote panel so a stale quote from the other mode never lingers
-  QUOTE = null; SYNTH = null; out().innerHTML = "";
+const SERVICE_LABEL = { refine: "Clean my data", augment: "Expand my data", synth: "Generate a dataset" };
+
+// --- STEP 1: purpose -----------------------------------------------------------
+function pickPurpose(p){
+  if(p !== "ft") return;                 // RAG is coming-soon / not selectable
+  PURPOSE = p;
+  document.querySelectorAll('#step1 .opt[data-purpose]').forEach(b=>b.classList.toggle("on", b.dataset.purpose===p));
+  document.getElementById("step2").style.display = "flex";
+}
+
+// --- STEP 2: starting point ----------------------------------------------------
+function pickStart(s){
+  START = s;
+  document.querySelectorAll('#step2 .opt[data-start]').forEach(b=>b.classList.toggle("on", b.dataset.start===s));
+  renderStartFields(s);
+  resetQuote();
+}
+
+function field(label, inner, hint){
+  return `<div><div class="label" style="margin-bottom:10px">${label}</div>${inner}${hint?`<div class="mono muted2" style="font-size:11px;margin-top:8px">${hint}</div>`:""}</div>`;
+}
+
+function renderStartFields(s){
+  const el = document.getElementById("startFields");
+  if(s === "refine"){
+    el.innerHTML =
+      field("Source data (https URL)", `<input id="dataset" placeholder="https://…/your-dataset.jsonl"/>`, "Discord logs · PDFs · scraped HTML · raw JSON") +
+      field("Customer email", `<input id="email" value="judge@aegisrefine.com"/>`);
+  } else if(s === "augment"){
+    el.innerHTML =
+      field("Source data to ground on (https URL)", `<input id="dataset" placeholder="https://…/your-dataset.jsonl"/>`, "New examples are generated grounded in this dataset") +
+      field("What should the new examples cover?", `<input id="synthTopic" placeholder="e.g. harder multi-step variants, edge cases"/>`) +
+      field("Target rows to add", `<input id="synthRows" type="number" min="1" step="1" value="100"/>`, "Aegis over-generates, then keeps only rows that pass the Δ-filter");
+  } else { // synth
+    el.innerHTML =
+      field("Topic / domain", `<input id="synthTopic" placeholder="e.g. multi-step algebra word problems"/>`, "What kind of high-value examples Aegis should generate") +
+      field("Target rows to keep", `<input id="synthRows" type="number" min="1" step="1" value="100"/>`, "Aegis over-generates, then keeps only rows that pass the Δ-filter (strong-solves ∧ weak-fails)");
+  }
+  if(s !== "refine"){
+    el.innerHTML += `<div class="card"><div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span class="teal">✦</span><span style="font-size:15px;font-weight:600">Synthetic · labeled · signed</span></div><p class="muted" style="font-size:13px;margin:0">Every generated row is labeled <span class="teal">synthetic</span> and ships in the same Ed25519-signed certificate, with full provenance — models, candidates, yield, real spend.</p></div>`;
+  }
+}
+
+function resetQuote(){
+  QUOTE = null; out().innerHTML = "";
   document.getElementById("quoteBox").innerHTML =
     `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>
      <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>`;
 }
 
-async function getSynthQuote(){
-  out().innerHTML = "";
-  const topic = document.getElementById("synthTopic").value.trim();
-  const rows  = parseInt(document.getElementById("synthRows").value, 10);
-  const reference = document.getElementById("synthRef").value.trim();
-  if(!topic){ err("Enter a topic / domain to synthesize."); return; }
-  if(!rows || rows < 1){ err("Enter how many high-value rows to keep (1 or more)."); return; }
-  const box = document.getElementById("quoteBox");
-  box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis is pricing your synthesis job…</p>`;
-  try{
-    const r = await fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"same-origin", body: JSON.stringify({topic, target_kept: rows, reference})});
-    const q = await r.json();
-    if(!r.ok) throw new Error(q.detail || "could not quote that synthesis job");
-    q.__augment = !!reference;   // local note for the card (response omits reference)
-    SYNTH = q; renderSynthQuote(q);
-  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
+// route the shared "Get my quote" button by the chosen starting point
+function onQuote(){
+  if(!START){ err("Pick where you're starting (step 2) first."); return; }
+  return START === "refine" ? getQuote() : getSynthQuote();
 }
 
-function renderSynthQuote(q){
-  // NOTE: estimated_cost_usd is the private COGS — never displayed.
-  const price = Number(q.quote_usd) || 0;
-  document.getElementById("quoteBox").innerHTML = `
-    <div style="text-align:center;padding:4px 0 12px">
-      <div class="mono teal" style="font-size:42px;font-weight:700;letter-spacing:-.02em">$${price.toFixed(2)}</div>
-      <div class="mono muted2" style="font-size:10px;margin-top:2px">FLAT · CAPPED · NO SURPRISES</div>
-    </div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Service</span><span class="mono teal">Synthesize / Augment</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Target rows kept</span><span class="mono">${(Number(q.target_kept)||0).toLocaleString()}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Generation</span><span class="mono green">${q.__augment ? "augment" : "from-seed"}</span></div>
-    <p class="muted" style="font-size:12px;margin:10px 0 16px">Every row is labeled <span class="teal">synthetic</span> with signed provenance. The most you'll ever pay — we eat any overage.</p>
-    <button class="btn" style="width:100%" onclick="acceptSynth()">Accept &amp; pay $${price.toFixed(2)} →</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
-}
-
-async function acceptSynth(){
-  if(!SYNTH || !SYNTH.quote_token) return;
-  out().innerHTML = `<p class="muted" style="font-size:12.5px;margin-top:14px">Redirecting to Stripe (test card 4242 4242 4242 4242)…</p>`;
-  try{
-    const r = await fetch("/jobs/", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"same-origin", body: JSON.stringify({quote_token: SYNTH.quote_token})});
-    const d = await r.json();
-    if(!r.ok) throw new Error(d.detail || "could not start checkout");
-    window.location = d.checkout_url;
-  }catch(e){ err(e); }
-}
-
+// --- card ① CLEAN MY DATA (refine) — the existing flow, unchanged plumbing ------
 async function getQuote(){
   out().innerHTML = "";
   const url = document.getElementById("dataset").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const emailEl = document.getElementById("email");
+  const email = emailEl ? emailEl.value.trim() : "";
   if(!url){ err("Enter your dataset URL first."); return; }
   const box = document.getElementById("quoteBox");
   box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis-14B is reading your dataset…</p>`;
   try{
     const r = await fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"same-origin", body: JSON.stringify({dataset_url:url, email})});
+      credentials:"include", body: JSON.stringify({dataset_url:url, email})});
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
     if(q.requires_human_quote){
       box.innerHTML = `<div style="text-align:center;padding:8px 0"><div class="mono amber" style="font-size:28px;font-weight:700">$${q.quoted_usd.toLocaleString()}</div><p class="muted" style="font-size:12.5px;margin:8px 0 0">Large job — a human confirms the price before anything runs.</p></div>`;
       return;
     }
-    QUOTE = q; renderQuote(q);
-  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="getQuote()">Get my quote →</button>`; err(e); }
+    QUOTE = q; renderRefineQuote(q);
+  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
 }
 
-function renderQuote(q){
+function renderRefineQuote(q){
   document.getElementById("quoteBox").innerHTML = `
     <div style="text-align:center;padding:4px 0 12px">
       <div class="mono teal" style="font-size:42px;font-weight:700;letter-spacing:-.02em">$${q.quoted_usd.toFixed(2)}</div>
       <div class="mono muted2" style="font-size:10px;margin-top:2px">FLAT · CAPPED · NO SURPRISES</div>
     </div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Records detected</span><span class="mono">${q.n_records.toLocaleString()}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Format in</span><span class="mono">${q.data_type}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Priced by</span><span class="mono green">${q.complexity_scored_by}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Service</span><span class="mono teal">Clean my data</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Records detected</span><span class="mono">${q.n_records.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Format in</span><span class="mono">${esc(q.data_type)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Priced by</span><span class="mono green">${esc(q.complexity_scored_by)}</span></div>
     <p class="muted" style="font-size:12px;margin:10px 0 16px">The most you'll ever pay. We run on our own GPUs first and eat any overage — you won't.</p>
     <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${q.quoted_usd.toFixed(2)} →</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="getQuote()">Re-quote</button>`;
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
 }
 
+// --- cards ② EXPAND / ③ GENERATE (synthesis) -----------------------------------
+async function getSynthQuote(){
+  out().innerHTML = "";
+  const topicEl = document.getElementById("synthTopic"), rowsEl = document.getElementById("synthRows");
+  const topic = topicEl ? topicEl.value.trim() : "";
+  const rows  = rowsEl ? parseInt(rowsEl.value, 10) : NaN;
+  // ② augment grounds on the dataset URL; ③ generate-from-seed sends no reference
+  const refEl = document.getElementById("dataset");
+  const reference = START === "augment" ? (refEl ? refEl.value.trim() : "") : "";
+  if(START === "augment" && !reference){ err("Enter the dataset URL to ground on."); return; }
+  if(!topic){ err(START === "augment" ? "Describe what the new examples should cover." : "Enter a topic / domain to generate."); return; }
+  if(!rows || rows < 1){ err(`Enter how many rows to ${START === "augment" ? "add" : "keep"} (1 or more).`); return; }
+  const box = document.getElementById("quoteBox");
+  box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis is pricing your job…</p>`;
+  try{
+    const r = await fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
+      credentials:"include", body: JSON.stringify({topic, target_kept: rows, reference})});
+    const q = await r.json();
+    if(!r.ok) throw new Error(q.detail || "could not quote that job");
+    QUOTE = q; renderSynthQuote(q);
+  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
+}
+
+function renderSynthQuote(q){
+  // estimated_cost is the private COGS — not returned by the API, never displayed.
+  const price = Number(q.quote_usd) || 0;
+  const mode = q.mode || (START === "augment" ? "augment" : "from-seed");
+  document.getElementById("quoteBox").innerHTML = `
+    <div style="text-align:center;padding:4px 0 12px">
+      <div class="mono teal" style="font-size:42px;font-weight:700;letter-spacing:-.02em">$${price.toFixed(2)}</div>
+      <div class="mono muted2" style="font-size:10px;margin-top:2px">FLAT · CAPPED · NO SURPRISES</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)"><span class="muted">Service</span><span class="mono teal">${esc(SERVICE_LABEL[START] || "Synthesis")}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Target rows</span><span class="mono">${(Number(q.target_kept)||0).toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Mode</span><span class="mono green">${esc(mode)}</span></div>
+    <p class="muted" style="font-size:12px;margin:10px 0 16px">Every row labeled <span class="teal">synthetic</span> · signed provenance. The most you'll ever pay — we eat any overage.</p>
+    <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${price.toFixed(2)} →</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
+}
+
+// --- shared accept → Stripe Checkout (all three cards return a .token) ----------
 async function accept(){
-  if(!QUOTE) return;
+  if(!QUOTE || !QUOTE.token) return;
   out().innerHTML = `<p class="muted" style="font-size:12.5px;margin-top:14px">Redirecting to Stripe (test card 4242 4242 4242 4242)…</p>`;
   try{
     const r = await fetch("/jobs/", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"same-origin", body: JSON.stringify({quote_token: QUOTE.token})});
+      credentials:"include", body: JSON.stringify({quote_token: QUOTE.token})});
     const d = await r.json();
     if(!r.ok) throw new Error(d.detail || "could not start checkout");
     window.location = d.checkout_url;
   }catch(e){ err(e); }
 }
-
-setMode("refine");   // initialise toggle highlight + default mode
 </script>
 </body>
 </html>
