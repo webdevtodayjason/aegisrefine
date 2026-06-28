@@ -99,3 +99,49 @@ def verify_quote_token(token: str, now: int):
         return None if payload.get("exp", 0) < now else payload
     except Exception:
         return None
+
+
+# --- integration: sample the dataset, ask Aegis-14B to score complexity, price it ---
+
+def _sample_features(dataset_url: str) -> dict:
+    import urllib.request
+    from app.curate import detect as cdetect
+    from app.curate.parsers import dataset as cds, tabular as ctab
+    from app.curate.clean.pii import residual_count
+
+    with urllib.request.urlopen(dataset_url, timeout=30) as r:
+        text = r.read().decode("utf-8", "replace")
+    fmt = cdetect.detect(dataset_url, text[:512].encode("utf-8", "replace"))
+    if fmt == "json":
+        recs, dtype = cds.parse_json(text, dataset_url), "jsonl"
+    elif fmt in ("csv", "tsv"):
+        recs, dtype = ctab.parse_csv(text, dataset_url, "\t" if fmt == "tsv" else ","), "tabular"
+    else:
+        recs, dtype = cds.parse_jsonl(text, dataset_url), "jsonl"
+    sample = recs[:8]
+    sample_text = "\n".join(m["content"][:200] for rec in sample for m in rec["messages"])[:2000]
+    pii = residual_count("\n".join(m["content"] for rec in sample for m in rec["messages"])) > 0
+    return {"n_records": len(recs), "data_type": dtype, "pii": pii, "sample_text": sample_text}
+
+
+def quote_job(dataset_url: str, email: str, now: int) -> dict:
+    """Public: sample the dataset, get Aegis-14B's complexity read, return a signed capped quote.
+    Model unreachable → deterministic heuristic complexity (flagged); never blocks a quote."""
+    from app.services import agent
+    f = _sample_features(dataset_url)
+    complexity, scored_by = 0.4, "heuristic"
+    try:
+        tri = agent.decide("triage", f"Estimate complexity 0-1 for refining this {f['data_type']} "
+                           f"dataset of ~{f['n_records']} records into clean ShareGPT/ChatML. "
+                           f"Sample:\n{f['sample_text']}")
+        c = float(tri.get("complexity") or 0.4)
+        complexity, scored_by = max(0.0, min(1.0, c / 10 if c > 1 else c)), "aegis-14b"
+    except Exception:
+        pass
+    q = price_quote(n_records=max(1, f["n_records"]), complexity=complexity, data_type=f["data_type"],
+                    pii=f["pii"], passes=2 if f["pii"] else 1,
+                    escalation_fraction=0.20 if complexity > 0.4 else 0.0, malformed_rate=0.05)
+    q.update({"data_type": f["data_type"], "n_records": f["n_records"], "complexity": round(complexity, 3),
+              "complexity_scored_by": scored_by, "dataset_url": dataset_url})
+    q["token"] = sign_quote_token(q, dataset_url, email, now)
+    return q

@@ -22,14 +22,35 @@ WEB_DIR = BACKEND_DIR / "web"
 BRAND_DIR = Path(__file__).resolve().parents[2] / "brand-assets"
 
 
-def _ensure_auth_schema():
-    """Idempotent: add auth columns to a users table that predates them (create_all won't ALTER)."""
-    cols = {c["name"] for c in inspect(engine).get_columns("users")}
+_REQUIRED_COLUMNS = {
+    "users": [("password_hash", "VARCHAR"), ("is_admin", "BOOLEAN DEFAULT false NOT NULL")],
+    "jobs": [("quote_amount", "DOUBLE PRECISION"), ("approved_cap", "DOUBLE PRECISION"),
+             ("quote_status", "VARCHAR DEFAULT 'draft'"), ("quote_breakdown", "JSONB"),
+             ("target_margin_pct", "DOUBLE PRECISION DEFAULT 0.65"),
+             ("margin_floor_pct", "DOUBLE PRECISION DEFAULT 0.55"),
+             ("revenue_collected", "DOUBLE PRECISION"),
+             ("requires_human_quote", "BOOLEAN DEFAULT false"),
+             ("quote_accepted_at", "TIMESTAMPTZ")],
+    "spend_tickets": [("kind", "VARCHAR DEFAULT 'gated'"), ("gate_reason", "VARCHAR"),
+                      ("provider", "VARCHAR"), ("units", "DOUBLE PRECISION"),
+                      ("unit_price_usd", "DOUBLE PRECISION"), ("cost_source", "VARCHAR"),
+                      ("actual_amount", "DOUBLE PRECISION")],
+}
+
+
+def _ensure_columns():
+    """Idempotent: add columns to tables that predate them (create_all won't ALTER existing tables).
+    pg-typed DDL only runs on the live Postgres; fresh sqlite already has them via create_all."""
+    insp = inspect(engine)
+    tables = set(insp.get_table_names())
     with engine.begin() as conn:
-        if "password_hash" not in cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR"))
-        if "is_admin" not in cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT false NOT NULL"))
+        for table, cols in _REQUIRED_COLUMNS.items():
+            if table not in tables:
+                continue
+            have = {c["name"] for c in insp.get_columns(table)}
+            for name, ddl in cols:
+                if name not in have:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
 
 
 def _seed_admin():
@@ -55,7 +76,7 @@ def _seed_admin():
 async def lifespan(app: FastAPI):
     # ponytail: create_all + a tiny idempotent ALTER covers the demo; Alembic if this grows.
     Base.metadata.create_all(bind=engine)
-    _ensure_auth_schema()
+    _ensure_columns()
     _seed_admin()
     yield
 

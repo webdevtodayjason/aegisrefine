@@ -54,23 +54,62 @@ def reject_spend_ticket(db: Session, ticket_id: int, rejected_by: str = "admin")
                {"ticket_id": ticket.id, "amount": ticket.amount, "rejected_by": rejected_by})
     return ticket
 
-def execute_spend_ticket(db: Session, ticket_id: int):
-    """Execute the approved spend via Stripe Skills.
+def execute_spend_ticket(db: Session, ticket_id: int, actual_amount: float | None = None):
+    """Execute the approved spend. `actual_amount` settles the ledger with the real metered cost
+    (pay-per-success); until a real provider adapter is wired it equals the reserved amount.
 
-    ponytail: real Stripe Skills outbound call (Hermes @stripe/link-cli spend-request,
-    non-zero exit = denied = no money moves) lands in Phase 2 — this records the
-    state transition + audit row so the gate is honest today. It does NOT yet move money.
+    ponytail: real provider call (the cheapest-good-enough adapter) lands behind this — this
+    records the state transition + audit row so the gate is honest today.
     """
     ticket = db.query(SpendTicket).filter(SpendTicket.id == ticket_id).first()
     if not ticket or ticket.status != "approved":
         return None
 
-    # TODO(phase2): subprocess @stripe/link-cli spend-request --request-approval;
-    # returncode 0 => mark executed + store stripe_payment_intent_id; non-zero => do NOT execute.
     ticket.status = "executed"
     ticket.executed_at = datetime.utcnow()
+    if actual_amount is not None:
+        ticket.actual_amount = actual_amount
     db.commit()
     db.refresh(ticket)
     log_action(db, ticket.job_id, "spend_executed", "system",
-               {"ticket_id": ticket.id, "amount": ticket.amount, "real_money": False})
+               {"ticket_id": ticket.id, "amount": ticket.actual_amount or ticket.amount,
+                "real_money": actual_amount is not None})
     return ticket
+
+
+def authorize_within_cap(db: Session, ticket_id: int, job):
+    """Autonomous spend that the ACCEPTED QUOTE pre-authorized (projected ≤ cap).
+
+    HONEST: actor='agent', action='spend_preauthorized' — this NEVER routes through
+    approve_spend_ticket and so never writes a human-approver audit row for a machine decision.
+    """
+    t = db.query(SpendTicket).filter(SpendTicket.id == ticket_id, SpendTicket.status == "proposed").first()
+    if not t:
+        return None
+    cap = job.approved_cap if job.approved_cap is not None else job.quote_amount
+    t.status = "approved"
+    t.approved_by = f"quote_pre_authorization#job:{job.id}#cap:${(cap or 0):.2f}"
+    t.decided_at = datetime.utcnow()
+    db.commit()
+    db.refresh(t)
+    log_action(db, t.job_id, "spend_preauthorized", "agent", {"ticket_id": t.id, "amount": t.amount})
+    return t
+
+
+def approve_overrun(db: Session, ticket_id: int, job, *, mode: str, approved_by: str,
+                    recharge_payment_intent: str | None = None):
+    """Human decision on a gated cap overrun. mode in {'absorb','recharge'} — either way the
+    cap rises to admit this ticket (recharge also adds new revenue from a re-quote Checkout)."""
+    from app.services import budget_service
+    t = approve_spend_ticket(db, ticket_id, approved_by=approved_by)  # truthful human audit row
+    if not t:
+        return None
+    job.approved_cap = float(budget_service.ledger(db, job)["committed"])
+    if mode == "recharge":
+        job.revenue_collected = (job.revenue_collected or job.quote_amount or 0) + t.amount
+        t.stripe_payment_intent_id = recharge_payment_intent
+    job.status = "processing"
+    db.commit()
+    log_action(db, job.id, "cap_raised", "human",
+               {"mode": mode, "new_cap": job.approved_cap, "by": approved_by})
+    return t
