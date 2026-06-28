@@ -194,6 +194,34 @@ async def verify_aar(job_id: int, db: Session = Depends(get_db)):
     return resp
 
 
+@app.get("/debug/reach")
+async def debug_reach(k: str = ""):
+    """From INSIDE the container: probe each provider's REST endpoint with its bearer key and
+    report the exact outcome — distinguishes network timeout (egress blocked) from 401/403 (auth/
+    key not authorized from here) from 200 (works). Admin-gated by the ADMIN_PASSWORD query param."""
+    if not k or k != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="admin only")
+    import httpx, time as _t
+    targets = {
+        "xai": ("https://api.x.ai/v1/chat/completions", os.getenv("XAI_API_KEY"), "grok-3-mini"),
+        "minimax": ("https://api.minimax.io/v1/chat/completions", os.getenv("MINIMAX_API_KEY"), "MiniMax-M2"),
+        "zai": ("https://api.z.ai/api/coding/paas/v4/chat/completions", os.getenv("ZAI_API_KEY"), "glm-4.5-air"),
+    }
+    out = {}
+    for name, (url, key, model) in targets.items():
+        info = {"key_present": bool(key), "key_prefix": (key[:5] + "…") if key else None}
+        t0 = _t.time()
+        try:
+            r = httpx.post(url, json={"model": model, "messages": [{"role": "user", "content": "hi"}],
+                                      "max_tokens": 5},
+                           headers={"Authorization": f"Bearer {key}"}, timeout=12)
+            info.update({"status": r.status_code, "secs": round(_t.time() - t0, 1), "body": r.text[:160]})
+        except Exception as e:
+            info.update({"error": type(e).__name__ + ": " + str(e)[:140], "secs": round(_t.time() - t0, 1)})
+        out[name] = info
+    return out
+
+
 # --- static mounts LAST: brand assets, then the branded site at root (same-origin, no CORS) ---
 # brand-assets lives at the repo root (outside the backend build context) — mount only if present.
 if BRAND_DIR.exists():
