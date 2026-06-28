@@ -108,6 +108,9 @@ async def create_job(req: JobRequest, user: User = Depends(require_user)):
 def _job_brief(j: Job) -> dict:
     return {"id": j.id, "status": j.status, "input": j.input_file_path,
             "complexity_score": j.complexity_score, "estimated_cost": j.estimated_cost,
+            "quote_amount": j.quote_amount, "revenue_collected": j.revenue_collected,
+            "actual_cost": j.actual_cost, "service": getattr(j, "service", "refine"),
+            "synth_topic": getattr(j, "synth_topic", None),
             "created_at": j.created_at.isoformat() if j.created_at else None}
 
 

@@ -26,6 +26,15 @@ def _auto_run_job(job_id: int):
         else:
             refinery.process_job(db, job, sample="auto-run on payment")
             refinery.complete_job(db, job)
+        # honest "we'll email you" — best-effort, after the deliverable is signed
+        try:
+            from app.services.notify import email_job_done
+            from app.models.user import User
+            u = db.query(User).filter(User.id == job.user_id).first()
+            if u:
+                email_job_done(u.email, job.id, getattr(job, "service", "refine"))
+        except Exception:
+            pass
     except Exception:
         pass  # the job stays at its last good state; governance/curation log the reason
     finally:
