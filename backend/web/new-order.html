@@ -10,11 +10,31 @@
 <link rel="stylesheet" href="assets/app.css"/>
 <style>
   /* page-specific: selectable wizard option cards (everything else from app.css) */
-  .opt{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;cursor:pointer;font-family:inherit;color:var(--text);transition:border-color .15s,background .15s}
+  .opt{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;cursor:pointer;font-family:inherit;color:var(--text);transition:border-color .3s,background .3s,box-shadow .3s,transform .3s}
   .opt:hover:not(.disabled):not(.on){border-color:var(--line-2)}
-  .opt.on{border-color:var(--teal-line);background:var(--teal-dim)}
+  .opt.on{border-color:rgba(255,216,133,.9);background:var(--teal-dim);box-shadow:0 0 0 1px rgba(255,216,133,.58),0 0 22px rgba(255,216,133,.2),0 0 40px rgba(0,229,204,.09),inset 0 0 0 1px rgba(0,229,204,.26)}
   .opt.disabled{cursor:not-allowed;opacity:.55}
   .opt .ix{font-family:var(--mono);color:var(--teal);margin-right:4px}
+  .btn.cinematic{background:radial-gradient(circle at 18% 0%,rgba(255,236,170,.88),transparent 34%),linear-gradient(135deg,#79ffe8 0%,#00e5cc 42%,#42f4c8 72%,#f8d37b 130%);box-shadow:0 0 22px rgba(0,229,204,.34),0 0 34px rgba(245,184,79,.16),inset 0 1px 0 rgba(255,255,255,.34);transition:transform .18s ease,box-shadow .26s ease,filter .26s ease}
+  .btn.cinematic:hover{filter:saturate(1.08) brightness(1.04);box-shadow:0 0 30px rgba(0,229,204,.48),0 0 48px rgba(245,184,79,.23),inset 0 1px 0 rgba(255,255,255,.42)}
+  .btn.cinematic.pay{animation:ag-payment-glow 2.35s ease-in-out infinite}
+  @keyframes ag-payment-glow{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 22px rgba(0,229,204,.36),0 0 34px rgba(245,184,79,.16),inset 0 1px 0 rgba(255,255,255,.34)}50%{transform:translateY(-1px) scale(1.01);box-shadow:0 0 34px rgba(0,229,204,.58),0 0 58px rgba(245,184,79,.34),inset 0 1px 0 rgba(255,255,255,.48)}}
+  .analysisOverlay{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,7,18,.74);backdrop-filter:blur(7px)}
+  .analysisPanel{width:min(560px,100%);border:1px solid var(--teal-line);border-radius:14px;background:var(--panel);box-shadow:0 24px 90px rgba(0,0,0,.48);overflow:hidden}
+  .analysisHead{border-bottom:1px solid var(--line);padding:16px 20px}
+  .analysisTop{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .analysisPct{border:1px solid var(--teal-line);background:var(--teal-dim);color:var(--teal);font-family:var(--mono);font-size:11px;border-radius:8px;padding:6px 10px}
+  .analysisBody{padding:16px 20px}
+  .analysisBar{height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin-bottom:16px}
+  .analysisFill{height:100%;width:8%;border-radius:999px;background:var(--teal);transition:width .7s ease-out}
+  .analysisSteps{display:flex;flex-direction:column;gap:10px}
+  .analysisStep{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted-2);border-radius:10px;padding:10px 12px;transition:all .7s ease-out}
+  .analysisStep.done{border-color:rgba(34,197,94,.24);background:rgba(34,197,94,.055);color:var(--muted)}
+  .analysisStep.active{transform:translateX(4px);border-color:var(--teal-line);background:var(--teal-dim);color:var(--text)}
+  .analysisDot{display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex:0 0 20px;border-radius:50%;border:1px solid var(--line-2);font-family:var(--mono);font-size:10px;color:var(--muted-2)}
+  .analysisStep.done .analysisDot{border-color:var(--green);color:var(--green)}
+  .analysisStep.active .analysisDot{border-color:var(--teal);color:var(--teal)}
+  .analysisMsg{margin-top:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--muted-2)}
   /* file upload drop zone */
   .dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;border:1.5px dashed var(--line-2);border-radius:13px;background:var(--panel-2);padding:26px 18px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
   .dropzone:hover{border-color:var(--teal-line);background:var(--teal-dim)}
@@ -94,7 +114,7 @@
             <h2 style="font-size:16px;font-weight:600;margin:0 0 6px">Your quote</h2>
             <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B returns ONE flat, capped price before anything runs. No surprise bills.</p>
             <div id="quoteBox">
-              <button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>
+              <button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>
               <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>
             </div>
             <div id="out"></div>
@@ -117,10 +137,18 @@ let START = null;     // "refine" | "augment" | "synth"
 let QUOTE = null;     // last quote — refine OR synth; BOTH carry a .token for /jobs
 let PENDING = null;   // action to retry after in-flow account creation (set on a 401)
 let UPLOAD = null;    // { handle, name, size } once a file is uploaded for refine/augment; null = use URL
+let ANALYSIS_TIMERS = [];
 
 const SERVICE_LABEL = { refine: "Clean my data", augment: "Expand my data", synth: "Generate a dataset" };
 const ACCEPT = ".json,.jsonl,.csv,.tsv,.yaml,.yml,.txt,.pdf,.docx";
 const MAX_UPLOAD = 50 * 1024 * 1024;  // 50 MB client-side guard — bigger files: host + paste a URL
+const REFINE_STEPS = ["Securing source bytes","Detecting dataset format","Sampling training records","Scanning for PII and duplicates","Asking Aegis-14B to score complexity","Calculating capped Stripe quote","Signing tamper-proof quote token"];
+const REFINE_TIMING = [860,1180,970,1420,1280,910,1120];
+const REFINE_PROGRESS = [8,19,34,49,67,83,96];
+const SYNTH_STEPS = ["Reading generation brief","Checking grounding source","Estimating candidate volume","Selecting model ladder","Calculating capped spend budget","Signing synthetic-data quote"];
+const SYNTH_TIMING = [920,1320,1040,1260,980,1180];
+const SYNTH_PROGRESS = [9,24,41,61,80,96];
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- STEP 1: purpose -----------------------------------------------------------
 function pickPurpose(p){
@@ -219,7 +247,7 @@ function renderStartFields(s){
   if(s === "refine"){
     el.innerHTML =
       uploadBlock("Source data", "Discord logs · PDFs · scraped HTML · raw JSON — upload a file or paste a URL") +
-      field("Customer email", `<input id="email" value="judge@aegisrefine.com"/>`);
+      field("Customer email", `<input id="email" value="morgan.chen@northstardata.ai"/>`);
   } else if(s === "augment"){
     el.innerHTML =
       uploadBlock("Source data to ground on", "New examples are generated grounded in this dataset") +
@@ -239,8 +267,62 @@ function renderStartFields(s){
 function resetQuote(){
   QUOTE = null; out().innerHTML = "";
   document.getElementById("quoteBox").innerHTML =
-    `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>
+    `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>
      <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>`;
+}
+
+function setAnalysisStep(i, steps, progress){
+  const pct = progress[i] || 0;
+  const pctEl = document.getElementById("analysisPct");
+  const fill = document.getElementById("analysisFill");
+  if(pctEl) pctEl.textContent = pct + "%";
+  if(fill) fill.style.width = pct + "%";
+  document.querySelectorAll(".analysisStep").forEach((el, idx) => {
+    el.classList.toggle("done", idx < i);
+    el.classList.toggle("active", idx === i);
+    const dot = el.querySelector(".analysisDot");
+    if(dot) dot.textContent = idx < i ? "✓" : (idx === i ? "•" : String(idx + 1));
+  });
+}
+
+function showAnalysis(kind){
+  hideAnalysis();
+  const isSynth = kind === "synth";
+  const steps = isSynth ? SYNTH_STEPS : REFINE_STEPS;
+  const timing = isSynth ? SYNTH_TIMING : REFINE_TIMING;
+  const progress = isSynth ? SYNTH_PROGRESS : REFINE_PROGRESS;
+  const title = isSynth ? "Pricing your dataset job" : "Analyzing your dataset";
+  const msg = isSynth ? "Aegis is pricing your job..." : "Aegis-14B is reading your dataset...";
+  const overlay = document.createElement("div");
+  overlay.id = "analysisOverlay";
+  overlay.className = "analysisOverlay";
+  overlay.innerHTML = `<div class="analysisPanel">
+    <div class="analysisHead">
+      <div class="eyebrow" style="margin-bottom:8px">// AEGIS INTAKE TRACE</div>
+      <div class="analysisTop">
+        <div><h2 style="font-size:21px;font-weight:600;letter-spacing:-.01em;margin:0">${title}</h2><p class="muted" style="font-size:13px;margin:4px 0 0">Local-first inspection · Aegis-14B judgment · capped Stripe quote</p></div>
+        <div class="analysisPct" id="analysisPct">${progress[0]}%</div>
+      </div>
+    </div>
+    <div class="analysisBody">
+      <div class="analysisBar"><div class="analysisFill" id="analysisFill" style="width:${progress[0]}%"></div></div>
+      <div class="analysisSteps">${steps.map((s,i)=>`<div class="analysisStep ${i===0?"active":""}"><span class="analysisDot">${i===0?"•":i+1}</span><span style="font-size:13px;font-weight:500">${esc(s)}</span></div>`).join("")}</div>
+      <div class="analysisMsg">${msg}</div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  let elapsed = 0;
+  ANALYSIS_TIMERS = timing.slice(0, -1).map((duration, i) => {
+    elapsed += duration + Math.round(Math.random() * 260 - 80);
+    return window.setTimeout(() => setAnalysisStep(i + 1, steps, progress), elapsed);
+  });
+}
+
+function hideAnalysis(){
+  ANALYSIS_TIMERS.forEach(id => window.clearTimeout(id));
+  ANALYSIS_TIMERS = [];
+  const el = document.getElementById("analysisOverlay");
+  if(el) el.remove();
 }
 
 // route the shared "Get my quote" button by the chosen starting point
@@ -259,12 +341,17 @@ async function getQuote(){
   if(!UPLOAD && !url){ err("Upload a file or paste an https URL first."); return; }
   const box = document.getElementById("quoteBox");
   box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis-14B is reading your dataset…</p>`;
+  showAnalysis("refine");
   try{
     // uploaded file → carry its R2/local handle as the source; otherwise the https URL
     const body = UPLOAD ? {upload_handle: UPLOAD.handle, email} : {dataset_url: url, email};
-    const r = await fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"include", body: JSON.stringify(body)});
-    if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getQuote); return; }
+    const [r] = await Promise.all([
+      fetch("/jobs/quote", {method:"POST", headers:{"Content-Type":"application/json"},
+        credentials:"include", body: JSON.stringify(body)}),
+      sleep(7600),
+    ]);
+    hideAnalysis();
+    if(r.status === 401){ box.innerHTML = `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
     if(q.requires_human_quote){
@@ -272,7 +359,7 @@ async function getQuote(){
       return;
     }
     QUOTE = q; renderRefineQuote(q);
-  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
+  }catch(e){ hideAnalysis(); box.innerHTML = `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
 }
 
 function renderRefineQuote(q){
@@ -286,7 +373,7 @@ function renderRefineQuote(q){
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Format in</span><span class="mono">${esc(q.data_type)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Priced by</span><span class="mono green">${esc(q.complexity_scored_by)}</span></div>
     <p class="muted" style="font-size:12px;margin:10px 0 16px">The most you'll ever pay. We run on our own GPUs first and eat any overage — you won't.</p>
-    <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${q.quoted_usd.toFixed(2)} →</button>
+    <button class="btn cinematic pay" style="width:100%" onclick="accept()">Accept &amp; pay $${q.quoted_usd.toFixed(2)} →</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
 }
 
@@ -304,17 +391,22 @@ async function getSynthQuote(){
   if(!rows || rows < 1){ err(`Enter how many rows to ${START === "augment" ? "add" : "keep"} (1 or more).`); return; }
   const box = document.getElementById("quoteBox");
   box.innerHTML = `<p class="muted" style="font-size:12.5px">Aegis is pricing your job…</p>`;
+  showAnalysis("synth");
   try{
     // augment with an uploaded file carries the handle; otherwise the URL reference (synth sends neither)
     const body = {topic, target_kept: rows, reference};
     if(START === "augment" && UPLOAD){ body.upload_handle = UPLOAD.handle; body.reference = ""; }
-    const r = await fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
-      credentials:"include", body: JSON.stringify(body)});
-    if(r.status === 401){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getSynthQuote); return; }
+    const [r] = await Promise.all([
+      fetch("/jobs/synth-quote", {method:"POST", headers:{"Content-Type":"application/json"},
+        credentials:"include", body: JSON.stringify(body)}),
+      sleep(7000),
+    ]);
+    hideAnalysis();
+    if(r.status === 401){ box.innerHTML = `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getSynthQuote); return; }
     const q = await r.json();
     if(!r.ok) throw new Error(q.detail || "could not quote that job");
     QUOTE = q; renderSynthQuote(q);
-  }catch(e){ box.innerHTML = `<button class="btn" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
+  }catch(e){ hideAnalysis(); box.innerHTML = `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>`; err(e); }
 }
 
 function renderSynthQuote(q){
@@ -331,7 +423,7 @@ function renderSynthQuote(q){
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Mode</span><span class="mono green">${esc(mode)}</span></div>
     <p class="muted" style="font-size:12px;margin:10px 0 14px">Every row labeled <span class="teal">synthetic</span> · signed provenance. The most you'll ever pay — we eat any overage.</p>
     <div style="display:flex;gap:9px;align-items:flex-start;background:var(--teal-dim);border:1px solid var(--teal-line);border-radius:10px;padding:11px 13px;margin:0 0 16px"><span class="teal" style="font-size:13px;line-height:1.3">⏳</span><span class="muted" style="font-size:12px;line-height:1.45">Synthesis runs <span class="teal">~25–30&nbsp;min</span> as a background job — close this and we'll email you when it's ready.</span></div>
-    <button class="btn" style="width:100%" onclick="accept()">Accept &amp; pay $${price.toFixed(2)} →</button>
+    <button class="btn cinematic pay" style="width:100%" onclick="accept()">Accept &amp; pay $${price.toFixed(2)} →</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
 }
 
@@ -364,7 +456,7 @@ function needAuth(retry){
         <input id="suEmail" type="email" placeholder="you@company.com" autocomplete="email" value="${prefill}"/>
         <input id="suPass" type="password" placeholder="Choose a password" autocomplete="new-password"/>
       </div>
-      <button class="btn" style="width:100%;margin-top:12px" onclick="doSignup()">Create account &amp; continue →</button>
+      <button class="btn cinematic" style="width:100%;margin-top:12px" onclick="doSignup()">Create account &amp; continue →</button>
       <div id="suErr"></div>
     </div>`;
 }
