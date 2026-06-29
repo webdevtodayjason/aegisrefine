@@ -3,6 +3,7 @@ the handle rides the signed token into job.input_file_path, and completed output
 These exercise ONLY the wiring owned here; quote_service/engine reading R2 bytes is their own slice."""
 import json
 import os
+import tempfile
 
 from starlette.testclient import TestClient
 
@@ -24,8 +25,9 @@ def _authed_client(email):
 
 def test_is_upload_handle():
     assert is_upload_handle("users/7/uploads/abc-data.jsonl")          # R2 key
-    assert is_upload_handle("/tmp/aegis-upload-xy-data.jsonl")          # local temp path
+    assert is_upload_handle(os.path.join(tempfile.gettempdir(), "aegis-upload-xy-data.jsonl"))
     assert not is_upload_handle("https://example.com/data.jsonl")      # an https URL is NOT a handle
+    assert not is_upload_handle("/etc/passwd")                         # not a minted local upload
     assert not is_upload_handle("")
 
 
@@ -87,11 +89,27 @@ def test_quote_uses_upload_handle_without_url_validation(monkeypatch):
 
     monkeypatch.setattr(quote_service, "quote_job", fake_quote_job)
     c = _authed_client("quote-h@test.com")
-    handle = "users/9/uploads/deadbeef-data.jsonl"     # an R2 key: would FAIL validate_https_url
+    handle = c.post("/jobs/upload", files={
+        "file": ("data.jsonl", b'{"prompt":"q","completion":"a"}\n', "application/x-ndjson")
+    }).json()["handle"]
     r = c.post("/jobs/quote", json={"upload_handle": handle})
     assert r.status_code == 200, r.text
     assert captured["source"] == handle                # the handle reached quote_job verbatim
     assert r.json()["token"] == "tok.sig"
+
+
+def test_quote_rejects_unminted_absolute_upload_handle(monkeypatch):
+    monkeypatch.setattr(quote_service, "quote_job", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not read")))
+    c = _authed_client("quote-path@test.com")
+    r = c.post("/jobs/quote", json={"upload_handle": "/etc/passwd"})
+    assert r.status_code == 400
+
+
+def test_quote_rejects_other_users_r2_upload_handle(monkeypatch):
+    monkeypatch.setattr(quote_service, "quote_job", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not read")))
+    c = _authed_client("quote-other-r2@test.com")
+    r = c.post("/jobs/quote", json={"upload_handle": "users/999/uploads/deadbeef-data.jsonl"})
+    assert r.status_code == 400
 
 
 def test_quote_requires_a_source():
@@ -115,8 +133,23 @@ def test_create_paid_job_carries_upload_handle(db, user):
 
 # --- completed outputs are pushed to R2 (best-effort) without breaking the DB-blob fallback ---
 
+def _aegis_ok(*a, **k):
+    return {
+        "complexity": 0.2,
+        "risk": "low",
+        "est_tokens": 100,
+        "noise_level": 0.1,
+        "steps": ["parse", "mask", "emit"],
+        "can_run_locally": True,
+        "quality_score": 0.9,
+        "issues": [],
+        "recommended_format": "sharegpt",
+        "est_clean_rows": 2,
+    }
+
+
 def test_complete_job_pushes_outputs_to_r2(db, user, tmp_path, write_jsonl, monkeypatch):
-    monkeypatch.setattr(agent, "decide", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    monkeypatch.setattr(agent, "decide", _aegis_ok)
     puts = []
     monkeypatch.setattr(storage, "enabled", lambda: True)
     monkeypatch.setattr(storage, "put_bytes",
@@ -139,7 +172,7 @@ def test_complete_job_pushes_outputs_to_r2(db, user, tmp_path, write_jsonl, monk
 
 
 def test_complete_job_survives_r2_hiccup(db, user, tmp_path, write_jsonl, monkeypatch):
-    monkeypatch.setattr(agent, "decide", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    monkeypatch.setattr(agent, "decide", _aegis_ok)
     monkeypatch.setattr(storage, "enabled", lambda: True)
 
     def boom(*a, **k):

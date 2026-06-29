@@ -17,6 +17,7 @@ const Aegis = {
   reject(ticketId, adminKey, who) { return this._req("POST", `/admin/gate/${ticketId}/reject`, undefined, { "X-Admin-Key": adminKey, "X-Admin-User": who || "operator" }); },
   execute(ticketId, adminKey) { return this._req("POST", `/admin/gate/${ticketId}/execute`, undefined, { "X-Admin-Key": adminKey }); },
   tickets(adminKey) { return this._req("GET", "/admin/gate/tickets", undefined, { "X-Admin-Key": adminKey }); },
+  receipt(jobId) { return this._req("GET", `/admin/jobs/${jobId}/receipt`); },
   complete(jobId, output) { return this._req("POST", `/jobs/${jobId}/complete`, { output }); },
   aar(jobId) { return this._req("GET", `/jobs/${jobId}/aar`); },
   verify(jobId) { return this._req("GET", `/jobs/${jobId}/verify`); },

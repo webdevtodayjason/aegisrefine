@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.job import Job
 from app.models.spend_ticket import SpendTicket
 from app.models.audit_certificate import AuditCertificate
+from app.models.audit_log import AuditLog
 from app.services.job_service import (
     validate_https_url,
     is_upload_handle,
@@ -17,6 +18,7 @@ from app.services.auth import require_user
 from app.services import agent, quote_service, storage
 from app.models.user import User
 import stripe
+import json
 import os
 import time
 import tempfile
@@ -47,6 +49,62 @@ class SynthQuoteRequest(BaseModel):
     target_kept: int = 100
     reference: str | None = None   # augment: an https dataset URL to ground generation in; empty = from-seed
     upload_handle: str | None = None
+
+
+def _metadata_receipt(payload: dict) -> str:
+    """Compact public quote receipt copied from the signed token into Stripe metadata."""
+    receipt = payload.get("receipt") or {}
+    return json.dumps(receipt, separators=(",", ":"), sort_keys=True)[:480]
+
+
+FAILURE_ACTIONS = {
+    "aegis_temporarily_queued",
+    "curation_error",
+    "synthesis_failed",
+}
+
+
+def _classify_job_failure(
+    status: str | None,
+    action: str | None,
+    details: dict | None,
+) -> tuple[str | None, str | None]:
+    status = (status or "").lower()
+    action = action or ""
+    details = details or {}
+    text = " ".join(str(details.get(k) or "") for k in ("error", "reason", "stage")).lower()
+
+    if action == "aegis_temporarily_queued" or status == "queued":
+        return "aegis_temporarily_queued", "Temporarily queued for Aegis-14B governance."
+    if "ocr" in text:
+        return "ocr_required", "OCR required before curation can continue."
+    if "zero kept" in text or "no synthetic rows kept" in text:
+        return "synthesis_zero_kept_rows", "Synthesis finished with zero kept rows."
+    if "no usable" in text or "records produced" in text:
+        return "no_usable_records", "No usable training records were found."
+    if action == "curation_error":
+        return "curation_error", "Curation failed while preparing this dataset."
+    if status == "failed":
+        return "job_failed", "Job failed before completion."
+    return None, None
+
+
+def _job_failure(db: Session, j: Job) -> dict:
+    status = (j.status or "").lower()
+    if status not in {"failed", "queued"}:
+        return {"failure_code": None, "failure_reason": None}
+    row = (
+        db.query(AuditLog)
+        .filter(AuditLog.job_id == j.id, AuditLog.action.in_(FAILURE_ACTIONS))
+        .order_by(AuditLog.id.desc())
+        .first()
+    )
+    code, reason = _classify_job_failure(
+        status,
+        row.action if row else None,
+        row.details if row else None,
+    )
+    return {"failure_code": code, "failure_reason": reason}
 
 
 def _checkout_return_urls(request: Request) -> tuple[str, str]:
@@ -145,7 +203,8 @@ async def create_job(req: JobRequest, request: Request, user: User = Depends(req
         meta = {"service": "synthesis", "email": email, "quoted_usd": f"{quoted:.2f}",
                 "target_margin_pct": "0.65", "topic": (payload.get("topic") or "")[:480],
                 "target_kept": str(payload.get("target_kept") or 0),
-                "reference": (payload.get("reference") or "")[:480]}
+                "reference": (payload.get("reference") or "")[:480],
+                "quote_receipt": _metadata_receipt(payload)}
     else:
         # the signed token binds the source under "url" — an https URL OR an upload handle
         # (R2 key / temp path). The HMAC already guarantees integrity, so only re-validate URLs
@@ -158,7 +217,8 @@ async def create_job(req: JobRequest, request: Request, user: User = Depends(req
             validate_upload_handle(source, user.id)
         product = "Aegis Dataset Refinement"
         meta = {"service": "refine", "dataset_url": source, "email": email,
-                "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"}
+                "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65",
+                "quote_receipt": _metadata_receipt(payload)}
     success_url, cancel_url = _checkout_return_urls(request)
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -208,13 +268,16 @@ async def sync_checkout(req: CheckoutSyncRequest, background: BackgroundTasks,
     return {"job_id": job.id, "created": created, "status": job.status}
 
 
-def _job_brief(j: Job) -> dict:
-    return {"id": j.id, "status": j.status, "input": j.input_file_path,
+def _job_brief(db: Session, j: Job) -> dict:
+    out = {"id": j.id, "status": j.status, "input": j.input_file_path,
             "complexity_score": j.complexity_score, "estimated_cost": j.estimated_cost,
             "quote_amount": j.quote_amount, "revenue_collected": j.revenue_collected,
+            "quote_breakdown": j.quote_breakdown,
             "actual_cost": j.actual_cost, "service": getattr(j, "service", "refine"),
             "synth_topic": getattr(j, "synth_topic", None),
             "created_at": j.created_at.isoformat() if j.created_at else None}
+    out.update(_job_failure(db, j))
+    return out
 
 
 @router.get("/")
@@ -224,7 +287,7 @@ async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User =
     if not user.is_admin:
         q = q.filter(Job.user_id == user.id)
     rows = q.order_by(Job.id.desc()).limit(max(1, min(limit, 200))).all()
-    return [_job_brief(j) for j in rows]
+    return [_job_brief(db, j) for j in rows]
 
 
 @router.get("/{job_id}")
@@ -236,7 +299,7 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
     tickets = db.query(SpendTicket).filter(SpendTicket.job_id == job_id).order_by(SpendTicket.id).all()
     cert = (db.query(AuditCertificate).filter(AuditCertificate.job_id == job_id)
             .order_by(AuditCertificate.id.desc()).first())
-    out = _job_brief(j)
+    out = _job_brief(db, j)
     out.update({
         "output": j.output_file_path, "actual_cost": j.actual_cost,
         "spend_tickets": [{"id": t.id, "amount": t.amount, "description": t.description,

@@ -1,6 +1,29 @@
 """Background execution for paid jobs."""
 
 
+def run_due_jobs(db, *, limit: int = 5) -> dict:
+    """Retry paid jobs that still need the worker.
+
+    Aegis-14B outages park jobs as `queued`, while deploy restarts can leave newly
+    paid jobs in `pending`. This function is safe for a scheduler/worker to call
+    repeatedly without relying on browser clicks.
+    """
+    from app.models.job import Job
+
+    rows = (
+        db.query(Job)
+        .filter(Job.status.in_(["pending", "queued"]))
+        .order_by(Job.id)
+        .limit(max(1, min(int(limit or 5), 25)))
+        .all()
+    )
+    started = []
+    for job in rows:
+        started.append(job.id)
+        auto_run_job(job.id)
+    return {"scanned": len(rows), "started": started}
+
+
 def auto_run_job(job_id: int):
     """Payment kicks off the pipeline by itself.
 

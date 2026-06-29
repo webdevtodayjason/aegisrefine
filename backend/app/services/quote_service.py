@@ -98,17 +98,24 @@ def _b64(b):
 
 
 def sign_quote_token(quote: dict, dataset_url: str, email: str, now: int) -> str:
+    receipt = {k: quote.get(k) for k in (
+        "quoted_usd", "cap_usd", "n_records", "data_type", "complexity",
+        "complexity_scored_by", "target_margin_pct", "requires_human_quote", "priced_on"
+    ) if k in quote}
     body = _b64(json.dumps({"q": quote["quoted_usd"], "url": dataset_url, "email": email,
-                            "exp": now + TOKEN_TTL}, sort_keys=True).encode())
+                            "receipt": receipt, "exp": now + TOKEN_TTL}, sort_keys=True).encode())
     sig = _b64(hmac.new(_SECRET, body.encode(), hashlib.sha256).digest())
     return f"{body}.{sig}"
 
 
 def sign_synth_token(quote: dict, topic: str, target_kept: int, reference: str, email: str, now: int) -> str:
     """Same HMAC+TTL envelope as a refine token, but binds the synthesis job params instead of a url."""
+    receipt = {k: quote.get(k) for k in (
+        "quote_usd", "target_kept", "target_margin_pct", "service"
+    ) if k in quote}
     body = _b64(json.dumps({"q": quote["quote_usd"], "service": "synthesis", "topic": topic,
                             "target_kept": int(target_kept), "reference": reference, "email": email,
-                            "exp": now + TOKEN_TTL}, sort_keys=True).encode())
+                            "receipt": receipt, "exp": now + TOKEN_TTL}, sort_keys=True).encode())
     sig = _b64(hmac.new(_SECRET, body.encode(), hashlib.sha256).digest())
     return f"{body}.{sig}"
 

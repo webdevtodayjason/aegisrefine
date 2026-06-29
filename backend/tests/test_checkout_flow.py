@@ -88,6 +88,44 @@ def test_checkout_sync_verifies_paid_session_and_is_idempotent(monkeypatch):
         db.close()
 
 
+def test_checkout_sync_persists_quote_receipt(monkeypatch):
+    from app.routers import jobs
+    from app.services import job_runner
+
+    c = _client()
+    email = _signup(c, "buyer-receipt@test.com")
+    session = {
+        "id": "cs_test_receipt_123",
+        "payment_status": "paid",
+        "amount_total": 5500,
+        "metadata": {
+            "service": "refine",
+            "dataset_url": "https://example.com/data.jsonl",
+            "email": email,
+            "quoted_usd": "55.00",
+            "target_margin_pct": "0.65",
+            "quote_receipt": (
+                '{"n_records":10,"data_type":"jsonl","complexity":0.3,'
+                '"complexity_scored_by":"aegis-14b","priced_on":"2026-06-27"}'
+            ),
+        },
+    }
+
+    monkeypatch.setattr(jobs.stripe.checkout.Session, "retrieve", lambda sid: session)
+    monkeypatch.setattr(job_runner, "auto_run_job", lambda job_id: None)
+
+    r = c.post("/jobs/checkout/sync", json={"session_id": "cs_test_receipt_123"})
+
+    assert r.status_code == 200
+    db = SessionLocal()
+    try:
+        job = db.query(Job).filter(Job.stripe_checkout_session_id == "cs_test_receipt_123").one()
+        assert job.quote_breakdown["n_records"] == 10
+        assert job.quote_breakdown["complexity_scored_by"] == "aegis-14b"
+    finally:
+        db.close()
+
+
 def test_checkout_sync_rejects_wrong_user(monkeypatch):
     from app.routers import jobs
 

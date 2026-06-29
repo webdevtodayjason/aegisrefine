@@ -7,6 +7,7 @@ and the path-injection hole (dataset input is a validated https URL, not a raw p
 """
 
 from urllib.parse import urlparse
+import json
 import os
 import tempfile
 from fastapi import HTTPException
@@ -66,7 +67,8 @@ def get_or_create_user(db: Session, email: str) -> User:
 def create_paid_job(db: Session, dataset_url: str, email: str,
                     quote_amount: float | None = None, target_margin_pct: float = 0.65,
                     service: str = "refine", synth: dict | None = None,
-                    stripe_checkout_session_id: str | None = None) -> Job:
+                    stripe_checkout_session_id: str | None = None,
+                    quote_breakdown: dict | None = None) -> Job:
     """Create the Job for a completed payment and record it on the audit trail.
     Identity comes from the Stripe-authenticated session (email), never the client.
     When a quote was accepted, the cap becomes the job's hard spend ceiling.
@@ -93,6 +95,7 @@ def create_paid_job(db: Session, dataset_url: str, email: str,
         job.approved_cap = quote_amount
         job.revenue_collected = quote_amount
         job.quote_status = "accepted"
+        job.quote_breakdown = quote_breakdown
         job.target_margin_pct = target_margin_pct
         job.quote_accepted_at = datetime.now(timezone.utc)
     db.add(job)
@@ -148,6 +151,12 @@ def create_paid_job_from_checkout_session(db: Session, session) -> tuple[Job, bo
     if quoted is not None and amount_total is not None and int(amount_total) != int(round(quoted * 100)):
         raise HTTPException(status_code=400, detail="amount_total does not match the quoted cap")
     margin = float(meta.get("target_margin_pct") or 0.65)
+    quote_breakdown = None
+    if meta.get("quote_receipt"):
+        try:
+            quote_breakdown = json.loads(meta["quote_receipt"])
+        except Exception:
+            raise HTTPException(status_code=400, detail="invalid quote receipt metadata")
 
     if service == "synthesis":
         if not email or not meta.get("topic"):
@@ -158,6 +167,7 @@ def create_paid_job_from_checkout_session(db: Session, session) -> tuple[Job, bo
             synth={"topic": meta.get("topic"), "target_kept": meta.get("target_kept"),
                    "reference": meta.get("reference")},
             stripe_checkout_session_id=session_id,
+            quote_breakdown=quote_breakdown,
         )
     else:
         dataset_url = meta.get("dataset_url")
@@ -166,5 +176,6 @@ def create_paid_job_from_checkout_session(db: Session, session) -> tuple[Job, bo
         job = create_paid_job(
             db, dataset_url, email, quote_amount=quoted, target_margin_pct=margin,
             stripe_checkout_session_id=session_id,
+            quote_breakdown=quote_breakdown,
         )
     return job, True

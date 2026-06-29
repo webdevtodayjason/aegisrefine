@@ -88,7 +88,7 @@
             <span class="sbadge mono" id="health" style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.06em;color:var(--muted-2);border:1px solid var(--line-2);padding:5px 9px;border-radius:6px"><i style="width:6px;height:6px;border-radius:50%;background:var(--muted-3)"></i> CHECKING…</span>
           </div>
           <div class="kvstack">
-            <div class="kv"><span class="k">Base model</span><span class="v">Hermes-4-14B</span></div>
+            <div class="kv"><span class="k">Base model</span><span class="v">Hermes 14B</span></div>
             <div class="kv"><span class="k">Specialization</span><span class="v teal">LoRA fine-tune</span></div>
             <div class="kv"><span class="k">Parameters</span><span class="v">14B + gov. adapter</span></div>
             <div class="kv"><span class="k">Served on</span><span class="v">NVIDIA DGX Spark</span></div>
@@ -267,19 +267,23 @@ const ACT_COLOR = {
   spend_executed:"#F59E0B", spend_rejected:"#ef4444", aar_issued:"#3A7BFF", job_completed:"#22C55E",
 };
 
-// ---- system health (real /health, same as the dashboard) ----------------
+// ---- Aegis-14B reachability ----------------------------------------------
 async function health() {
   const el = document.getElementById("health");
   try {
-    const r = await fetch("/health");
-    const ok = r.ok && ((await r.json()) || {}).status === "healthy";
+    const r = await fetch("/agent/health");
+    const data = (await r.json()) || {};
+    const ok = r.ok && data.status === "ok";
+    const model = data.model_name || "Aegis-14B";
     el.innerHTML = ok
-      ? `<i style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></i> GOVERNING`
-      : `<i style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></i> DEGRADED`;
+      ? `<i style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></i> ${esc(model).toUpperCase()} ONLINE`
+      : `<i style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></i> DEGRADED · QUEUED`;
+    el.title = ok ? `${model} reachable in ${data.latency_ms} ms` : (data.error || "Aegis-14B decisions are queued");
     el.style.color = ok ? "var(--green)" : "var(--amber)";
     el.style.border = "1px solid " + (ok ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)");
   } catch {
-    el.innerHTML = `<i style="width:6px;height:6px;border-radius:50%;background:var(--red)"></i> OFFLINE`;
+    el.innerHTML = `<i style="width:6px;height:6px;border-radius:50%;background:var(--red)"></i> UNREACHABLE · QUEUED`;
+    el.title = "Aegis-14B health probe could not be reached";
     el.style.color = "var(--red)"; el.style.border = "1px solid rgba(239,68,68,0.3)";
   }
 }

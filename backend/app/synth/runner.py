@@ -5,7 +5,8 @@ import os
 
 from app.synth.loop import synthesize
 from app.curate.format import write_jsonl
-from app.services import budget_service, spend_service
+from app.services import budget_service, spend_service, quote_service
+from app.services.audit import log_action
 from app.services.refinery import complete_job
 
 OUT_DIR = os.environ.get("SYNTH_OUT_DIR", "/tmp/aegis-synth")
@@ -22,8 +23,24 @@ def run_synth_job(db, job, *, topic, target_kept=10, reference="", roles=None,
     job.status = "processing"  # surface that work has started (else the UI shows 'pending')
     db.commit()
     cap = float(budget_service.ledger(db, job)["cap"]) if job.quote_amount else 1.0
-    res = synthesize(topic=topic, target_kept=target_kept, reference=reference,
+    reference_text = reference or ""
+    if reference:
+        try:
+            features = quote_service._sample_features(reference)
+            reference_text = features["sample_text"]
+            real_rows = real_rows or int(features["n_records"] or 0)
+        except Exception:
+            # Keep the job moving, but provenance will show zero real rows if the reference
+            # could not be read at run time.
+            reference_text = reference
+    res = synthesize(topic=topic, target_kept=target_kept, reference=reference_text,
                      roles=roles, cap_usd=cap * 0.8, _call=_call)  # buffer keeps cap_respected true
+    if int(res.get("kept_count") or 0) <= 0:
+        job.status = "failed"
+        db.commit()
+        log_action(db, job.id, "synthesis_failed", "system",
+                   {"reason": "no synthetic rows kept", "candidates": res.get("candidates_generated", 0)})
+        raise RuntimeError("synthesis produced zero kept rows")
 
     os.makedirs(OUT_DIR, exist_ok=True)
     out_path = os.path.join(OUT_DIR, f"synth-job-{job.id}.jsonl")

@@ -26,6 +26,7 @@
   .ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sbadge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:4px 9px;border-radius:5px}
   .sbadge i{width:5px;height:5px;border-radius:50%;display:inline-block}
+  .reason{font-size:11.5px;line-height:1.35;margin-top:5px;color:var(--muted-2)}
   .attn{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:12px;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(90deg,rgba(245,158,11,0.08),rgba(245,158,11,0.02));transition:border-color .2s}
   .attn:hover{border-color:rgba(245,158,11,0.6)}
   .attn .ico{width:40px;height:40px;flex:0 0 auto;border-radius:9px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:18px;animation:ag-pulse 2s infinite}
@@ -138,6 +139,20 @@ const theme = s => STATUS[String(s||"").toLowerCase()] || [String(s||"UNKNOWN").
 const DONE = new Set(["complete","completed","rejected","halted","failed"]);
 const isDone   = s => ["complete","completed"].includes(String(s||"").toLowerCase());
 const isActive = s => !DONE.has(String(s||"").toLowerCase());
+
+function jobIssue(j) {
+  let reason = j && j.failure_reason;
+  const status = String((j && j.status) || "").toLowerCase();
+  if (!reason && status === "queued") reason = "Temporarily queued for Aegis-14B governance.";
+  if (!reason && status === "failed") reason = "Job failed before completion.";
+  if (!reason) return null;
+  const queued = status === "queued";
+  return {
+    reason,
+    color: queued ? "#F59E0B" : "#ef4444",
+    bg: queued ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)",
+  };
+}
 
 function complexity(n){
   const v = Number(n);
@@ -259,10 +274,12 @@ function renderJobs(jobs){
     const isSynth = String(j.service||"").toLowerCase() === "synthesis";
     const name = esc(isSynth ? (j.synth_topic || "Synthetic dataset") : (j.input || "Refinement job"));
     const svc  = j.service ? ` · ${esc(j.service)}` : "";
+    const issue = jobIssue(j);
     return `<a class="jrow" href="order-detail.html?job=${encodeURIComponent(j.id)}">`+
       `<div style="min-width:0"><div class="ellip" style="font-size:14px;font-weight:500">${name}</div>`+
         `<div class="mono muted2" style="font-size:10.5px">JOB-${esc(j.id)}${svc}</div></div>`+
-      `<div><span class="sbadge" style="color:${col};border:1px solid ${bd};background:${bg}"><i style="background:${col}"></i>${esc(lbl)}</span></div>`+
+      `<div><span class="sbadge" style="color:${issue ? issue.color : col};border:1px solid ${issue ? issue.color : bd};background:${issue ? issue.bg : bg}"><i style="background:${issue ? issue.color : col}"></i>${esc(lbl)}</span>`+
+        `${issue ? `<div class="reason" style="color:${issue.color}">${esc(issue.reason)}</div>` : ""}</div>`+
       `<div class="mono c-cx" style="font-size:12.5px;color:${cxCol}">${esc(cx)}</div>`+
       `<div class="mono c-cost" style="font-size:12.5px;color:var(--muted)">${cost}</div>`+
       `<div class="mono c-date" style="font-size:11.5px;color:var(--muted-2)">${fmtDate(j.created_at)}</div>`+
@@ -310,13 +327,18 @@ function refreshStats(){ renderStats(lastJobs, lastActivity); }
 async function health(){
   const el = document.getElementById("health");
   try {
-    const r = await fetch("/health"); const ok = r.ok && ((await r.json())||{}).status === "healthy";
-    el.innerHTML = ok ? `<i style="background:var(--green)"></i> ALL SYSTEMS OPERATIONAL`
-                      : `<i style="background:var(--amber)"></i> DEGRADED`;
+    const r = await fetch("/agent/health");
+    const data = (await r.json()) || {};
+    const ok = r.ok && data.status === "ok";
+    const model = data.model_name || "Aegis-14B";
+    el.innerHTML = ok ? `<i style="background:var(--green)"></i> ${esc(model).toUpperCase()} ONLINE · DGX SPARK`
+                      : `<i style="background:var(--amber)"></i> AEGIS DEGRADED · JOBS QUEUED`;
+    el.title = ok ? `${model} reachable in ${data.latency_ms} ms` : (data.error || "Aegis-14B decisions are queued");
     el.style.color = ok ? "var(--green)" : "var(--amber)";
     el.style.border = "1px solid " + (ok ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)");
   } catch {
-    el.innerHTML = `<i style="background:var(--red)"></i> OFFLINE`;
+    el.innerHTML = `<i style="background:var(--red)"></i> AEGIS UNREACHABLE · JOBS QUEUED`;
+    el.title = "Aegis-14B health probe could not be reached";
     el.style.color = "var(--red)"; el.style.border = "1px solid rgba(239,68,68,0.3)";
   }
 }

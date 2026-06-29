@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Job receipt · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css"/>
+<style>
+  .receipt-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  .kvlist{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .event{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .event:last-child{border-bottom:0}
+  .dotx{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:var(--teal);box-shadow:0 0 7px var(--teal)}
+  @media(max-width:900px){.receipt-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">// ADMIN JOB RECEIPT</div>
+          <h1 id="title" style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Loading receipt…</h1>
+          <p class="muted" style="font-size:14px;margin:0">Quote, Stripe session, model-spend ledger, audit trail, and signed proof in one operator view.</p>
+        </div>
+        <a class="btn ghost" id="jobLink" href="dashboard.html">Open job →</a>
+      </div>
+      <div id="root"><div class="card mono muted2" style="font-size:12px">Loading…</div></div>
+    </div>
+  </div>
+</div>
+<script src="assets/api.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+AppShell.mount("job-queue", "job receipt");
+const JOB_ID = new URLSearchParams(location.search).get("job");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const money = n => n == null ? "—" : "$" + Number(n || 0).toFixed(6).replace(/0+$/,"").replace(/\.$/,"");
+const kv = (k,v,cls="") => `<div class="kv"><span class="k">${esc(k)}</span><span class="v ${cls}">${esc(v == null || v === "" ? "—" : v)}</span></div>`;
+function renderKV(obj){
+  const rows = Object.entries(obj || {});
+  return rows.length ? rows.map(([k,v]) => kv(k.replace(/_/g," "), typeof v === "object" ? JSON.stringify(v) : v)).join("") : kv("none","—");
+}
+async function load(){
+  if(!JOB_ID){ document.getElementById("root").innerHTML = `<div class="card err">Missing ?job=</div>`; return; }
+  try{
+    const r = await Aegis.receipt(JOB_ID);
+    document.getElementById("title").textContent = `Receipt for job #${r.job.id}`;
+    document.getElementById("jobLink").href = `order-detail.html?job=${encodeURIComponent(r.job.id)}`;
+    const tickets = (r.spend_tickets || []).map(t => `<div class="kvlist" style="margin-bottom:10px">${renderKV({
+      ticket: "#" + t.id, status: t.status, kind: t.kind, provider: t.provider,
+      reserved: money(t.amount), actual: money(t.actual_amount), source: t.cost_source,
+      description: t.description
+    })}</div>`).join("") || `<div class="mono muted2" style="font-size:12px">No spend tickets recorded.</div>`;
+    const events = (r.audit_events || []).map(e => `<div class="event"><span class="dotx"></span><div style="flex:1"><div style="font-size:13px">${esc(e.action)}</div><div class="mono muted2" style="font-size:10.5px">${esc(e.actor)} · ${esc(e.at || "")}</div></div></div>`).join("");
+    document.getElementById("root").innerHTML = `
+      <div class="receipt-grid">
+        <div class="card"><div class="label" style="margin-bottom:12px">JOB + STRIPE</div><div class="kvlist">${renderKV({
+          id: r.job.id, status: r.job.status, service: r.job.service, stripe_checkout_session: r.job.stripe_checkout_session_id,
+          quote_amount: money(r.job.quote_amount), revenue_collected: money(r.job.revenue_collected), actual_cost: money(r.job.actual_cost),
+          certificate: r.certificate ? r.certificate.aar : "not issued"
+        })}</div></div>
+        <div class="card"><div class="label" style="margin-bottom:12px">SIGNED QUOTE RECEIPT</div><div class="kvlist">${renderKV(r.quote)}</div></div>
+        <div class="card"><div class="label" style="margin-bottom:12px">MODEL / SPEND LEDGER</div>${tickets}</div>
+        <div class="card"><div class="label" style="margin-bottom:12px">AUDIT EVENTS</div>${events || `<div class="mono muted2" style="font-size:12px">No events recorded.</div>`}</div>
+      </div>`;
+  }catch(e){
+    document.getElementById("root").innerHTML = `<div class="card err">✗ ${esc(e.message || e)}</div>`;
+  }
+}
+load();
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import os
+import asyncio
 import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -13,7 +14,7 @@ from app.database import Base, engine, get_db, SessionLocal
 from app.models.user import User
 from app import models  # noqa: F401 — import so Base.metadata sees every table
 from fastapi.responses import RedirectResponse
-from app.routers import jobs, admin, webhooks, certificates, activity, refinery, auth, scoreboard, downloads
+from app.routers import jobs, admin, webhooks, certificates, activity, refinery, auth, scoreboard, downloads, health
 from app.services import auth as authsvc
 from app.services.job_service import create_paid_job
 from app.services.aar_service import AAR_MJS, DID_JSON, CERTS_DIR, BACKEND_DIR
@@ -94,6 +95,24 @@ def _sweep_orphaned():
         db.close()
 
 
+async def _queued_retry_loop():
+    """Best-effort in-process retry worker for jobs parked while Aegis-14B was busy."""
+    interval = float(os.getenv("AEGIS_QUEUE_POLL_SECONDS", "30"))
+    if interval <= 0:
+        return
+    from app.services.job_runner import run_due_jobs
+
+    while True:
+        await asyncio.sleep(interval)
+        db = SessionLocal()
+        try:
+            run_due_jobs(db, limit=int(os.getenv("AEGIS_QUEUE_BATCH", "5")))
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ponytail: create_all + a tiny idempotent ALTER covers the demo; Alembic if this grows.
@@ -101,7 +120,15 @@ async def lifespan(app: FastAPI):
     _ensure_columns()
     _seed_admin()
     _sweep_orphaned()
-    yield
+    retry_task = asyncio.create_task(_queued_retry_loop())
+    try:
+        yield
+    finally:
+        retry_task.cancel()
+        try:
+            await retry_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
@@ -114,6 +141,7 @@ app = FastAPI(
 # --- API routers (registered BEFORE the static mounts so they take precedence) ---
 app.include_router(jobs.router)
 app.include_router(admin.router)
+app.include_router(admin.receipts_router)
 app.include_router(webhooks.router)
 app.include_router(certificates.router)
 app.include_router(downloads.router)
@@ -121,13 +149,14 @@ app.include_router(activity.router)
 app.include_router(refinery.router)
 app.include_router(auth.router)
 app.include_router(scoreboard.router)
+app.include_router(health.router)
 
 
 # new-order.html is intentionally PUBLIC — a logged-out visitor can build a quote; auth is
 # collected in-flow (the wizard prompts account creation when /jobs/quote returns 401).
 _CUSTOMER_PAGES = {"/dashboard.html", "/order-detail.html",
                    "/certificate.html", "/billing.html", "/settings.html", "/marketplace.html"}
-_ADMIN_PAGES = {"/ops.html", "/job-queue.html", "/audit-log.html", "/customers.html",
+_ADMIN_PAGES = {"/ops.html", "/job-queue.html", "/job-receipt.html", "/audit-log.html", "/customers.html",
                 "/policies.html", "/agents.html"}
 
 
