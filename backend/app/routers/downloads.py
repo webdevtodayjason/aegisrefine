@@ -39,7 +39,8 @@ def _dataset_bytes(job: Job) -> bytes | None:
     """Resolve the produced dataset for a job from its durable homes, in order:
     in-DB blob -> R2 key -> local fs path. None if the job has no output yet."""
     if job.output_data:                                  # DB copy survives redeploys
-        return job.output_data.encode("utf-8")
+        data = job.output_data.encode("utf-8")
+        return data if data.strip() else None
     src = job.output_file_path
     if src:
         if src.startswith("users/") and storage.enabled():   # R2 key (shared contract)
@@ -49,7 +50,8 @@ def _dataset_bytes(job: Job) -> bytes | None:
                 return None
         if os.path.exists(src):                          # local fs path
             with open(src, "rb") as f:
-                return f.read()
+                data = f.read()
+                return data if data.strip() else None
     return None
 
 

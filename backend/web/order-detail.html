@@ -429,23 +429,35 @@ function renderGate(job, ticket, completed, cert) {
   </div>`;
 }
 
+function deliverableRows(cert) {
+  const g = (((cert || {}).aar_json || {}).guarantees) || ((cert || {}).guarantees);
+  if (!g || g.rows == null) return null;
+  return Number(g.rows || 0);
+}
+
 function renderDeliverables(job, completed, cert) {
-  const ready = completed && !!cert;
-  $("delivStatus").textContent = ready ? "READY" : "LOCKED UNTIL COMPLETE";
-  $("delivStatus").style.color = ready ? "var(--green)" : "var(--muted-2)";
+  const rows = deliverableRows(cert);
+  const hasRows = rows == null || rows > 0;
+  const ready = completed && !!cert && hasRows;
+  const zeroRows = completed && !!cert && !hasRows;
+  $("delivStatus").textContent = ready ? "READY" : (zeroRows ? "NO DATASET OUTPUT" : "LOCKED UNTIL COMPLETE");
+  $("delivStatus").style.color = ready ? "var(--green)" : (zeroRows ? "var(--amber)" : "var(--muted-2)");
 
   const synth = job.service === "synthesis";
   const data = $("delivData"), dataChip = $("delivDataChip");
-  data.style.opacity = completed ? "1" : ".45";
+  data.style.opacity = ready ? "1" : ".45";
   $("delivDataLabel").textContent = synth ? "Synthetic dataset" : "Refined dataset";
-  $("delivDataMeta").textContent = completed ? (synth ? "synthesized · JSONL" : "refined · JSONL") : "awaiting completion";
-  if (completed) {
+  $("delivDataMeta").textContent = ready ? (synth ? "synthesized · JSONL" : "refined · JSONL") : (zeroRows ? "no usable rows produced" : "awaiting completion");
+  if (ready) {
     data.href = `/jobs/${job.id}/download`;
     data.setAttribute("download", "");
     dataChip.textContent = "↓ DOWNLOAD"; dataChip.style.color = "var(--teal)"; dataChip.style.borderColor = "var(--teal-line)";
   } else {
     data.href = "#";
     data.removeAttribute("download");
+    dataChip.textContent = zeroRows ? "⛒ EMPTY" : "⛒ LOCKED";
+    dataChip.style.color = zeroRows ? "var(--amber)" : "var(--muted-3)";
+    dataChip.style.borderColor = zeroRows ? "rgba(245,158,11,0.3)" : "var(--line-2)";
   }
 
   const certEl = $("delivCert"), certChip = $("delivCertChip");
@@ -621,6 +633,7 @@ async function loadCert() {
   wrap.innerHTML = `<div class="card"><div class="mono muted2" style="display:flex;align-items:center;gap:10px;font-size:12.5px"><span class="spinner" style="width:18px;height:18px;border-width:2px"></span> Loading signed certificate…</div></div>`;
   try {
     AAR_CACHE = await Aegis.aar(JOB_ID);
+    if (JOB) renderDeliverables(JOB, JOB.status === "completed", AAR_CACHE);
     renderCertCard(AAR_CACHE);
     if (JOB) renderLedger(JOB, AAR_CACHE);
   } catch (e) {

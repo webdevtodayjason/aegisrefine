@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request, BackgroundTasks
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,7 +6,13 @@ from app.database import get_db
 from app.models.job import Job
 from app.models.spend_ticket import SpendTicket
 from app.models.audit_certificate import AuditCertificate
-from app.services.job_service import validate_https_url, is_upload_handle
+from app.services.job_service import (
+    validate_https_url,
+    is_upload_handle,
+    validate_upload_handle,
+    create_paid_job_from_checkout_session,
+    checkout_session_to_dict,
+)
 from app.services.auth import require_user
 from app.services import quote_service, storage
 from app.models.user import User
@@ -32,10 +38,28 @@ class JobRequest(BaseModel):
     quote_token: str
 
 
+class CheckoutSyncRequest(BaseModel):
+    session_id: str
+
+
 class SynthQuoteRequest(BaseModel):
     topic: str
     target_kept: int = 100
     reference: str | None = None   # augment: an https dataset URL to ground generation in; empty = from-seed
+    upload_handle: str | None = None
+
+
+def _checkout_return_urls(request: Request) -> tuple[str, str]:
+    """Build return URLs for the browser surface that started Stripe Checkout."""
+    configured = os.getenv("CHECKOUT_RETURN_BASE_URL") or os.getenv("APP_BASE_URL")
+    origin = request.headers.get("origin")
+    base = (configured or origin or "https://aegisrefine.com").rstrip("/")
+    local_next = base.startswith("http://localhost:") or base.startswith("http://127.0.0.1:")
+    dashboard = os.getenv("CHECKOUT_SUCCESS_PATH") or ("/dashboard" if local_next else "/dashboard.html")
+    new_order = os.getenv("CHECKOUT_CANCEL_PATH") or ("/new-order" if local_next else "/new-order.html")
+    success_url = f"{base}{dashboard}?paid=1&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{base}{new_order}?canceled=1"
+    return success_url, cancel_url
 
 
 @router.post("/upload")
@@ -68,7 +92,7 @@ async def quote(req: QuoteRequest, user: User = Depends(require_user)):
     The private cost estimate is NEVER returned — only the capped price the customer pays.
     Source is EITHER an uploaded-file handle OR a validated https URL (handle takes precedence)."""
     if req.upload_handle:
-        source = req.upload_handle                  # server-generated handle — trusted, not URL-validated
+        source = validate_upload_handle(req.upload_handle, user.id)
     elif req.dataset_url:
         source = validate_https_url(req.dataset_url)
     else:
@@ -91,9 +115,12 @@ async def synth_quote(req: SynthQuoteRequest, user: User = Depends(require_user)
     if not (req.topic or "").strip():
         raise HTTPException(status_code=400, detail="a topic/domain is required")
     tk = max(1, min(int(req.target_kept or 100), 5000))
-    reference = (req.reference or "").strip()
+    reference = (req.upload_handle or req.reference or "").strip()
     if reference:
-        validate_https_url(reference)
+        if is_upload_handle(reference):
+            reference = validate_upload_handle(reference, user.id)
+        else:
+            validate_https_url(reference)
     q = quote_service.quote_synth(tk)
     token = quote_service.sign_synth_token(q, req.topic.strip(), tk, reference, user.email, int(time.time()))
     return {"quote_usd": q["quote_usd"], "target_kept": tk, "target_margin_pct": q["target_margin_pct"],
@@ -101,7 +128,7 @@ async def synth_quote(req: SynthQuoteRequest, user: User = Depends(require_user)
 
 
 @router.post("/")
-async def create_job(req: JobRequest, user: User = Depends(require_user)):
+async def create_job(req: JobRequest, request: Request, user: User = Depends(require_user)):
     """Accept a signed quote (refine OR synthesis) and open a Stripe Checkout for EXACTLY the
     capped amount. No Job is created here — the webhook creates it AFTER payment (identity from Stripe)."""
     payload = quote_service.verify_quote_token(req.quote_token, int(time.time()))
@@ -109,6 +136,8 @@ async def create_job(req: JobRequest, user: User = Depends(require_user)):
         raise HTTPException(status_code=400, detail="quote expired or invalid — please re-quote")
     quoted = float(payload["q"])
     email = payload["email"]
+    if email.lower() != user.email.lower() and not user.is_admin:
+        raise HTTPException(status_code=403, detail="quote belongs to a different user")
     if payload.get("service") == "synthesis":
         product = "Aegis Dataset Synthesis"
         meta = {"service": "synthesis", "email": email, "quoted_usd": f"{quoted:.2f}",
@@ -123,9 +152,12 @@ async def create_job(req: JobRequest, user: User = Depends(require_user)):
         source = payload["url"]
         if not is_upload_handle(source):
             validate_https_url(source)
+        else:
+            validate_upload_handle(source, user.id)
         product = "Aegis Dataset Refinement"
         meta = {"service": "refine", "dataset_url": source, "email": email,
                 "quoted_usd": f"{quoted:.2f}", "target_margin_pct": "0.65"}
+    success_url, cancel_url = _checkout_return_urls(request)
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -135,13 +167,43 @@ async def create_job(req: JobRequest, user: User = Depends(require_user)):
                          "quantity": 1}],
             mode="payment",
             customer_email=email,
-            success_url="https://aegisrefine.com/dashboard.html?paid=1",
-            cancel_url="https://aegisrefine.com/new-order.html?canceled=1",
+            success_url=success_url,
+            cancel_url=cancel_url,
             metadata=meta,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"checkout_url": checkout_session.url}
+
+
+@router.post("/checkout/sync")
+async def sync_checkout(req: CheckoutSyncRequest, background: BackgroundTasks,
+                        db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """Local/browser return-page reconciliation for a real Stripe Checkout payment.
+
+    Stripe webhooks remain the production source of truth. Locally, when the Stripe CLI is
+    not forwarding events to localhost, this verifies the hosted Checkout Session directly
+    with Stripe before creating the same paid Job the webhook would create.
+    """
+    sid = (req.session_id or "").strip()
+    if not sid.startswith("cs_"):
+        raise HTTPException(status_code=400, detail="invalid checkout session id")
+    try:
+        session = stripe.checkout.Session.retrieve(sid)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"could not verify checkout session: {e}")
+    session = checkout_session_to_dict(session)
+    if session.get("payment_status") != "paid":
+        raise HTTPException(status_code=402, detail="checkout session is not paid")
+    meta = session.get("metadata") or {}
+    email = (meta.get("email") or (session.get("customer_details") or {}).get("email") or "").lower()
+    if email != user.email.lower() and not user.is_admin:
+        raise HTTPException(status_code=403, detail="checkout session belongs to a different user")
+    job, created = create_paid_job_from_checkout_session(db, session)
+    if created:
+        from app.services.job_runner import auto_run_job
+        background.add_task(auto_run_job, job.id)
+    return {"job_id": job.id, "created": created, "status": job.status}
 
 
 def _job_brief(j: Job) -> dict:
@@ -191,8 +253,13 @@ async def download_dataset(job_id: int, db: Session = Depends(get_db), user: Use
         raise HTTPException(status_code=404, detail="no dataset output yet")
     headers = {"Content-Disposition": f'attachment; filename="aegis-dataset-{job_id}.jsonl"'}
     if j and j.output_data:                          # DB copy survives redeploys
-        return Response(content=j.output_data, media_type="application/x-ndjson", headers=headers)
+        data = j.output_data.encode("utf-8")
+        if data.strip():
+            return Response(content=data, media_type="application/x-ndjson", headers=headers)
     if j and j.output_file_path and os.path.exists(j.output_file_path):
+        with open(j.output_file_path, "rb") as f:
+            if not f.read().strip():
+                raise HTTPException(status_code=404, detail="no dataset output yet")
         return FileResponse(j.output_file_path, media_type="application/x-ndjson",
                             filename=f"aegis-dataset-{job_id}.jsonl")
     raise HTTPException(status_code=404, detail="no dataset output yet")
