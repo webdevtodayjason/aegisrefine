@@ -2,9 +2,8 @@ from app.models.job import Job
 from app.services import refinery, agent
 
 
-def test_job_completes_when_model_unreachable(db, user, tmp_path, write_jsonl, monkeypatch):
-    """The deployed container can't reach Aegis-14B — governance degrades, but the deterministic
-    curation + signed cert must still ship."""
+def test_job_queues_when_model_unreachable(db, user, tmp_path, write_jsonl, monkeypatch):
+    """Aegis-14B is mandatory governance; no heuristic fallback may sign a paid job."""
     def boom(*a, **k):
         raise RuntimeError("AINODE unreachable")
     monkeypatch.setattr(agent, "decide", boom)
@@ -15,13 +14,13 @@ def test_job_completes_when_model_unreachable(db, user, tmp_path, write_jsonl, m
               approved_cap=100.0, revenue_collected=100.0, target_margin_pct=0.65)
     db.add(job); db.commit(); db.refresh(job)
 
-    summary = refinery.process_job(db, job, sample="sample text")
-    assert summary["stats"]["rows_in"] == 2           # curation ran despite the model being down
-    assert job.output_file_path                        # real bytes produced
-
-    cert = refinery.complete_job(db, job)
-    assert cert["economics"]["cap_respected"] is True
-    assert cert["guarantees"]["pii_residual"] == 0
+    try:
+        refinery.process_job(db, job, sample="sample text")
+        raise AssertionError("expected Aegis-14B outage to queue the job")
+    except agent.AegisTemporarilyQueued as e:
+        assert "temporarily queued" in str(e)
+    assert job.status == "queued"
+    assert not job.output_file_path
 
 
 def test_curation_error_marks_job_failed(db, user, monkeypatch):

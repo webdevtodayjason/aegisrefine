@@ -96,6 +96,18 @@ def test_quote_job_handles_multiple_supported_data_shapes(tmp_path, monkeypatch)
         assert q["complexity_scored_by"] == "aegis-14b"
 
 
+def test_quote_job_temporarily_queues_when_aegis_unreachable(tmp_path, monkeypatch):
+    monkeypatch.setattr(agent, "decide", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("DGX busy")))
+    src = tmp_path / "upload.jsonl"
+    src.write_text('{"question":"What is 2+2?","answer":"4"}\n')
+
+    try:
+        quote_job(str(src), "buyer@test.com", 1782600000)
+        raise AssertionError("expected quote_job to require Aegis-14B")
+    except agent.AegisTemporarilyQueued as e:
+        assert "temporarily queued" in str(e)
+
+
 def test_quote_job_rejects_sources_with_no_usable_records(tmp_path, monkeypatch):
     monkeypatch.setattr(agent, "decide", lambda *a, **k: (_ for _ in ()).throw(AssertionError("model should not run")))
     src = tmp_path / "contacts.csv"

@@ -14,7 +14,7 @@ from app.services.job_service import (
     checkout_session_to_dict,
 )
 from app.services.auth import require_user
-from app.services import quote_service, storage
+from app.services import agent, quote_service, storage
 from app.models.user import User
 import stripe
 import os
@@ -99,6 +99,8 @@ async def quote(req: QuoteRequest, user: User = Depends(require_user)):
         raise HTTPException(status_code=400, detail="provide a dataset_url or an upload_handle")
     try:
         q = quote_service.quote_job(source, req.email or user.email, int(time.time()))
+    except agent.AegisTemporarilyQueued as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"could not read that dataset: {e}")
     pub = {k: q[k] for k in ("quoted_usd", "cap_usd", "n_records", "data_type", "complexity",

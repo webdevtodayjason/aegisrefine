@@ -76,7 +76,7 @@
               <div style="display:flex;align-items:center;gap:9px"><span class="teal">◎</span><span style="font-size:16px;font-weight:600">Run Aegis-14B governance</span></div>
               <span class="pill teal">DGX SPARK · LIVE</span>
             </div>
-            <p class="muted" style="font-size:13px;margin:0 0 18px">Feed a sample plus an edge-case doc. Aegis-14B triages, scores quality, and decides whether any external spend is worth proposing — under the human gate.</p>
+            <p class="muted" style="font-size:13px;margin:0 0 18px">Feed a sample plus an edge-case doc. Aegis-14B, trained from Hermes 14B for this role, triages, scores quality, and decides whether any external spend is worth proposing — under the human gate.</p>
 
             <div class="label" style="margin-bottom:10px">Dataset sample</div>
             <textarea id="sample" rows="5" placeholder="Paste a sample row from your dataset (JSON / JSONL / text)…"></textarea>
@@ -245,6 +245,7 @@ function render(job) {
   else if (completed) badge = { txt: "COMPLETE", th: THEME.green };
   else if (job.status === "failed") badge = { txt: "FAILED", th: THEME.red };
   else if (job.status === "processing") badge = { txt: "PROCESSING", th: THEME.teal };
+  else if (job.status === "queued") badge = { txt: "TEMPORARILY QUEUED", th: THEME.amber };
   else badge = { txt: "PAID · READY", th: THEME.teal };
   const b = $("statusBadge");
   b.style.color = badge.th.c; b.style.borderColor = badge.th.b; b.style.background = badge.th.f;
@@ -480,7 +481,7 @@ function renderSidebar(job, ticket, completed) {
   $("jdComplexity").innerHTML = job.complexity_score != null
     ? `<span class="amber">${(Number(job.complexity_score)).toFixed(2)}</span>` : "—";
   $("jdCreated").textContent = job.created_at ? new Date(job.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—";
-  $("jdInference").textContent = synth ? "cheapest-good-enough (see provenance)" : "DGX Spark";
+  $("jdInference").textContent = synth ? "cheapest-good-enough (see provenance)" : "Aegis-14B · DGX Spark";
 
   // conductor pipeline current node
   let loop, th;
@@ -490,13 +491,14 @@ function renderSidebar(job, ticket, completed) {
     else if (job.status === "processing") { loop = "Generating · filtering"; th = THEME.teal; }
     else { loop = "Paid · queued to generate"; th = THEME.teal; }
   } else {
-    loop = "Paid · ready to triage"; th = THEME.teal;
+    loop = "Paid · ready for Aegis-14B"; th = THEME.teal;
     if (ticket && ticket.status === "proposed") { loop = "Human Gate · awaiting"; th = THEME.amber; }
     else if (ticket && ticket.status === "approved") { loop = "Gate approved · executing"; th = THEME.teal; }
     else if (ticket && ticket.status === "executed") { loop = "Spend authorized (test) · resumed"; th = THEME.green; }
     else if (ticket && ticket.status === "rejected" && !completed) { loop = "Halted at gate"; th = THEME.red; }
     else if (completed) { loop = "AAR · certified"; th = THEME.green; }
     else if (job.status === "processing") { loop = "Triage + scoring"; th = THEME.teal; }
+    else if (job.status === "queued") { loop = "Aegis-14B temporarily queued"; th = THEME.amber; }
   }
   $("loopStatus").textContent = loop; $("loopStatus").style.color = th.c;
   const ld = $("loopDot"); ld.style.background = th.c; ld.style.boxShadow = `0 0 8px ${th.c}`;

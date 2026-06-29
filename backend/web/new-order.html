@@ -112,7 +112,7 @@
         <div style="position:sticky;top:90px;display:flex;flex-direction:column;gap:18px">
           <div class="card">
             <h2 style="font-size:16px;font-weight:600;margin:0 0 6px">Your quote</h2>
-            <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B returns ONE flat, capped price before anything runs. No surprise bills.</p>
+            <p class="muted" style="font-size:12.5px;margin:0 0 16px">Aegis-14B, trained from Hermes 14B for this governance role, returns ONE flat, capped price before anything runs.</p>
             <div id="quoteBox">
               <button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>
               <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> No charge to quote · 15-min hold · Secured by Stripe</div>
@@ -353,6 +353,10 @@ async function getQuote(){
     hideAnalysis();
     if(r.status === 401){ box.innerHTML = `<button class="btn cinematic" style="width:100%" onclick="onQuote()">Get my quote →</button>`; needAuth(getQuote); return; }
     const q = await r.json();
+    if(r.status === 503){
+      box.innerHTML = `<div style="text-align:center;padding:8px 0"><div class="mono amber" style="font-size:16px;font-weight:700">TEMPORARILY QUEUED</div><p class="muted" style="font-size:12.5px;margin:8px 0 14px">Aegis-14B is busy on DGX Spark. No fallback model priced this quote.</p><button class="btn cinematic" style="width:100%" onclick="onQuote()">Retry Aegis-14B →</button></div>`;
+      return;
+    }
     if(!r.ok) throw new Error(q.detail || "could not quote that dataset");
     if(q.requires_human_quote){
       box.innerHTML = `<div style="text-align:center;padding:8px 0"><div class="mono amber" style="font-size:28px;font-weight:700">$${q.quoted_usd.toLocaleString()}</div><p class="muted" style="font-size:12.5px;margin:8px 0 0">Large job — a human confirms the price before anything runs.</p></div>`;

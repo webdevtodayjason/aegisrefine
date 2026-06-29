@@ -37,6 +37,10 @@ class AgentError(ValueError):
     """The model did not return valid, schema-complete JSON for the job."""
 
 
+class AegisTemporarilyQueued(RuntimeError):
+    """Aegis-14B is temporarily unavailable; keep the job queued instead of falling back."""
+
+
 def parse_decision(job: str, content: str) -> dict:
     """Parse + validate the model's structured output. Raises AgentError on bad shape."""
     if job not in JOB_SCHEMAS:

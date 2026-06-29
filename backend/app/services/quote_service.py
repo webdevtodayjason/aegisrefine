@@ -175,15 +175,13 @@ def _sample_features(dataset_url: str) -> dict:
 
 def quote_job(dataset_url: str, email: str, now: int) -> dict:
     """Public: sample the dataset, get Aegis-14B's complexity read, return a signed capped quote.
-    Model unreachable → deterministic heuristic complexity (flagged); never blocks a quote."""
+    Aegis-14B is mandatory for governance; if unavailable, the quote is temporarily queued."""
     from app.services import agent
     f = _sample_features(dataset_url)
     if f["n_records"] <= 0:
         if f.get("needs_ocr"):
             raise ValueError("source needs OCR before curation; automatic OCR is not enabled for this flow yet")
         raise ValueError("no usable training records found; provide question/answer, prompt/completion, messages, conversations, or document text")
-    complexity, scored_by = 0.4, "heuristic"
-    model_error = None
     try:
         tri = agent.decide("triage", f"Estimate complexity 0-1 for refining this {f['data_type']} "
                            f"dataset of ~{f['n_records']} records into clean ShareGPT/ChatML. "
@@ -191,16 +189,16 @@ def quote_job(dataset_url: str, email: str, now: int) -> dict:
                            f"and whether it can run locally. "
                            f"Sample:\n{f['sample_text']}")
         c = float(tri.get("complexity") or 0.4)
-        complexity, scored_by = max(0.0, min(1.0, c / 10 if c > 1 else c)), "aegis-14b"
     except Exception as e:
-        model_error = str(e)[:500]
+        raise agent.AegisTemporarilyQueued(
+            "Aegis-14B is temporarily queued on DGX Spark; retry the quote when governance is reachable"
+        ) from e
+    complexity, scored_by = max(0.0, min(1.0, c / 10 if c > 1 else c)), "aegis-14b"
     q = price_quote(n_records=max(1, f["n_records"]), complexity=complexity, data_type=f["data_type"],
                     pages=f["pages"], scanned_doc=f["needs_ocr"],
                     pii=f["pii"], passes=2 if f["pii"] else 1,
                     escalation_fraction=0.20 if complexity > 0.4 else 0.0, malformed_rate=0.05)
     q.update({"data_type": f["data_type"], "n_records": f["n_records"], "complexity": round(complexity, 3),
               "complexity_scored_by": scored_by, "dataset_url": dataset_url})
-    if model_error:
-        q["complexity_model_error"] = model_error
     q["token"] = sign_quote_token(q, dataset_url, email, now)
     return q
