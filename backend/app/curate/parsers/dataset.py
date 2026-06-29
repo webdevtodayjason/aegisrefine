@@ -19,8 +19,9 @@ def from_obj(obj, source=""):
         return record([{"role": "user", "content": instr}, {"role": "assistant", "content": obj["output"]}], source)
     if "prompt" in obj and "completion" in obj:
         return record([{"role": "user", "content": obj["prompt"]}, {"role": "assistant", "content": obj["completion"]}], source)
-    if "question" in obj and "answer" in obj:
-        return record([{"role": "user", "content": obj["question"]}, {"role": "assistant", "content": obj["answer"]}], source)
+    if "question" in obj and ("answer" in obj or "ground_truth" in obj):
+        answer = obj.get("answer") if "answer" in obj else obj.get("ground_truth")
+        return record([{"role": "user", "content": obj["question"]}, {"role": "assistant", "content": answer}], source)
     return None
 
 

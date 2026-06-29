@@ -18,6 +18,7 @@ class Job(Base):
     completed_at = Column(DateTime(timezone=True))
 
     # --- quote / economics (QUOTE_ENGINE.md) ---
+    stripe_checkout_session_id = Column(String, unique=True, index=True)
     quote_amount = Column(Float)                 # accepted flat cap = Stripe charge = revenue
     approved_cap = Column(Float)                 # hard ceiling the gate checks; starts = quote_amount
     quote_status = Column(String, default="draft")  # draft|sent|accepted|declined|change_requested|expired

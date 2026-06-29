@@ -130,21 +130,47 @@ def _sample_features(dataset_url: str) -> dict:
     import urllib.request
     from app.curate import detect as cdetect
     from app.curate.parsers import dataset as cds, tabular as ctab
+    from app.curate.parsers import documents as cdocs
     from app.curate.clean.pii import residual_count
+    from app.services import storage
 
-    with urllib.request.urlopen(dataset_url, timeout=30) as r:
-        text = r.read().decode("utf-8", "replace")
-    fmt = cdetect.detect(dataset_url, text[:512].encode("utf-8", "replace"))
+    def read_source(source: str) -> bytes:
+        if source.startswith("users/") and storage.enabled():
+            return storage.get_bytes(source)
+        if source.startswith(("http://", "https://")):
+            with urllib.request.urlopen(source, timeout=30) as r:
+                return r.read()
+        with open(source, "rb") as f:
+            return f.read()
+
+    raw = read_source(dataset_url)
+    fmt = cdetect.detect(dataset_url, raw[:512])
+    extra: dict = {}
     if fmt == "json":
+        text = raw.decode("utf-8", "replace")
         recs, dtype = cds.parse_json(text, dataset_url), "jsonl"
     elif fmt in ("csv", "tsv"):
+        text = raw.decode("utf-8", "replace")
         recs, dtype = ctab.parse_csv(text, dataset_url, "\t" if fmt == "tsv" else ","), "tabular"
+    elif fmt == "yaml":
+        text = raw.decode("utf-8", "replace")
+        recs, dtype = cdocs.parse_yaml(text, dataset_url), "document"
+    elif fmt == "txt":
+        text = raw.decode("utf-8", "replace")
+        recs, dtype = cdocs.parse_txt(text, dataset_url), "document"
+    elif fmt == "pdf":
+        recs, extra = cdocs.parse_pdf(raw, dataset_url)
+        dtype = "scanned" if extra.get("needs_ocr") else "document"
+    elif fmt == "docx":
+        recs, dtype = cdocs.parse_docx(raw, dataset_url), "document"
     else:
+        text = raw.decode("utf-8", "replace")
         recs, dtype = cds.parse_jsonl(text, dataset_url), "jsonl"
     sample = recs[:8]
     sample_text = "\n".join(m["content"][:200] for rec in sample for m in rec["messages"])[:2000]
     pii = residual_count("\n".join(m["content"] for rec in sample for m in rec["messages"])) > 0
-    return {"n_records": len(recs), "data_type": dtype, "pii": pii, "sample_text": sample_text}
+    return {"n_records": len(recs), "data_type": dtype, "pii": pii, "sample_text": sample_text,
+            "pages": int(extra.get("pages") or 0), "needs_ocr": bool(extra.get("needs_ocr"))}
 
 
 def quote_job(dataset_url: str, email: str, now: int) -> dict:
@@ -152,19 +178,29 @@ def quote_job(dataset_url: str, email: str, now: int) -> dict:
     Model unreachable → deterministic heuristic complexity (flagged); never blocks a quote."""
     from app.services import agent
     f = _sample_features(dataset_url)
+    if f["n_records"] <= 0:
+        if f.get("needs_ocr"):
+            raise ValueError("source needs OCR before curation; automatic OCR is not enabled for this flow yet")
+        raise ValueError("no usable training records found; provide question/answer, prompt/completion, messages, conversations, or document text")
     complexity, scored_by = 0.4, "heuristic"
+    model_error = None
     try:
         tri = agent.decide("triage", f"Estimate complexity 0-1 for refining this {f['data_type']} "
                            f"dataset of ~{f['n_records']} records into clean ShareGPT/ChatML. "
+                           f"Also estimate risk, tokens, noise level, local processing steps, "
+                           f"and whether it can run locally. "
                            f"Sample:\n{f['sample_text']}")
         c = float(tri.get("complexity") or 0.4)
         complexity, scored_by = max(0.0, min(1.0, c / 10 if c > 1 else c)), "aegis-14b"
-    except Exception:
-        pass
+    except Exception as e:
+        model_error = str(e)[:500]
     q = price_quote(n_records=max(1, f["n_records"]), complexity=complexity, data_type=f["data_type"],
+                    pages=f["pages"], scanned_doc=f["needs_ocr"],
                     pii=f["pii"], passes=2 if f["pii"] else 1,
                     escalation_fraction=0.20 if complexity > 0.4 else 0.0, malformed_rate=0.05)
     q.update({"data_type": f["data_type"], "n_records": f["n_records"], "complexity": round(complexity, 3),
               "complexity_scored_by": scored_by, "dataset_url": dataset_url})
+    if model_error:
+        q["complexity_model_error"] = model_error
     q["token"] = sign_quote_token(q, dataset_url, email, now)
     return q

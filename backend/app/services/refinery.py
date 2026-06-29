@@ -36,16 +36,21 @@ def _persist_outputs_to_r2(db: Session, job: Job, dataset_bytes: bytes, cert: di
 
 def _triage_task(job: Job, sample: str) -> str:
     return (f"Job {job.id}: refine the dataset at {job.input_file_path} into clean "
-            f"ShareGPT/ChatML training data. Sample:\n{sample}\nScore it.")
+            f"ShareGPT/ChatML training data. Sample:\n{sample}\n"
+            f"Estimate complexity, risk, token count, noise, local processing steps, "
+            f"and whether it can run locally.")
 
 
 def _quality_task(sample: str) -> str:
-    return f"Assess this raw data sample for fine-tuning fitness:\n{sample}"
+    return (f"Assess this raw data sample for fine-tuning fitness. Score quality, "
+            f"identify issues, estimate noise and clean row count, recommend output "
+            f"format, and decide whether local processing is sufficient:\n{sample}")
 
 
 def _spend_task(job: Job, hard_doc: str) -> str:
     return (f"Mid-job edge case for job {job.id}: {hard_doc}. "
-            f"Decide whether to call an external paid tool.")
+            f"Decide whether to call an external paid tool, estimate cost, expected gain, "
+            f"approval recommendation, and rationale.")
 
 
 def _safe_decide(db: Session, job: Job, kind: str, task: str, default: dict, summary: dict) -> dict:
@@ -115,9 +120,19 @@ def process_job(db: Session, job: Job, sample: str, hard_doc: str | None = None)
         db.commit()
         log_action(db, job.id, "curated", "system", result["stats"])
         summary["stats"] = result["stats"]
+        if int(result["stats"].get("rows_out") or 0) <= 0:
+            reason = "no usable records produced"
+            if result.get("needs_ocr"):
+                reason = "source needs OCR before curation"
+            summary["curation_error"] = reason
+            job.status = "failed"
+            db.commit()
+            log_action(db, job.id, "curation_error", "system", {"error": reason})
     except Exception as e:  # surface honestly, never fake a result
         summary["curation_error"] = str(e)
         log_action(db, job.id, "curation_error", "system", {"error": str(e)[:200]})
+        job.status = "failed"
+        db.commit()
 
     if hard_doc:
         spend = _safe_decide(db, job, "spend", _spend_task(job, hard_doc),

@@ -24,7 +24,8 @@ BRAND_DIR = Path(__file__).resolve().parents[2] / "brand-assets"
 
 _REQUIRED_COLUMNS = {
     "users": [("password_hash", "VARCHAR"), ("is_admin", "BOOLEAN DEFAULT false NOT NULL")],
-    "jobs": [("quote_amount", "DOUBLE PRECISION"), ("approved_cap", "DOUBLE PRECISION"),
+    "jobs": [("stripe_checkout_session_id", "VARCHAR"),
+             ("quote_amount", "DOUBLE PRECISION"), ("approved_cap", "DOUBLE PRECISION"),
              ("quote_status", "VARCHAR DEFAULT 'draft'"), ("quote_breakdown", "JSONB"),
              ("target_margin_pct", "DOUBLE PRECISION DEFAULT 0.65"),
              ("margin_floor_pct", "DOUBLE PRECISION DEFAULT 0.55"),
@@ -163,7 +164,7 @@ class SimulatedPayment(BaseModel):
 async def simulate_payment(req: SimulatedPayment, db: Session = Depends(get_db)):
     """DEV ONLY — create a paid Job without a real Stripe round-trip, for demo rehearsal.
     Disabled unless DEV_MODE=1. The authentic path stays Stripe Checkout + the webhook."""
-    if os.getenv("DEV_MODE", "1") != "1":
+    if os.getenv("DEV_MODE", "0") != "1":
         raise HTTPException(status_code=404, detail="not found")
     job = create_paid_job(db, req.dataset_url, req.email)
     return {"job_id": job.id, "status": job.status}
