@@ -8,8 +8,8 @@ Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA gover
 [![Frontier Infra](https://img.shields.io/badge/Frontier%20Infra-AVL%20%7C%20AAR%20%7C%20ADL-00D1C1?style=for-the-badge)](https://frontierinfra.org/)
 [![Aegis--14B](https://img.shields.io/badge/Aegis--14B-Hermes--4%20LoRA-111827?style=for-the-badge)](https://aegisrefine.com/how-it-works.html)
 [![Hugging Face Model](https://img.shields.io/badge/Hugging%20Face-jbrashear%2FAegis--14B-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
-[![Hugging Face Downloads](https://img.shields.io/huggingface/dt/jbrashear/Aegis-14B?style=for-the-badge&logo=huggingface&label=downloads)](https://huggingface.co/jbrashear/Aegis-14B)
-[![Hugging Face Likes](https://img.shields.io/huggingface/likes/jbrashear/Aegis-14B?style=for-the-badge&logo=huggingface&label=likes)](https://huggingface.co/jbrashear/Aegis-14B)
+[![Hugging Face Downloads](https://img.shields.io/badge/downloads-23-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
+[![Hugging Face Likes](https://img.shields.io/badge/likes-1-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
 
 Live product: [aegisrefine.com](https://aegisrefine.com)  
 System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
@@ -231,12 +231,12 @@ This project sits inside a larger agent/business-ops stack. Public links are inc
 
 The [Aegis-14B model card](https://huggingface.co/jbrashear/Aegis-14B) is also part of the public evidence trail: it identifies `NousResearch/Hermes-4-14B` as the base model, marks the artifact as a LoRA adapter, and has already started receiving organic discovery through Hugging Face's Hermes model graph.
 
-Additional project notes live in:
+Additional project notes live in [`documents/`](documents/):
 
-- `HERMES_AGENT_INTEGRATION.md` - deeper Hermes/Nemotron/Stripe operator integration notes.
-- `HUGGINGFACE_MODEL_CARD.md` - cleaned Aegis-14B model card, ready to publish to Hugging Face.
-- `QUOTE_ENGINE.md` - quote curve, pricing rules, and capped quote examples.
-- `API_CONTRACT.md` - backend API shape.
-- `CURATION_PLAN.md` - dataset refinement and AAR proof plan.
+- [`documents/HERMES_AGENT_INTEGRATION.md`](documents/HERMES_AGENT_INTEGRATION.md) - deeper Hermes/Nemotron/Stripe operator integration notes.
+- [`documents/HUGGINGFACE_MODEL_CARD.md`](documents/HUGGINGFACE_MODEL_CARD.md) - cleaned Aegis-14B model card, ready to publish to Hugging Face.
+- [`documents/QUOTE_ENGINE.md`](documents/QUOTE_ENGINE.md) - quote curve, pricing rules, and capped quote examples.
+- [`documents/API_CONTRACT.md`](documents/API_CONTRACT.md) - backend API shape.
+- [`documents/CURATION_PLAN.md`](documents/CURATION_PLAN.md) - dataset refinement and AAR proof plan.
 
-Some older handoff/state-audit documents are retained as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.
+Some older handoff/state-audit documents are retained under [`documents/`](documents/) as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.
