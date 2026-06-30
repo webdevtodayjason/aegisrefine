@@ -74,8 +74,10 @@ async def execute_ticket(ticket_id: int, db: Session = Depends(get_db), admin: U
         or result.get("stripe_payment_id")
     )
     cap_cents = int(round(float(ticket.amount or 0) * 100))
-    expected_destination = (os.getenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT") or "").strip() or None
-    if transfer_id:
+    expected_destination = (os.getenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT") or "").strip()
+    if transfer_id and not expected_destination:
+        verified = {"executed": None, "status": "missing_vendor_account", "route": "temporarily_queue"}
+    elif transfer_id:
         verified = stripe_spend.verify_agent_transfer(transfer_id, cap_cents, expected_destination)
     elif os.getenv("ALLOW_AGENT_PAYMENT_INTENT_SPEND", "").lower() in {"1", "true", "yes"}:
         verified = stripe_spend.verify_agent_spend(payment_id or "", cap_cents)

@@ -96,6 +96,7 @@ def test_admin_execute_requires_verified_stripe_transfer(db, monkeypatch):
 def test_admin_execute_queues_when_transfer_is_not_verified(db, monkeypatch):
     c, buyer = _admin_client(db)
     _job, ticket = _approved_ticket(db, buyer)
+    monkeypatch.setenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT", "acct_vendor")
 
     monkeypatch.setattr(
         admin_router.hermes_operator,
@@ -141,3 +142,22 @@ def test_admin_execute_does_not_accept_missing_transfer_by_default(db, monkeypat
     db.refresh(ticket)
     assert ticket.status == "approved"
     assert ticket.stripe_spend_status == "missing_transfer"
+
+
+def test_admin_execute_requires_configured_vendor_destination(db, monkeypatch):
+    c, buyer = _admin_client(db)
+    _job, ticket = _approved_ticket(db, buyer)
+
+    monkeypatch.delenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT", raising=False)
+    monkeypatch.setattr(
+        admin_router.hermes_operator,
+        "dispatch_job",
+        lambda *_args, **_kwargs: {"result": {"spend": {"executed": {"stripe_transfer_id": "tr_verified"}}}},
+    )
+
+    r = c.post(f"/admin/gate/{ticket.id}/execute")
+
+    assert r.status_code == 503
+    db.refresh(ticket)
+    assert ticket.status == "approved"
+    assert ticket.stripe_spend_status == "missing_vendor_account"
