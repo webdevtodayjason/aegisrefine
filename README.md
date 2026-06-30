@@ -204,6 +204,16 @@ Core environment variables:
 | `HERMES_OPERATOR_URL` | Private Hermes operator bridge |
 | `HERMES_OPERATOR_TOKEN` | Shared bridge token |
 
+## Collaboration
+
+Aegis Refine is open for collaborators. The useful work ahead is bigger than one repo and one builder: better model evaluations, harder dataset fixtures, more Hermes skills, spend/receipt adapters, UI polish, and Frontier Infra standards for agent-readable proof.
+
+If this overlaps with what you are building, open an issue, fork the repo, or reach out through the hackathon Discord/X thread. The goal is not just to ship a demo; it is to find people who want to build practical, verifiable agent systems together.
+
+## License
+
+Code and documentation in this repository are released under the MIT License. See [`LICENSE`](LICENSE).
+
 ## Honest Limitations
 
 - Stripe is demonstrated in test mode for the hackathon.
