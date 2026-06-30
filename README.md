@@ -2,6 +2,12 @@
 
 Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA governance, verified spend receipts, and signed delivery proof.
 
+[![Stripe Checkout + Connect](https://img.shields.io/badge/Stripe-Checkout%20%2B%20Connect-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com)
+[![NVIDIA Nemotron](https://img.shields.io/badge/NVIDIA-Nemotron-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/ai/)
+[![Hermes Agent](https://img.shields.io/badge/Hermes-Agent-FFD21E?style=for-the-badge)](https://github.com/NousResearch)
+[![Frontier Infra](https://img.shields.io/badge/Frontier%20Infra-AVL%20%7C%20AAR%20%7C%20ADL-00D1C1?style=for-the-badge)](https://frontierinfra.org/)
+[![Aegis--14B](https://img.shields.io/badge/Aegis--14B-Hermes%2014B%20derived-111827?style=for-the-badge)](https://aegisrefine.com/how-it-works.html)
+
 Live product: [aegisrefine.com](https://aegisrefine.com)  
 System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
 
@@ -58,23 +64,23 @@ The customer-facing architecture page renders this as Mermaid diagrams with mode
 
 [https://aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
 
-## What Is Real
+## Live Capabilities
 
-- Live deployed FastAPI app on `aegisrefine.com`.
-- Real Stripe test-mode Checkout.
-- Real Stripe Connect test-mode transfer verification path.
-- Real dataset parsing and curation pipeline.
-- Real quote HMAC tokens with 15-minute expiry.
-- Real Ed25519 AAR signing and verification.
-- Real job ownership checks.
-- Real Telegram receipt from Hermes for completed jobs.
-- Backend test suite: `74 passed`.
+- Deployed FastAPI application at `aegisrefine.com`.
+- Stripe test-mode Checkout for capped customer payments.
+- Stripe Connect test-mode transfer verification for agent-initiated spend.
+- Dataset parsing, curation, PII masking, and validation pipeline.
+- Signed quote tokens with 15-minute expiry.
+- Ed25519-signed AAR certificates and public verification endpoints.
+- Job ownership checks for customer downloads and order views.
+- Telegram operator receipts from Hermes for completed jobs.
+- Backend regression suite: `74 passed`.
 
 Stripe objects are test-mode objects and are labeled honestly as such.
 
-## Judge Review Guide
+## Implementation Map
 
-Start here if you are reviewing the implementation behind the demo.
+Start here to trace the product workflow from demo claim to implementation.
 
 | Claim | Code to inspect |
 |---|---|
@@ -133,8 +139,6 @@ Examples from the current quote curve:
 | 10,000 clean JSONL records | about `$30` |
 | 100,000 messy tabular/PII records | about `$250` |
 | OCR-heavy scanned records | about `$610` |
-
-There is no hidden flat `$55` floor in the current quote path.
 
 ## Repo Map
 
