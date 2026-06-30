@@ -6,8 +6,10 @@ Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA gover
 [![NVIDIA Nemotron](https://img.shields.io/badge/NVIDIA-Nemotron-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/ai/)
 [![Hermes Agent](https://img.shields.io/badge/Hermes-Agent-FFD21E?style=for-the-badge)](https://github.com/NousResearch)
 [![Frontier Infra](https://img.shields.io/badge/Frontier%20Infra-AVL%20%7C%20AAR%20%7C%20ADL-00D1C1?style=for-the-badge)](https://frontierinfra.org/)
-[![Aegis--14B](https://img.shields.io/badge/Aegis--14B-Hermes%2014B%20derived-111827?style=for-the-badge)](https://aegisrefine.com/how-it-works.html)
+[![Aegis--14B](https://img.shields.io/badge/Aegis--14B-Hermes--4%20LoRA-111827?style=for-the-badge)](https://aegisrefine.com/how-it-works.html)
 [![Hugging Face Model](https://img.shields.io/badge/Hugging%20Face-jbrashear%2FAegis--14B-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
+[![Hugging Face Downloads](https://img.shields.io/huggingface/dt/jbrashear/Aegis-14B?style=for-the-badge&logo=huggingface&label=downloads)](https://huggingface.co/jbrashear/Aegis-14B)
+[![Hugging Face Likes](https://img.shields.io/huggingface/likes/jbrashear/Aegis-14B?style=for-the-badge&logo=huggingface&label=likes)](https://huggingface.co/jbrashear/Aegis-14B)
 
 Live product: [aegisrefine.com](https://aegisrefine.com)  
 System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
@@ -35,7 +37,7 @@ Aegis Refine was built for the Hermes Agent Accelerated Business Hackathon:
 
 - **Hermes Agent** runs the operator workflow through a custom `aegis-refine` skill.
 - **NVIDIA / Nemotron** provides the operations model path and safety-gate story.
-- **[Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B)**, trained from Hermes 14B for this project, performs data-governance judgment.
+- **[Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B)**, a LoRA fine-tune of `NousResearch/Hermes-4-14B`, performs data-governance judgment.
 - **Stripe Checkout** is the earn rail: the customer pays the capped quote.
 - **Stripe Connect Transfers** are the spend rail: when outbound spend is approved, Aegis records execution only after Stripe verification.
 - **Frontier Infra standards** inform the receipt/proof surfaces: AVL, AAR, and ADL-style auditability.
@@ -220,12 +222,14 @@ This project sits inside a larger agent/business-ops stack. Public links are inc
 | [Hermes Agent](https://github.com/NousResearch) | Agent runtime used as the business operator. Hermes receives bounded job payloads from Aegis and operates the job through the `aegis-refine` skill. |
 | [Frontier Infra](https://frontierinfra.org/) | Standards and design influence for agent-verifiable business operations: AVL-style visibility, AAR-style attestations, and ADL-style decision/audit logs. |
 | [AINode](https://ainode.dev/) | Clustered NVIDIA/DGX Spark environment around the project. Aegis-14B is served through this infrastructure, and AINode compute is the modeled vendor for agent spend. |
-| [Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B) | Public Hugging Face model for the project-specific data-governance model trained from Hermes 14B for dataset quality, risk, route, and signing decisions. Served through the local NVIDIA/DGX Spark environment. |
+| [Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B) | Public Hugging Face LoRA fine-tune of `NousResearch/Hermes-4-14B` for dataset quality, risk, route, and signing decisions. Served through the local NVIDIA/DGX Spark environment. |
 | NVIDIA / Nemotron | Operations and safety model stack: `nvidia/nemotron-3-ultra-550b-a55b` for higher-level routing/spend decisions, `nvidia/nemotron-3-nano-30b-a3b` as latency fallback, and `nvidia/nemotron-3.5-content-safety` for safety-gate review when evidence is available. |
 | Stripe Checkout | Earn rail. The customer pays the exact signed capped quote before work starts. |
 | Stripe Connect Transfers | Spend rail. Hermes may initiate a transfer for approved outbound spend; Aegis independently verifies the Stripe object before recording execution. |
 | Coolify | Deployment path for the live FastAPI/static web app on the Dell R750 environment. |
 | Telegram / Hermes Gateway | Operator receipt channel used in the demo. Receipts include job id, quote/cap, route, model stack, and proof links, never raw customer data. |
+
+The [Aegis-14B model card](https://huggingface.co/jbrashear/Aegis-14B) is also part of the public evidence trail: it identifies `NousResearch/Hermes-4-14B` as the base model, marks the artifact as a LoRA adapter, and has already started receiving organic discovery through Hugging Face's Hermes model graph.
 
 Additional project notes live in:
 

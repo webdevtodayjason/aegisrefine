@@ -8,7 +8,7 @@ Aegis Refine should be presented as a Hermes Agent-operated business workflow, n
 - **Nemotron 3 Ultra**: `nvidia/nemotron-3-ultra-550b-a55b`, the primary operations brain for roadmap, routing, cap/margin, and spend decisions.
 - **Nemotron 3 Nano**: `nvidia/nemotron-3-nano-30b-a3b`, the latency/cost fallback for fast receipt generation and low-risk routing.
 - **Nemotron 3.5 Content Safety**: `nvidia/nemotron-3.5-content-safety`, the safety gate for PII / unsafe-content review when raw or summarized safety evidence is available.
-- **Aegis-14B**: data-governance specialist trained from Hermes 14B for dataset quality, risk, and refinement decisions.
+- **Aegis-14B**: data-governance specialist, published as a LoRA fine-tune of `NousResearch/Hermes-4-14B`, for dataset quality, risk, and refinement decisions.
 - **Stripe**: capped Checkout earn rail and payment-to-job creation. Outbound agent spend is a Hermes-initiated Stripe Connect Transfer to the AINode compute vendor when approved; the backend independently verifies the returned Stripe object before recording execution.
 - **AAR / Frontier Infra**: signed proof layer for what the agent did.
 - **AInode / DGX Spark**: clustered local model serving environment.

@@ -17,7 +17,7 @@ metadata:
 
 Use this skill when Hermes Agent is asked to operate an Aegis Refine customer job: quote review, route planning, spend governance, dataset refinement oversight, synthetic augmentation oversight, or signed-delivery verification.
 
-Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governance specialist. `nvidia/nemotron-3-ultra-550b-a55b` is the primary operations brain for roadmap, routing, margin, and spend decisions. `nvidia/nemotron-3-nano-30b-a3b` is the documented latency/cost fallback for receipt generation. `nvidia/nemotron-3.5-content-safety` is the NVIDIA safety gate for PII / unsafe-content review when raw or summarized safety evidence is available. Stripe Checkout is the earn rail. Outbound spend is a Hermes-initiated Stripe Connect Transfer to the AINode compute vendor when configured; Aegis verifies the returned Stripe object before recording execution. AAR certificates are the proof surface.
+Hermes Agent is the operator. Aegis-14B is the data-governance specialist, published as a LoRA fine-tune of `NousResearch/Hermes-4-14B`. `nvidia/nemotron-3-ultra-550b-a55b` is the primary operations brain for roadmap, routing, margin, and spend decisions. `nvidia/nemotron-3-nano-30b-a3b` is the documented latency/cost fallback for receipt generation. `nvidia/nemotron-3.5-content-safety` is the NVIDIA safety gate for PII / unsafe-content review when raw or summarized safety evidence is available. Stripe Checkout is the earn rail. Outbound spend is a Hermes-initiated Stripe Connect Transfer to the AINode compute vendor when configured; Aegis verifies the returned Stripe object before recording execution. AAR certificates are the proof surface.
 
 ## When To Use
 
