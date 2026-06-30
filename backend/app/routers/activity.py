@@ -7,7 +7,8 @@ router = APIRouter(tags=["activity"])
 
 # Public feed MUST NOT leak raw data — whitelist safe detail keys only.
 # Never expose: dataset_url, email, file paths, PANs, raw row content.
-SAFE_KEYS = {"amount", "model", "ticket_id", "certificate_id", "response_sha256", "real_money"}
+SAFE_KEYS = {"amount", "model", "ticket_id", "certificate_id", "response_sha256", "real_money",
+             "phase", "route", "next_action", "telegram_sent"}
 
 # Human-readable one-liners for the live ticker.
 SUMMARY = {
@@ -17,6 +18,8 @@ SUMMARY = {
     "spend_rejected": "Operator denied the spend — no money moved",
     "spend_executed": "Spend executed",
     "aar_issued": "Signed certificate issued ✓",
+    "hermes_operator_decision": "Hermes Agent returned an operator receipt",
+    "hermes_operator_unavailable": "Hermes Agent temporarily queued",
 }
 
 

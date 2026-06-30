@@ -10,7 +10,7 @@ import os
 import json
 from sqlalchemy.orm import Session
 from app.models.job import Job
-from app.services import agent, spend_service, aar_service, budget_service, escalation, storage
+from app.services import agent, spend_service, aar_service, budget_service, escalation, storage, hermes_operator
 from app.services.audit import log_action
 from app.curate import engine as curate_engine
 
@@ -217,4 +217,13 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
     # push the produced dataset + signed cert to R2 too (durable beyond the container fs / DB blob).
     # Covers BOTH refine and synthesis — the synth runner completes through this same path.
     _persist_outputs_to_r2(db, job, output or b"", cert)
+    try:
+        hermes_operator.dispatch_job(
+            db,
+            job,
+            phase="completed",
+            receipt={"certificate_id": cert.get("id"), "aar": f"/jobs/{job.id}/aar"},
+        )
+    except Exception:
+        pass
     return cert

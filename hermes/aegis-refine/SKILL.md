@@ -57,7 +57,8 @@ Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governanc
    - spend ticket decisions
    - audit events
    - AAR certificate id/link
-5. Produce a concise operator result in JSON followed by a short human summary.
+5. For completed jobs, send Jason a concise Telegram receipt through Hermes messaging.
+6. Produce a concise operator result in JSON only when called by the Aegis bridge.
 
 ## Reference Quick Commands
 
@@ -67,6 +68,7 @@ Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governanc
 | Check local Aegis | `curl -fsS http://localhost:8000/agent/health` |
 | Load this skill once | `hermes -z --skills aegis-refine "Operate Aegis Refine job <id>..."` |
 | Run from repo prompt | `hermes -z --skills aegis-refine "$(cat hermes/aegis-refine/templates/operator-prompt.md)"` |
+| Send Telegram receipt | `hermes send --to telegram "Aegis Refine job <id> completed: quote, spend, AAR"` |
 
 ## Operator Decision Schema
 
@@ -135,6 +137,17 @@ Before calling a job complete, verify:
 - Spend tickets show proposed/approved/executed/rejected status.
 - Downloadable output is non-empty.
 - AAR certificate exists or is explicitly pending.
+- Telegram receipt was sent for completed jobs, or the send failure is reported without blocking delivery.
+
+### Telegram Receipts
+
+When a job phase is `completed`, send a short Telegram receipt through Hermes:
+
+```sh
+hermes send --to telegram "Aegis Refine job <id> completed: quote $<amount>, cap $<cap>, spend $<spent>, AAR <path>"
+```
+
+Never include raw dataset contents, PII, private customer data, or secrets in Telegram. Include only job id, service, route, quote/cap, executed spend, status, and the protected AAR/download location.
 
 ## Known Issues
 

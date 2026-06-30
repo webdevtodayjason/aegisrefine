@@ -153,6 +153,8 @@
               <div><div class="mono muted2" style="font-size:10px;letter-spacing:.12em">CURRENT NODE</div><div id="loopStatus" style="font-size:13.5px;font-weight:500;color:var(--muted)">—</div></div>
             </div>
           </div>
+
+          <div class="card" id="operatorCard" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -299,6 +301,7 @@ function render(job) {
   renderDeliverables(job, completed, cert);
   renderSidebar(job, ticket, completed);
   renderLedger(job, AAR_CACHE);
+  renderOperator(job);
 }
 
 // synthesis generation view — auto-runs on payment, no data-paste fields
@@ -548,6 +551,36 @@ function renderSidebar(job, ticket, completed) {
   const ld = $("loopDot"); ld.style.background = th.c; ld.style.boxShadow = `0 0 8px ${th.c}`;
 }
 
+function renderOperator(job) {
+  const card = $("operatorCard");
+  if (!card) return;
+  const op = job && job.operator;
+  if (!op || !op.details) { card.style.display = "none"; card.innerHTML = ""; return; }
+  const d = op.details || {};
+  const r = d.result || {};
+  const route = d.route || r.route || "—";
+  const next = d.next_action || r.next_action || "—";
+  const telegram = d.telegram_sent === true || r.telegram_sent === true;
+  const unavailable = op.action === "hermes_operator_unavailable";
+  card.style.display = "";
+  card.innerHTML = `
+    <div class="label teal" style="letter-spacing:.14em;margin-bottom:14px">HERMES AGENT RECEIPT</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="dot" style="width:9px;height:9px;background:${unavailable ? "var(--amber)" : "var(--teal)"};box-shadow:0 0 8px ${unavailable ? "var(--amber)" : "var(--teal)"}"></span>
+      <div>
+        <div style="font-size:13.5px;font-weight:600">${esc(d.operator || "Hermes Agent")}</div>
+        <div class="mono muted2" style="font-size:10px">skill: ${esc(d.skill || "aegis-refine")}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      <div class="kv"><span class="k">Phase</span><span class="v teal">${esc(d.phase || "—")}</span></div>
+      <div class="kv"><span class="k">Route</span><span class="v">${esc(route)}</span></div>
+      <div class="kv"><span class="k">Next action</span><span class="v">${esc(next)}</span></div>
+      <div class="kv"><span class="k">Telegram receipt</span><span class="v ${telegram ? "green" : "muted2"}">${telegram ? "sent" : "pending"}</span></div>
+    </div>
+    <div class="mono muted2" style="font-size:10.5px;margin-top:12px">stored ${esc(op.created_at || "")}</div>`;
+}
+
 // ---- RUN AEGIS-14B -----------------------------------------------------------
 async function runAegis() {
   const btn = $("runBtn"), out = $("runOut");
@@ -647,7 +680,8 @@ const ACTION_COLOR = {
   job_created:"#A1A1AA", triage:"#00E5CC", quality:"#00E5CC", quality_check:"#00E5CC",
   spend_decision:"#00E5CC", spend_proposed:"#F59E0B", spend_approved:"#22C55E",
   spend_rejected:"#ef4444", spend_executed:"#F59E0B", aar_issued:"#3A7BFF",
-  job_completed:"#22C55E",
+  job_completed:"#22C55E", hermes_operator_decision:"#00E5CC",
+  hermes_operator_unavailable:"#F59E0B",
 };
 async function loadActivity() {
   const el = $("trail");

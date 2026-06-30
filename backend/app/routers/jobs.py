@@ -14,8 +14,8 @@ from app.services.job_service import (
     create_paid_job_from_checkout_session,
     checkout_session_to_dict,
 )
-from app.services.auth import require_user
-from app.services import agent, quote_service, storage
+from app.services.auth import require_admin, require_user
+from app.services import agent, hermes_operator, quote_service, storage
 from app.models.user import User
 import stripe
 import json
@@ -280,6 +280,13 @@ def _job_brief(db: Session, j: Job) -> dict:
     return out
 
 
+def _job_for_user(db: Session, job_id: int, user: User) -> Job:
+    j = db.query(Job).filter(Job.id == job_id).first()
+    if not j or (not user.is_admin and j.user_id != user.id):
+        raise HTTPException(status_code=404, detail="job not found")
+    return j
+
+
 @router.get("/")
 async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """Recent jobs, newest first (Dashboard) — scoped to the signed-in account (admins see all)."""
@@ -293,9 +300,7 @@ async def list_jobs(limit: int = 50, db: Session = Depends(get_db), user: User =
 @router.get("/{job_id}")
 async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     """One job + its spend tickets + certificate (OrderDetail / Certificate)."""
-    j = db.query(Job).filter(Job.id == job_id).first()
-    if not j or (not user.is_admin and j.user_id != user.id):
-        raise HTTPException(status_code=404, detail="job not found")
+    j = _job_for_user(db, job_id, user)
     tickets = db.query(SpendTicket).filter(SpendTicket.job_id == job_id).order_by(SpendTicket.id).all()
     cert = (db.query(AuditCertificate).filter(AuditCertificate.job_id == job_id)
             .order_by(AuditCertificate.id.desc()).first())
@@ -306,8 +311,28 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
                            "status": t.status, "approved_by": t.approved_by} for t in tickets],
         "certificate": ({"id": cert.id, "aar": f"/jobs/{job_id}/aar"} if cert else None),
         "service": getattr(j, "service", "refine"),
+        "operator": hermes_operator.latest_operator_payload(db, job_id),
     })
     return out
+
+
+@router.get("/{job_id}/operator")
+async def get_operator_receipt(job_id: int, db: Session = Depends(get_db),
+                               user: User = Depends(require_user)):
+    """Latest Hermes Agent operator receipt for this job."""
+    _job_for_user(db, job_id, user)
+    payload = hermes_operator.latest_operator_payload(db, job_id)
+    if not payload:
+        raise HTTPException(status_code=404, detail="Hermes operator receipt not found")
+    return payload
+
+
+@router.post("/{job_id}/operator/dispatch")
+async def dispatch_operator(job_id: int, db: Session = Depends(get_db),
+                            admin: User = Depends(require_admin)):
+    """Admin-only manual operator dispatch for demos/retries."""
+    job = _job_for_user(db, job_id, admin)
+    return hermes_operator.dispatch_job(db, job, phase="manual_admin_dispatch", require_config=True)
 
 
 @router.get("/{job_id}/download")

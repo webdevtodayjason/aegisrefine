@@ -32,13 +32,17 @@ def auto_run_job(job_id: int):
     """
     from app.database import SessionLocal
     from app.models.job import Job
-    from app.services import refinery
+    from app.services import hermes_operator, refinery
 
     db = SessionLocal()
     try:
         job = db.query(Job).filter(Job.id == job_id).first()
         if not job:
             return
+        try:
+            hermes_operator.dispatch_job(db, job, phase="paid_job_created")
+        except Exception:
+            pass
         if getattr(job, "service", "refine") == "synthesis":
             from app.synth.runner import run_synth_job
 
