@@ -218,6 +218,19 @@ def complete_job(db: Session, job: Job, output: bytes | None = None, claim: str 
     # Covers BOTH refine and synthesis — the synth runner completes through this same path.
     _persist_outputs_to_r2(db, job, output or b"", cert)
     try:
+        from app.models.audit_log import AuditLog
+        already_sent = False
+        rows = db.query(AuditLog).filter(
+            AuditLog.job_id == job.id,
+            AuditLog.action == "hermes_operator_decision",
+        ).all()
+        for row in rows:
+            details = row.details or {}
+            if details.get("phase") == "completed" and details.get("telegram_sent") is True:
+                already_sent = True
+                break
+        if already_sent:
+            return cert
         hermes_operator.dispatch_job(
             db,
             job,

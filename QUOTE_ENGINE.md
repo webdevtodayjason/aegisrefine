@@ -33,7 +33,7 @@ value_list = 9.00 + 1.50*(N/1000)*(1+c) + (C_ocr*1.30)
 # cost floor (never sell below MARGIN_FLOOR on real cash cost)
 cogs_floor = COGS_est/(1-0.55)
 # pick, gross for Stripe, round UP
-subtotal = max(value_list, cogs_floor, 49)                                  # FLOOR_BASE=49
+subtotal = max(value_list, cogs_floor)                                      # no flat project floor; data drives quote
 charge   = (subtotal+0.30)/(1-0.029) ;  CAP = roundup(charge)               # <200:$5 · 200-1k:$10 · >1k:$50
 requires_human_quote = (CAP > 1000)                                         # auto-quote only ≤ $1k
 quote_amount = approved_cap = CAP ;  soft_margin_line = CAP*(1-0.65)        # soft = reroute+log, NOT a gate
@@ -42,7 +42,7 @@ quote_amount = approved_cap = CAP ;  soft_margin_line = CAP*(1-0.65)        # so
 Token fallbacks (overridden by sampled `est_tokens`): jsonl 600/50/500 · tabular 200/40/150 · scanned-post-OCR 900/60/800.
 
 **Worked examples (one formula, 3 binding constraints):**
-- **A easy** 10k clean JSONL → COGS $6.21 → floor-base binds → **CAP $55** (~85–97% margin), gate never arms.
+- **A easy** 10k clean JSONL → COGS $6.21 → value binds → **CAP $30**, gate never arms.
 - **B medium** 100k messy tabular+PII → COGS $20.43 → value binds → **CAP $250** (~88.8% margin), fully autonomous (80% on $0.02 Llama-8B, 20% ambiguous on gpt-4o-mini).
 - **C hard** 20k scanned invoices (OCR $200 cash) → COGS $263 → **cost floor binds** → **CAP $610** (~53.9% ≈ floor). 200k-page version trips `requires_human_quote`.
 
@@ -102,4 +102,4 @@ Ledger = `SUM(amount)` over a job's spend_tickets (Decimal, quantized to cents).
 
 **Honesty risks:** (1) `value_list` is a business price, not market cost — labeled as such. (2) Money is Float → compare in Decimal-cents. (3) Never fake a human approval (autonomous=agent/`spend_preauthorized`; human=`approve_spend_ticket`). (4) SpendTicket authorizes OUR provider spend vs the cap, not a customer charge. (5) Per-page VLM cost is an estimate → meter + recompute. (6) `requires_human_quote` (>$1k) is the safety valve.
 
-**Tunables:** `MARGIN_TARGET=0.65 · MARGIN_FLOOR=0.55 · FLOOR_BASE=49 · BASE=9 · RATE_PER_1K=1.50 · OCR_PASSTHROUGH=1.30 · C_FIXED=6 · ROUND=ceil(<200:5/200-1k:10/>1k:50) · HUMAN_QUOTE_CEILING=1000 · STRIPE=2.9%+0.30`
+**Tunables:** `MARGIN_TARGET=0.65 · MARGIN_FLOOR=0.55 · FLOOR_BASE=0 · BASE=9 · RATE_PER_1K=1.50 · OCR_PASSTHROUGH=1.30 · C_FIXED=6 · ROUND=ceil(<200:5/200-1k:10/>1k:50) · HUMAN_QUOTE_CEILING=1000 · STRIPE=2.9%+0.30`

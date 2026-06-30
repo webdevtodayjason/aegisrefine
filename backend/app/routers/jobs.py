@@ -163,6 +163,7 @@ async def quote(req: QuoteRequest, user: User = Depends(require_user)):
         raise HTTPException(status_code=400, detail=f"could not read that dataset: {e}")
     pub = {k: q[k] for k in ("quoted_usd", "cap_usd", "n_records", "data_type", "complexity",
                              "complexity_scored_by", "target_margin_pct", "requires_human_quote")}
+    pub["quote_plan"] = q.get("quote_plan")
     if not q["requires_human_quote"]:
         pub["token"] = q["token"]
     return pub

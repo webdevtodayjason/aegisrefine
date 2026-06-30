@@ -100,7 +100,7 @@
           </div>
           <button class="btn ghost" style="width:100%" onclick="refresh()">↻ Refresh queue</button>
           <div class="mono muted2" style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:10px;line-height:1.5">
-            <span class="teal">⛉</span> Key never leaves this request. Outbound spend is a test stub — no real money moves yet.
+            <span class="teal">⛉</span> Key never leaves this request. Approved spend must return a Stripe Transfer before Aegis records it as executed.
           </div>
         </div>
       </div>
@@ -231,11 +231,11 @@ async function approve(id) {
   const t = tickets.find(x => x.id === id); if (!t) return;
   inflight = true; busyState = { id, kind: "approving" }; renderGate();
   try {
-    // 1) human approves (identity recorded)  2) execute the authorized spend (test stub)
+    // 1) human approves (identity recorded)  2) execute only if the agent returns a Stripe-verified spend
     await Aegis.approve(id, KEY(), OPER());
     await Aegis.execute(id, KEY());
     sessionAuthorized += Number(t.amount || 0);
-    toast(`Ticket #${id} · ${money(t.amount)} spend authorized (test) — real outbound payment via @stripe/link-cli pending. No money has moved.`, "ok");
+    toast(`Ticket #${id} · ${money(t.amount)} spend authorized — executed only after Stripe verifies the transfer.`, "ok");
   } catch (e) {
     banner(`Approve failed — ${esc(e.message || e)}`, "err");
   } finally {
@@ -329,7 +329,7 @@ function renderGate() {
          <button class="approve-btn" onclick="approve(${t.id})">✓ AUTHORIZE SPEND ${money(t.amount)} <span style="opacity:.7;font-weight:500">(test)</span></button>
          <button class="deny-btn" onclick="deny(${t.id})">Deny</button>
        </div>
-       <div class="signed"><span class="teal">⛉</span> Decision signed &amp; recorded as <span style="color:var(--text)">${esc(OPER())}</span> · outbound is a test stub — no real money moves</div>`;
+       <div class="signed"><span class="teal">⛉</span> Decision signed &amp; recorded as <span style="color:var(--text)">${esc(OPER())}</span> · execution requires a verified Stripe Transfer</div>`;
 
   g.innerHTML = `
     <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>

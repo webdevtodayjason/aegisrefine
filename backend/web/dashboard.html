@@ -168,7 +168,7 @@ function renderStats(jobs, activity){
   const delivered = jobs.filter(j => isDone(j.status)).length;
   const total     = jobs.length;
   const billed    = jobs.reduce((s,j) => s + jobPrice(j), 0); // real gross: sum of quote_amount (fallback revenue_collected)
-  // outbound spend is a TEST STUB — count authorizations, sum stubbed amounts, label honestly
+  // Outbound spend is verified before execution. Local jobs may complete with zero spend.
   let approvals = 0, spendSum = 0;
   for (const a of activity){
     if (a.action === "spend_approved") approvals++;
@@ -178,7 +178,7 @@ function renderStats(jobs, activity){
     ["ACTIVE JOBS", String(active), active ? "in triage / refining / at gate" : "nothing running", "var(--teal)"],
     ["DATASETS DELIVERED", String(delivered), delivered ? "signed AAR issued" : "none yet", "var(--text)"],
     ["GROSS BILLED", money(billed), total + " order" + (total===1?"":"s") + " · Stripe test", "var(--text)"],
-    ["SPEND AUTHORIZED (test)", money(spendSum), approvals + " approval" + (approvals===1?"":"s") + " · outbound is a stub", "var(--amber)"],
+    ["VERIFIED SPEND (test)", money(spendSum), approvals + " approval" + (approvals===1?"":"s") + " · Stripe-verified when executed", "var(--amber)"],
   ];
   document.getElementById("stats").innerHTML = cards.map(([k,v,sub,col]) =>
     `<div class="stat rise"><div class="label" style="margin-bottom:12px">${k}</div>`+

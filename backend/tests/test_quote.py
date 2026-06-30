@@ -12,7 +12,7 @@ def test_worked_examples_match_spec():
                     ocr_profile="textract_expense", passes=2, escalation_fraction=0.35,
                     pii=True, scanned_doc=True, malformed_rate=0.10,
                     base_model="gpt_4o_mini", next_model="gpt_4_1_mini")
-    assert (a["quoted_usd"], b["quoted_usd"], c["quoted_usd"]) == (55.0, 250.0, 610.0)
+    assert (a["quoted_usd"], b["quoted_usd"], c["quoted_usd"]) == (30.0, 250.0, 610.0)
     assert (a["estimated_cost_usd"], b["estimated_cost_usd"], c["estimated_cost_usd"]) == (6.21, 20.43, 263.26)
 
 
@@ -68,7 +68,9 @@ def test_quote_job_reads_uploaded_local_file_handle(tmp_path, monkeypatch):
     assert q["n_records"] == 2
     assert q["data_type"] == "jsonl"
     assert q["complexity_scored_by"] == "aegis-14b"
-    assert q["quoted_usd"] == 55.0
+    assert q["quoted_usd"] == 40.0
+    assert q["quote_plan"]["route"] == "run_local"
+    assert q["quote_plan"]["estimated_compute_usd"] == q["estimated_cost_usd"]
 
 
 def test_quote_job_handles_multiple_supported_data_shapes(tmp_path, monkeypatch):

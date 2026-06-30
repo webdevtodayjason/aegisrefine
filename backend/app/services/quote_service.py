@@ -18,7 +18,7 @@ from app.services import provider_catalog as pc
 # --- tunables (QUOTE_ENGINE.md §7) ---
 MARGIN_TARGET = 0.65
 MARGIN_FLOOR = 0.55
-FLOOR_BASE = 49.0
+FLOOR_BASE = 0.0
 BASE = 9.0
 RATE_PER_1K = 1.50
 OCR_PASSTHROUGH = 1.30
@@ -59,6 +59,8 @@ def price_quote(*, n_records, complexity, data_type="jsonl", pages=0, ocr_profil
 
     value_list = BASE + RATE_PER_1K * (N / 1000) * (1 + c) + C_ocr * OCR_PASSTHROUGH
     cogs_floor = cogs / (1 - MARGIN_FLOOR)
+    # Data should drive the quote. Keep the cost/margin floor, but do not hide
+    # small clean jobs behind a flat project minimum.
     subtotal = max(value_list, cogs_floor, FLOOR_BASE)
     charge = (subtotal + pc.STRIPE["flat"]) / (1 - pc.STRIPE["pct"])
     cap = _roundup(charge)
@@ -74,6 +76,43 @@ def price_quote(*, n_records, complexity, data_type="jsonl", pages=0, ocr_profil
                       "C_ocr": round(C_ocr, 2), "C_decide": round(C_decide, 2),
                       "C_embed": round(C_embed, 4), "C_human": C_human, "C_fixed": C_FIXED},
         "priced_on": pc.ACCESSED,
+    }
+
+
+def _quote_plan(*, data_type: str, n_records: int, complexity: float, pii: bool,
+                needs_ocr: bool, pages: int, escalation_fraction: float,
+                base_model: str, next_model: str, estimated_cost_usd: float,
+                quoted_usd: float) -> dict:
+    local_steps = ["detect format", "parse records", "normalize to ShareGPT/ChatML", "dedupe", "mask PII", "verify schema"]
+    model_stack = [
+        "Aegis-14B governance triage on DGX Spark",
+        f"{base_model} bulk scoring estimate",
+        "deterministic local curation engine",
+    ]
+    route = "run_local"
+    if pii:
+        model_stack.append("PII/safety pass")
+        local_steps.append("residual PII scan")
+    if needs_ocr:
+        route = "ocr_required"
+        model_stack.append("OCR before curation")
+        local_steps.insert(1, "OCR scanned pages")
+    elif escalation_fraction > 0:
+        route = "local_with_review_sample"
+        model_stack.append(f"{next_model} review sample estimate")
+
+    return {
+        "route": route,
+        "data_shape": f"{n_records:,} {data_type} records",
+        "complexity": round(max(0.0, min(1.0, complexity)), 3),
+        "estimated_compute_usd": round(estimated_cost_usd, 2),
+        "model_stack": model_stack,
+        "steps": local_steps,
+        "why_this_price": (
+            f"Quote is computed from {n_records:,} records, complexity {round(complexity, 3)}, "
+            f"{'OCR pages ' + str(pages) if needs_ocr else 'local cleanup'}, "
+            f"and the margin/cap ledger. Customer cap: ${quoted_usd:.2f}."
+        ),
     }
 
 
@@ -100,7 +139,8 @@ def _b64(b):
 def sign_quote_token(quote: dict, dataset_url: str, email: str, now: int) -> str:
     receipt = {k: quote.get(k) for k in (
         "quoted_usd", "cap_usd", "n_records", "data_type", "complexity",
-        "complexity_scored_by", "target_margin_pct", "requires_human_quote", "priced_on"
+        "complexity_scored_by", "target_margin_pct", "requires_human_quote", "priced_on",
+        "model_route", "compute_profile"
     ) if k in quote}
     body = _b64(json.dumps({"q": quote["quoted_usd"], "url": dataset_url, "email": email,
                             "receipt": receipt, "exp": now + TOKEN_TTL}, sort_keys=True).encode())
@@ -201,11 +241,30 @@ def quote_job(dataset_url: str, email: str, now: int) -> dict:
             "Aegis-14B is temporarily queued on DGX Spark; retry the quote when governance is reachable"
         ) from e
     complexity, scored_by = max(0.0, min(1.0, c / 10 if c > 1 else c)), "aegis-14b"
+    escalation_fraction = 0.20 if complexity > 0.4 else 0.0
+    base_model, next_model = "llama31_8b", "gpt_4o_mini"
     q = price_quote(n_records=max(1, f["n_records"]), complexity=complexity, data_type=f["data_type"],
                     pages=f["pages"], scanned_doc=f["needs_ocr"],
                     pii=f["pii"], passes=2 if f["pii"] else 1,
-                    escalation_fraction=0.20 if complexity > 0.4 else 0.0, malformed_rate=0.05)
+                    escalation_fraction=escalation_fraction, malformed_rate=0.05,
+                    base_model=base_model, next_model=next_model)
+    plan = _quote_plan(
+        data_type=f["data_type"],
+        n_records=f["n_records"],
+        complexity=complexity,
+        pii=f["pii"],
+        needs_ocr=f["needs_ocr"],
+        pages=f["pages"],
+        escalation_fraction=escalation_fraction,
+        base_model=base_model,
+        next_model=next_model,
+        estimated_cost_usd=q["estimated_cost_usd"],
+        quoted_usd=q["quoted_usd"],
+    )
     q.update({"data_type": f["data_type"], "n_records": f["n_records"], "complexity": round(complexity, 3),
-              "complexity_scored_by": scored_by, "dataset_url": dataset_url})
+              "complexity_scored_by": scored_by, "dataset_url": dataset_url,
+              "quote_plan": plan,
+              "model_route": plan["route"],
+              "compute_profile": plan["data_shape"]})
     q["token"] = sign_quote_token(q, dataset_url, email, now)
     return q

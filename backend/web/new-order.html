@@ -367,6 +367,17 @@ async function getQuote(){
 }
 
 function renderRefineQuote(q){
+  const plan = q.quote_plan || {};
+  const stack = Array.isArray(plan.model_stack) ? plan.model_stack : [];
+  const steps = Array.isArray(plan.steps) ? plan.steps : [];
+  const planHtml = plan.route ? `
+    <div style="border:1px solid var(--teal-line);background:var(--teal-dim);border-radius:10px;padding:11px 12px;margin:12px 0 14px;text-align:left">
+      <div class="mono teal" style="font-size:10px;letter-spacing:.14em;margin-bottom:8px">PLANNED ROUTE · ${esc(String(plan.route).replace(/_/g," "))}</div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12.5px;margin-bottom:7px"><span class="muted">Data shape</span><span class="mono" style="text-align:right">${esc(plan.data_shape || `${q.n_records.toLocaleString()} ${q.data_type} records`)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12.5px;margin-bottom:9px"><span class="muted">Estimated compute</span><span class="mono">$${Number(plan.estimated_compute_usd || 0).toFixed(2)}</span></div>
+      ${stack.length ? `<div class="mono muted2" style="font-size:10.5px;line-height:1.55;margin-top:8px">${stack.map(s => `• ${esc(s)}`).join("<br>")}</div>` : ""}
+      ${steps.length ? `<div class="mono muted2" style="font-size:10.5px;line-height:1.55;margin-top:8px">Steps: ${esc(steps.join(" → "))}</div>` : ""}
+    </div>` : "";
   document.getElementById("quoteBox").innerHTML = `
     <div style="text-align:center;padding:4px 0 12px">
       <div class="mono teal" style="font-size:42px;font-weight:700;letter-spacing:-.02em">$${q.quoted_usd.toFixed(2)}</div>
@@ -376,6 +387,7 @@ function renderRefineQuote(q){
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Records detected</span><span class="mono">${q.n_records.toLocaleString()}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Format in</span><span class="mono">${esc(q.data_type)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px"><span class="muted">Priced by</span><span class="mono green">${esc(q.complexity_scored_by)}</span></div>
+    ${planHtml}
     <p class="muted" style="font-size:12px;margin:10px 0 16px">The most you'll ever pay. We run on our own GPUs first and eat any overage — you won't.</p>
     <button class="btn cinematic pay" style="width:100%" onclick="accept()">Accept &amp; pay $${q.quoted_usd.toFixed(2)} →</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="onQuote()">Re-quote</button>`;
