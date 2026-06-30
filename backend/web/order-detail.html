@@ -562,6 +562,13 @@ function renderOperator(job) {
   const next = d.next_action || r.next_action || "—";
   const telegram = d.telegram_sent === true || r.telegram_sent === true;
   const unavailable = op.action === "hermes_operator_unavailable";
+  const models = r.primary_models || d.primary_models || {};
+  const ops = models.operations_brain || {};
+  const opsActive = (typeof ops === "object" ? (ops.active || ops.primary || ops.label) : ops) || "—";
+  const fallbackUsed = !!(typeof ops === "object" && ops.fallback_used);
+  const safety = r.safety_gate || d.safety_gate || {};
+  const safetyModel = safety.model || models.content_safety_gate || "nvidia/nemotron-3.5-content-safety";
+  const safetyStatus = safety.status || "pending";
   card.style.display = "";
   card.innerHTML = `
     <div class="label teal" style="letter-spacing:.14em;margin-bottom:14px">HERMES AGENT RECEIPT</div>
@@ -576,6 +583,8 @@ function renderOperator(job) {
       <div class="kv"><span class="k">Phase</span><span class="v teal">${esc(d.phase || "—")}</span></div>
       <div class="kv"><span class="k">Route</span><span class="v">${esc(route)}</span></div>
       <div class="kv"><span class="k">Next action</span><span class="v">${esc(next)}</span></div>
+      <div class="kv"><span class="k">Ops model</span><span class="v" style="max-width:62%;text-align:right">${esc(opsActive)}${fallbackUsed ? " · fallback" : ""}</span></div>
+      <div class="kv"><span class="k">Safety gate</span><span class="v" style="max-width:62%;text-align:right">${esc(safetyModel)} · ${esc(safetyStatus)}</span></div>
       <div class="kv"><span class="k">Telegram receipt</span><span class="v ${telegram ? "green" : "muted2"}">${telegram ? "sent" : "pending"}</span></div>
     </div>
     <div class="mono muted2" style="font-size:10.5px;margin-top:12px">stored ${esc(op.created_at || "")}</div>`;

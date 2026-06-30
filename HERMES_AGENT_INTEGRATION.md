@@ -5,9 +5,11 @@ Aegis Refine should be presented as a Hermes Agent-operated business workflow, n
 ## Runtime Roles
 
 - **Hermes Agent**: operator/runtime that receives an Aegis Refine job and loads the `aegis-refine` skill.
-- **Nemotron 3 Ultra**: operations brain for roadmap, routing, cap/margin, and spend decisions when configured.
+- **Nemotron 3 Ultra**: `nvidia/nemotron-3-ultra-550b-a55b`, the primary operations brain for roadmap, routing, cap/margin, and spend decisions.
+- **Nemotron 3 Nano**: `nvidia/nemotron-3-nano-30b-a3b`, the latency/cost fallback for fast receipt generation and low-risk routing.
+- **Nemotron 3.5 Content Safety**: `nvidia/nemotron-3.5-content-safety`, the safety gate for PII / unsafe-content review when raw or summarized safety evidence is available.
 - **Aegis-14B**: data-governance specialist trained from Hermes 14B for dataset quality, risk, and refinement decisions.
-- **Stripe**: capped checkout, payment-to-job creation, and governed spend rail.
+- **Stripe**: capped Checkout earn rail and payment-to-job creation. Outbound agent spend is currently a governed internal ledger/test stub, not Stripe Skills money movement.
 - **AAR / Frontier Infra**: signed proof layer for what the agent did.
 - **AInode / DGX Spark**: clustered local model serving environment.
 
@@ -62,11 +64,16 @@ The Dell bridge can pin a fast receipt model independently of the interactive
 Hermes default:
 
 ```bash
-HERMES_OPERATOR_MODEL=nvidia/nemotron-3-nano-30b-a3b
+HERMES_OPERATOR_MODEL=nvidia/nemotron-3-ultra-550b-a55b
+HERMES_OPERATOR_PRIMARY_TIMEOUT_SECONDS=25
+HERMES_OPERATOR_FALLBACK_MODEL=nvidia/nemotron-3-nano-30b-a3b
+HERMES_CONTENT_SAFETY_MODEL=nvidia/nemotron-3.5-content-safety
 ```
 
-Use Ultra for a heavyweight operator demo shot when desired; use Nano for the
-live receipt bridge when latency matters.
+The honest production pattern is Ultra primary, Nano fallback. Receipts record
+which model actually ran. The bridge also records the Content Safety gate status;
+if raw data was not sent to the model, the status must be `metadata_only` or
+`pending`, not a claimed full scan.
 
 The backend stores Hermes receipts as `audit_logs` rows:
 
@@ -91,6 +98,6 @@ Then cut back to the browser showing the live job, Stripe payment, Hermes operat
 
 Use this stack line:
 
-> Hermes Agent is the operator. It loads an Aegis Refine skill, uses Nemotron 3 Ultra for operational routing and cap/spend decisions, calls Aegis-14B for dataset governance, and leaves the customer with a refined dataset plus signed proof.
+> Hermes Agent is the operator. It loads an Aegis Refine skill, uses `nvidia/nemotron-3-ultra-550b-a55b` as the operations brain for routing and cap/spend decisions, records `nvidia/nemotron-3-nano-30b-a3b` as the latency fallback, uses `nvidia/nemotron-3.5-content-safety` for the safety gate when evidence is available, calls Aegis-14B for dataset governance, earns through capped Stripe Checkout, and leaves the customer with a refined dataset plus signed proof. Outbound spend is governed by an auditable internal cap ledger in this build; Stripe Skills outflow is the next milestone, not a completed claim.
 
 Avoid saying Hermes Agent runs inside the production web container. The honest claim is that the backend dispatches job phases to the private Hermes Agent bridge on the Dell, Hermes runs the `aegis-refine` skill, and the app stores the returned operator receipt.

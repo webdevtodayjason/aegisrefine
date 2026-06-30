@@ -17,12 +17,13 @@ metadata:
 
 Use this skill when Hermes Agent is asked to operate an Aegis Refine customer job: quote review, route planning, spend governance, dataset refinement oversight, synthetic augmentation oversight, or signed-delivery verification.
 
-Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governance specialist. Nemotron 3 Ultra is the preferred operations brain for roadmap, routing, margin, and spend decisions when available. Stripe is the money rail. AAR certificates are the proof surface.
+Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governance specialist. `nvidia/nemotron-3-ultra-550b-a55b` is the primary operations brain for roadmap, routing, margin, and spend decisions. `nvidia/nemotron-3-nano-30b-a3b` is the documented latency/cost fallback for receipt generation. `nvidia/nemotron-3.5-content-safety` is the NVIDIA safety gate for PII / unsafe-content review when raw or summarized safety evidence is available. Stripe Checkout is the earn rail. Outbound spend is currently an auditable internal cap ledger/test stub, not a completed Stripe Skills outflow. AAR certificates are the proof surface.
 
 ## When To Use
 
 - A paid Aegis Refine job needs an operator decision, roadmap, or quality gate.
 - A dataset needs a cleaning/sanitization/refinement plan before work runs.
+- A dataset needs a PII / unsafe-content safety gate before delivery.
 - A synthetic augmentation job needs a model/tool plan and proof criteria.
 - A spend ticket needs review against the accepted customer cap.
 - A completed job needs receipt/certificate verification before delivery.
@@ -47,6 +48,7 @@ Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governanc
    - Local: `curl -fsS http://localhost:8000/agent/health`
 3. Build the operator decision:
    - classify data type and risk
+   - record the Nemotron 3.5 Content Safety gate status
    - decide local refinement vs synthetic augment vs OCR/tool escalation
    - identify models/tools required
    - estimate spend and compare against the accepted cap
@@ -83,8 +85,19 @@ Return this JSON shape when operating a job:
   "aegis_health": "ok|degraded|unverified",
   "primary_models": {
     "operator": "Hermes Agent",
-    "operations_brain": "Nemotron 3 Ultra",
+    "operations_brain": {
+      "primary": "nvidia/nemotron-3-ultra-550b-a55b",
+      "active": "nvidia/nemotron-3-ultra-550b-a55b",
+      "fallback": "nvidia/nemotron-3-nano-30b-a3b",
+      "fallback_used": false
+    },
+    "content_safety_gate": "nvidia/nemotron-3.5-content-safety",
     "data_governance": "Aegis-14B"
+  },
+  "safety_gate": {
+    "model": "nvidia/nemotron-3.5-content-safety",
+    "status": "passed|flagged|metadata_only|pending",
+    "reason": null
   },
   "route": "run_local|synthesize|request_spend|temporarily_queue|fail_closed",
   "cap": {
@@ -114,11 +127,13 @@ Return this JSON shape when operating a job:
 ### Refine Jobs
 
 1. Use Aegis-14B for data-domain governance: quality, PII/noise risk, format, usable rows, and whether the data can be processed locally.
-2. Use Nemotron 3 Ultra for the operator roadmap when available: business route, margin/cap reasoning, tool/model choice, and approval wording.
-3. If local Aegis processing is enough, continue within cap.
-4. If external spend is justified and within the accepted cap, create or approve an auditable spend ticket according to the Aegis Refine backend policy.
-5. If projected spend exceeds the accepted cap, fail closed into a human approval/requote path.
-6. Do not deliver if the refined output is empty or the certificate cannot be issued.
+2. Use `nvidia/nemotron-3.5-content-safety` as the PII / unsafe-content safety gate when raw sample text or signed safety summaries are available.
+3. Use `nvidia/nemotron-3-ultra-550b-a55b` for the operator roadmap when latency permits: business route, margin/cap reasoning, tool/model choice, and approval wording.
+4. Use `nvidia/nemotron-3-nano-30b-a3b` only as the documented fast fallback for receipt generation or low-risk routing; do not label a Nano run as Ultra.
+5. If local Aegis processing is enough, continue within cap.
+6. If external spend is justified and within the accepted cap, create or approve an auditable spend ticket according to the Aegis Refine backend policy.
+7. If projected spend exceeds the accepted cap, fail closed into a human approval/requote path.
+8. Do not deliver if the refined output is empty or the certificate cannot be issued.
 
 ### Synthesis / Augment Jobs
 
@@ -135,6 +150,7 @@ Before calling a job complete, verify:
 - Stripe payment or checkout state is attached when the job is paid.
 - The accepted quote/cap is present.
 - Spend tickets show proposed/approved/executed/rejected status.
+- The safety gate status is recorded. If no raw data was sent to the content-safety model, mark it `metadata_only` or `pending` instead of claiming a full scan.
 - Downloadable output is non-empty.
 - AAR certificate exists or is explicitly pending.
 - Telegram receipt was sent for completed jobs, or the send failure is reported without blocking delivery.
@@ -154,7 +170,9 @@ Never include raw dataset contents, PII, private customer data, or secrets in Te
 - If `/agent/health` is degraded, do not run a fake fallback. Return `temporarily_queue`.
 - If the web app is reachable but admin receipt endpoints require a browser session, report that the receipt is protected rather than guessing.
 - If Stripe state is missing, do not claim the job earned revenue.
-- If Nemotron 3 Ultra is unavailable, say operations-brain status is unverified; do not rename another model as Nemotron.
+- If outbound spend lacks a Stripe payment intent, describe it as internal ledger/test-stub spend authorization, not Stripe Skills money movement.
+- If `nvidia/nemotron-3-ultra-550b-a55b` is unavailable or too slow, record the actual fallback model. Do not write "Ultra" over a Nano run.
+- If `nvidia/nemotron-3.5-content-safety` did not inspect raw/summarized safety evidence, report `metadata_only` or `pending`; do not claim it sanitized the data.
 
 ## Verification
 

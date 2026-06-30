@@ -17,9 +17,13 @@ from typing import Any
 HERMES_BIN = os.getenv("HERMES_BIN", "/home/sem/.local/bin/hermes")
 SKILL = os.getenv("HERMES_SKILL", "aegis-refine")
 TOKEN = os.getenv("HERMES_OPERATOR_TOKEN", "").strip()
-MODEL = os.getenv("HERMES_OPERATOR_MODEL", "").strip()
 PROVIDER = os.getenv("HERMES_OPERATOR_PROVIDER", "").strip()
+MODEL = os.getenv("HERMES_OPERATOR_MODEL", "").strip()
+FALLBACK_MODEL = os.getenv("HERMES_OPERATOR_FALLBACK_MODEL", "").strip()
+OPERATIONS_MODEL = os.getenv("HERMES_OPERATIONS_MODEL", "nvidia/nemotron-3-ultra-550b-a55b").strip()
+CONTENT_SAFETY_MODEL = os.getenv("HERMES_CONTENT_SAFETY_MODEL", "nvidia/nemotron-3.5-content-safety").strip()
 RUN_TIMEOUT = int(os.getenv("HERMES_RUN_TIMEOUT_SECONDS", "90"))
+PRIMARY_TIMEOUT = int(os.getenv("HERMES_OPERATOR_PRIMARY_TIMEOUT_SECONDS", str(RUN_TIMEOUT)))
 SEND_TIMEOUT = int(os.getenv("HERMES_SEND_TIMEOUT_SECONDS", "20"))
 TELEGRAM_TARGET = os.getenv("HERMES_TELEGRAM_TARGET", "telegram").strip()
 
@@ -62,35 +66,81 @@ def _prompt(payload: dict[str, Any]) -> str:
     }
     return (
         "Use aegis-refine. Return compact JSON only. "
-        "Schema keys: operator, skill, job_id, service, aegis_health, primary_models, "
+        "Schema keys: operator, skill, job_id, service, aegis_health, primary_models, safety_gate, "
         "route, cap, spend_decision, proof, next_action. "
         "Routes: run_local, synthesize, request_spend, temporarily_queue, fail_closed. "
+        f"Operations primary={OPERATIONS_MODEL}. Content safety gate={CONTENT_SAFETY_MODEL}. "
+        "If no raw dataset sample is present, safety_gate.status must be metadata_only or pending. "
         "No raw data or secrets. Job="
         f"{json.dumps(compact, separators=(',', ':'), sort_keys=True, default=str)}"
     )
 
 
-def _run_hermes(payload: dict[str, Any]) -> dict[str, Any]:
+def _model_roles(active_model: str | None, fallback_used: bool = False) -> dict[str, Any]:
+    return {
+        "operator": "Hermes Agent",
+        "operations_brain": {
+            "primary": OPERATIONS_MODEL,
+            "active": active_model or MODEL or "Hermes configured default",
+            "fallback": FALLBACK_MODEL or None,
+            "fallback_used": fallback_used,
+        },
+        "content_safety_gate": CONTENT_SAFETY_MODEL,
+        "data_governance": "Aegis-14B",
+    }
+
+
+def _brief_error(error: Exception) -> str:
+    if isinstance(error, subprocess.TimeoutExpired):
+        return "Hermes model attempt timed out"
+    text = str(error)
+    if "No LLM provider configured" in text:
+        return "Hermes provider is not configured for this model"
+    if "timed out" in text.lower():
+        return "Hermes model attempt timed out"
+    return "Hermes model attempt failed"
+
+
+def _run_hermes_once(payload: dict[str, Any], model: str | None, timeout: int) -> dict[str, Any]:
     cmd = [HERMES_BIN]
     if PROVIDER:
         cmd += ["--provider", PROVIDER]
-    if MODEL:
-        cmd += ["-m", MODEL]
+    if model:
+        cmd += ["-m", model]
     cmd += ["--skills", SKILL, "-z", _prompt(payload)]
     proc = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
-        timeout=RUN_TIMEOUT,
+        timeout=timeout,
         check=False,
     )
     if proc.returncode != 0:
         raise RuntimeError((proc.stderr or proc.stdout or "Hermes command failed").strip()[:600])
-    result = _extract_json(proc.stdout)
-    return _normalize_result(payload, result)
+    return _extract_json(proc.stdout)
 
 
-def _normalize_result(payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+def _run_hermes(payload: dict[str, Any]) -> dict[str, Any]:
+    attempts: list[tuple[str | None, int, bool]] = []
+    attempts.append((MODEL or None, PRIMARY_TIMEOUT, False))
+    if FALLBACK_MODEL and FALLBACK_MODEL != MODEL:
+        attempts.append((FALLBACK_MODEL, RUN_TIMEOUT, True))
+
+    last_error: Exception | None = None
+    for model, timeout, fallback_used in attempts:
+        try:
+            result = _run_hermes_once(payload, model, timeout)
+            out = _normalize_result(payload, result, active_model=model, fallback_used=fallback_used)
+            if last_error and fallback_used:
+                out["fallback_reason"] = _brief_error(last_error)
+            return out
+        except Exception as exc:
+            last_error = exc
+    raise last_error or RuntimeError("Hermes command failed")
+
+
+def _normalize_result(payload: dict[str, Any], result: dict[str, Any],
+                      active_model: str | None = None, fallback_used: bool = False) -> dict[str, Any]:
     quote = payload.get("quote") or {}
     out = dict(result)
     out["operator"] = "Hermes Agent"
@@ -98,11 +148,22 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
     out["job_id"] = out.get("job_id") or payload.get("job_id")
     out["service"] = out.get("service") or payload.get("service")
     if not isinstance(out.get("primary_models"), dict):
-        out["primary_models"] = {
-            "operator": "Hermes Agent",
-            "operations_brain": "Nemotron 3 Ultra",
-            "data_governance": "Aegis-14B",
+        out["primary_models"] = _model_roles(active_model, fallback_used)
+    else:
+        roles = {**_model_roles(active_model, fallback_used), **out["primary_models"]}
+        if not isinstance(roles.get("operations_brain"), dict):
+            roles["operations_brain"] = {
+                **_model_roles(active_model, fallback_used)["operations_brain"],
+                "label": roles.get("operations_brain"),
+            }
+        out["primary_models"] = roles
+    if not isinstance(out.get("safety_gate"), dict):
+        out["safety_gate"] = {
+            "model": CONTENT_SAFETY_MODEL,
+            "status": "metadata_only",
+            "reason": "Bridge received redacted job metadata, not raw dataset contents.",
         }
+    out.setdefault("route", "temporarily_queue")
     if not isinstance(out.get("cap"), dict):
         out["cap"] = {
             "quoted_usd": quote.get("quoted_usd"),
@@ -112,7 +173,7 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
         }
     if not isinstance(out.get("spend_decision"), dict):
         out["spend_decision"] = {
-            "needed": str(out.get("spend_decision") or "").lower() in {"approve", "approved", "request_spend"},
+            "needed": out.get("route") == "request_spend",
             "tool_or_model": None,
             "reason": str(out.get("spend_decision") or "Local processing sufficient within cap"),
             "ticket_required": out.get("route") == "request_spend",
@@ -124,7 +185,6 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
             "aar_expected": True,
             "delivery_allowed": payload.get("phase") == "completed",
         }
-    out.setdefault("route", "temporarily_queue")
     out.setdefault("next_action", "queue" if out["route"] == "temporarily_queue" else "continue")
     return out
 
@@ -138,10 +198,11 @@ def _queued_result(payload: dict[str, Any], error: Exception) -> dict[str, Any]:
         "job_id": payload.get("job_id"),
         "service": payload.get("service"),
         "aegis_health": "unverified",
-        "primary_models": {
-            "operator": "Hermes Agent",
-            "operations_brain": "Nemotron 3 Ultra",
-            "data_governance": "Aegis-14B",
+        "primary_models": _model_roles(None, False),
+        "safety_gate": {
+            "model": CONTENT_SAFETY_MODEL,
+            "status": "pending",
+            "reason": "Operator pass did not complete.",
         },
         "route": "temporarily_queue",
         "cap": {
@@ -163,7 +224,7 @@ def _queued_result(payload: dict[str, Any], error: Exception) -> dict[str, Any]:
             "delivery_allowed": False,
         },
         "next_action": "queue",
-        "hermes_error": str(error)[:240],
+        "hermes_error": _brief_error(error),
     }
 
 
@@ -176,6 +237,8 @@ def _receipt_message(payload: dict[str, Any], result: dict[str, Any]) -> str:
         f"Job: {payload.get('job_id')} ({payload.get('service')})",
         f"Phase: {payload.get('phase')}",
         f"Route: {result.get('route')} / Next: {result.get('next_action')}",
+        f"Ops model: {((result.get('primary_models') or {}).get('operations_brain') or {}).get('active') or 'unknown'}",
+        f"Safety gate: {((result.get('safety_gate') or {}).get('model') or CONTENT_SAFETY_MODEL)}",
         f"Quote: ${quote.get('quoted_usd')} | Cap: ${quote.get('approved_cap_usd')}",
         f"Revenue: ${economics.get('revenue_collected_usd')} | Cost: ${economics.get('actual_cost_usd')}",
         f"AAR: {receipt.get('aar') or 'pending'}",

@@ -75,7 +75,7 @@
         <div style="max-width:580px">
           <div class="eyebrow" style="margin-bottom:10px">// AGENT FLEET</div>
           <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Hermes Agent operates every job</h1>
-          <p class="muted" style="font-size:14px;margin:0">Hermes Agent loads the Aegis Refine skill and operates the customer job. Nemotron 3 Ultra handles route, cap, and spend reasoning; <span class="teal">Aegis-14B</span>, trained from Hermes 14B, handles dataset governance on NVIDIA DGX Spark. It can propose outbound spend, but it cannot move a dollar without the one human gate.</p>
+          <p class="muted" style="font-size:14px;margin:0">Hermes Agent loads the Aegis Refine skill and operates the customer job. <span class="teal">nvidia/nemotron-3-ultra-550b-a55b</span> handles route, cap, and spend reasoning; <span class="teal">nvidia/nemotron-3.5-content-safety</span> is the PII / unsafe-content gate; <span class="teal">Aegis-14B</span>, trained from Hermes 14B, handles dataset governance on NVIDIA DGX Spark.</p>
         </div>
 
         <div class="ident card">
@@ -89,7 +89,9 @@
           </div>
           <div class="kvstack">
             <div class="kv"><span class="k">Operator</span><span class="v">Hermes Agent</span></div>
-            <div class="kv"><span class="k">Operations brain</span><span class="v">Nemotron 3 Ultra</span></div>
+            <div class="kv"><span class="k">Operations brain</span><span class="v">nemotron-3-ultra-550b-a55b</span></div>
+            <div class="kv"><span class="k">Latency fallback</span><span class="v">nemotron-3-nano-30b-a3b</span></div>
+            <div class="kv"><span class="k">Safety gate</span><span class="v">nemotron-3.5-content-safety</span></div>
             <div class="kv"><span class="k">Data model base</span><span class="v">Hermes 14B</span></div>
             <div class="kv"><span class="k">Specialization</span><span class="v teal">LoRA fine-tune</span></div>
             <div class="kv"><span class="k">Parameters</span><span class="v">14B + gov. adapter</span></div>
@@ -210,7 +212,8 @@
             <div class="kv"><span class="k">Accelerator</span><span class="v">NVIDIA DGX Spark</span></div>
             <div class="kv"><span class="k">Inference runtime</span><span class="v teal">AInode</span></div>
             <div class="kv"><span class="k">Agent runtime</span><span class="v">Hermes Agent skill</span></div>
-            <div class="kv"><span class="k">Route model</span><span class="v">Nemotron 3 Ultra</span></div>
+            <div class="kv"><span class="k">Route model</span><span class="v">nvidia/nemotron-3-ultra-550b-a55b</span></div>
+            <div class="kv"><span class="k">Safety model</span><span class="v">nvidia/nemotron-3.5-content-safety</span></div>
             <div class="kv"><span class="k">Adapter</span><span class="v">Aegis governance LoRA</span></div>
             <div class="kv"><span class="k">Context format</span><span class="v">ChatML</span></div>
             <div class="kv"><span class="k">Median decision</span><span class="v">~3 s / call</span></div>
