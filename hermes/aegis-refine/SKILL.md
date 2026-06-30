@@ -17,7 +17,7 @@ metadata:
 
 Use this skill when Hermes Agent is asked to operate an Aegis Refine customer job: quote review, route planning, spend governance, dataset refinement oversight, synthetic augmentation oversight, or signed-delivery verification.
 
-Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governance specialist. `nvidia/nemotron-3-ultra-550b-a55b` is the primary operations brain for roadmap, routing, margin, and spend decisions. `nvidia/nemotron-3-nano-30b-a3b` is the documented latency/cost fallback for receipt generation. `nvidia/nemotron-3.5-content-safety` is the NVIDIA safety gate for PII / unsafe-content review when raw or summarized safety evidence is available. Stripe Checkout is the earn rail. Outbound spend is currently an auditable internal cap ledger/test stub, not a completed Stripe Skills outflow. AAR certificates are the proof surface.
+Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governance specialist. `nvidia/nemotron-3-ultra-550b-a55b` is the primary operations brain for roadmap, routing, margin, and spend decisions. `nvidia/nemotron-3-nano-30b-a3b` is the documented latency/cost fallback for receipt generation. `nvidia/nemotron-3.5-content-safety` is the NVIDIA safety gate for PII / unsafe-content review when raw or summarized safety evidence is available. Stripe Checkout is the earn rail. Outbound spend is a Hermes-initiated Stripe Connect Transfer to the AINode compute vendor when configured; Aegis verifies the returned Stripe object before recording execution. AAR certificates are the proof surface.
 
 ## When To Use
 
@@ -57,6 +57,7 @@ Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governanc
    - quote receipt
    - Stripe session/payment state
    - spend ticket decisions
+   - verified Stripe Connect transfer id for outbound spend, when executed
    - audit events
    - AAR certificate id/link
 5. For completed jobs, send Jason a concise Telegram receipt through Hermes messaging.
@@ -70,6 +71,7 @@ Hermes Agent is the operator. Aegis-14B is the Hermes-14B-derived data-governanc
 | Check local Aegis | `curl -fsS http://localhost:8000/agent/health` |
 | Load this skill once | `hermes -z --skills aegis-refine "Operate Aegis Refine job <id>..."` |
 | Run from repo prompt | `hermes -z --skills aegis-refine "$(cat hermes/aegis-refine/templates/operator-prompt.md)"` |
+| Create agent spend transfer | `python hermes/aegis-refine/scripts/create_stripe_transfer.py --job-id <id> --amount-cents <cents> --service ainode_compute --purpose ocr_enrichment` |
 | Send Telegram receipt | `hermes send --to telegram "Aegis Refine job <id> completed: quote, spend, AAR"` |
 
 ## Operator Decision Schema
@@ -118,6 +120,14 @@ Return this JSON shape when operating a job:
     "aar_expected": true,
     "delivery_allowed": false
   },
+  "spend": {
+    "proposed_by": "nvidia/nemotron-3-ultra-550b-a55b",
+    "approved_cap_cents": null,
+    "projected_spend_cents": null,
+    "executed": null,
+    "cap_respected": null,
+    "verified_against_stripe": false
+  },
   "next_action": "continue|queue|ask_operator|block_delivery"
 }
 ```
@@ -132,8 +142,53 @@ Return this JSON shape when operating a job:
 4. Use `nvidia/nemotron-3-nano-30b-a3b` only as the documented fast fallback for receipt generation or low-risk routing; do not label a Nano run as Ultra.
 5. If local Aegis processing is enough, continue within cap.
 6. If external spend is justified and within the accepted cap, create or approve an auditable spend ticket according to the Aegis Refine backend policy.
-7. If projected spend exceeds the accepted cap, fail closed into a human approval/requote path.
-8. Do not deliver if the refined output is empty or the certificate cannot be issued.
+7. When the bridge phase is `spend_approved`, initiate the outbound spend as a Stripe Connect Transfer to the configured AINode compute vendor. Use an idempotency key shaped like `<job_id>:<purpose>` so retries cannot double-spend.
+8. Return the transfer id in `spend.executed.stripe_transfer_id`. Do not set `verified_against_stripe` to true; the Aegis backend independently retrieves the Stripe object and verifies destination, cap, currency, and livemode before marking the ticket executed.
+9. If the Stripe transfer cannot be created or no Stripe skill/tool is available, return `spend.executed: null`, `route: "temporarily_queue"`, and a concise reason. Never synthesize a `tr_...` id.
+10. If projected spend exceeds the accepted cap, fail closed into a human approval/requote path.
+11. Do not deliver if the refined output is empty or the certificate cannot be issued.
+
+### Request Spend / Stripe Transfer
+
+Only use this route after Aegis shows the spend ticket is approved by a human or preauthorized by the accepted quote cap.
+
+Required environment:
+
+- `STRIPE_SECRET_KEY` must be a Stripe test or live secret key for the platform account.
+- `STRIPE_AGENT_SPEND_VENDOR_ACCOUNT` must be the connected AINode compute vendor account.
+- `MAX_AGENT_SPEND_CENTS` should be set as an independent circuit breaker.
+
+Procedure:
+
+1. Read the approved ticket from the job payload receipt: `ticket_id`, `approved_spend_cents`, `service`, and `purpose`.
+2. Clamp the transfer amount to the lower of `approved_spend_cents` and `MAX_AGENT_SPEND_CENTS`.
+3. Create a Stripe Connect Transfer to `STRIPE_AGENT_SPEND_VENDOR_ACCOUNT` with metadata `{job_id, ticket_id, service, purpose, operator: "Hermes Agent"}`.
+4. Use idempotency key `<job_id>:<purpose>` or `<job_id>:ticket-<ticket_id>`.
+5. Return JSON with:
+
+```json
+{
+  "route": "run_local",
+  "spend": {
+    "proposed_by": "nvidia/nemotron-3-ultra-550b-a55b",
+    "approved_cap_cents": 1200,
+    "projected_spend_cents": 1200,
+    "executed": {
+      "stripe_transfer_id": "tr_...",
+      "amount_cents": 1200,
+      "currency": "usd",
+      "destination": "acct_...",
+      "service": "ainode_compute",
+      "livemode": false
+    },
+    "cap_respected": true,
+    "verified_against_stripe": false
+  },
+  "next_action": "continue"
+}
+```
+
+The backend will reject the execution if the Stripe transfer cannot be retrieved, exceeds the approved cap, or goes to the wrong connected account.
 
 ### Synthesis / Augment Jobs
 
@@ -170,7 +225,8 @@ Never include raw dataset contents, PII, private customer data, or secrets in Te
 - If `/agent/health` is degraded, do not run a fake fallback. Return `temporarily_queue`.
 - If the web app is reachable but admin receipt endpoints require a browser session, report that the receipt is protected rather than guessing.
 - If Stripe state is missing, do not claim the job earned revenue.
-- If outbound spend lacks a Stripe payment intent, describe it as internal ledger/test-stub spend authorization, not Stripe Skills money movement.
+- If outbound spend lacks a verified Stripe transfer, describe it as temporarily queued, not Stripe money movement.
+- If the transfer id is present but backend verification has not completed, do not call it verified.
 - If `nvidia/nemotron-3-ultra-550b-a55b` is unavailable or too slow, record the actual fallback model. Do not write "Ultra" over a Nano run.
 - If `nvidia/nemotron-3.5-content-safety` did not inspect raw/summarized safety evidence, report `metadata_only` or `pending`; do not claim it sanitized the data.
 

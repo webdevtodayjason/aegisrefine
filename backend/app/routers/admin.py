@@ -1,8 +1,10 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.spend_service import approve_spend_ticket, reject_spend_ticket, execute_spend_ticket
 from app.services.auth import require_admin
+from app.services import hermes_operator, stripe_spend
 from app.models.audit_certificate import AuditCertificate
 from app.models.audit_log import AuditLog
 from app.models.job import Job
@@ -37,10 +39,69 @@ async def reject_ticket(ticket_id: int, db: Session = Depends(get_db), admin: Us
 
 @router.post("/{ticket_id}/execute")
 async def execute_ticket(ticket_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    ticket = execute_spend_ticket(db, ticket_id)
+    ticket = db.query(SpendTicket).filter(SpendTicket.id == ticket_id).first()
+    if not ticket or ticket.status != "approved":
+        raise HTTPException(status_code=404, detail="Ticket not found or not approved")
+    job = db.query(Job).filter(Job.id == ticket.job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    op = hermes_operator.dispatch_job(
+        db,
+        job,
+        phase="spend_approved",
+        receipt={
+            "ticket_id": ticket.id,
+            "approved_spend_cents": int(round(float(ticket.amount or 0) * 100)),
+            "service": ticket.provider or "ainode_compute",
+            "purpose": ticket.description or "agent spend",
+        },
+        require_config=True,
+    )
+    result = ((op or {}).get("result") or (op or {}).get("details") or {})
+    spend = result.get("spend") if isinstance(result.get("spend"), dict) else {}
+    executed = spend.get("executed") if isinstance(spend.get("executed"), dict) else {}
+    transfer_id = (
+        executed.get("stripe_transfer_id")
+        or executed.get("transfer")
+        or spend.get("stripe_transfer_id")
+        or result.get("stripe_transfer_id")
+    )
+    payment_id = (
+        executed.get("stripe_payment_id")
+        or executed.get("payment_intent")
+        or spend.get("stripe_payment_id")
+        or result.get("stripe_payment_id")
+    )
+    cap_cents = int(round(float(ticket.amount or 0) * 100))
+    expected_destination = (os.getenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT") or "").strip() or None
+    if transfer_id:
+        verified = stripe_spend.verify_agent_transfer(transfer_id, cap_cents, expected_destination)
+    elif os.getenv("ALLOW_AGENT_PAYMENT_INTENT_SPEND", "").lower() in {"1", "true", "yes"}:
+        verified = stripe_spend.verify_agent_spend(payment_id or "", cap_cents)
+    else:
+        verified = {"executed": None, "status": "missing_transfer", "route": "temporarily_queue"}
+    if not verified.get("executed"):
+        ticket.stripe_spend_status = verified.get("status") or "unverified"
+        ticket.stripe_spend_error = verified.get("error")
+        db.commit()
+        raise HTTPException(status_code=503, detail={
+            "message": "agent spend was not verified by Stripe",
+            "verification": verified,
+        })
+
+    v = verified["executed"]
+    ticket = execute_spend_ticket(
+        db,
+        ticket_id,
+        actual_amount=float(v["amount_cents"]) / 100,
+        stripe_payment_intent_id=v.get("stripe_payment_id"),
+        stripe_transfer_id=v.get("stripe_transfer_id"),
+        stripe_spend_status=v.get("status") or "verified",
+    )
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found or not approved")
-    return {"status": "executed", "ticket_id": ticket.id}
+    return {"status": "executed", "ticket_id": ticket.id, "stripe_spend": verified}
 
 
 @receipts_router.get("/{job_id}/receipt")
@@ -79,6 +140,9 @@ async def job_receipt(job_id: int, db: Session = Depends(get_db), admin: User = 
             "provider": t.provider,
             "units": t.units,
             "cost_source": t.cost_source,
+            "stripe_payment_intent_id": t.stripe_payment_intent_id,
+            "stripe_transfer_id": t.stripe_transfer_id,
+            "stripe_spend_status": t.stripe_spend_status,
             "description": t.description,
         } for t in tickets],
         "audit_events": [{

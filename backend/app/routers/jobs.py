@@ -307,8 +307,13 @@ async def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depen
     out = _job_brief(db, j)
     out.update({
         "output": j.output_file_path, "actual_cost": j.actual_cost,
-        "spend_tickets": [{"id": t.id, "amount": t.amount, "description": t.description,
-                           "status": t.status, "approved_by": t.approved_by} for t in tickets],
+        "spend_tickets": [{"id": t.id, "amount": t.amount, "actual_amount": t.actual_amount,
+                           "description": t.description, "status": t.status,
+                           "approved_by": t.approved_by,
+                           "stripe_transfer_id": t.stripe_transfer_id,
+                           "stripe_payment_intent_id": t.stripe_payment_intent_id,
+                           "stripe_spend_status": t.stripe_spend_status}
+                          for t in tickets],
         "certificate": ({"id": cert.id, "aar": f"/jobs/{job_id}/aar"} if cert else None),
         "service": getattr(j, "service", "refine"),
         "operator": hermes_operator.latest_operator_payload(db, job_id),

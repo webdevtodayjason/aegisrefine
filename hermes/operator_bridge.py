@@ -22,6 +22,8 @@ MODEL = os.getenv("HERMES_OPERATOR_MODEL", "").strip()
 FALLBACK_MODEL = os.getenv("HERMES_OPERATOR_FALLBACK_MODEL", "").strip()
 OPERATIONS_MODEL = os.getenv("HERMES_OPERATIONS_MODEL", "nvidia/nemotron-3-ultra-550b-a55b").strip()
 CONTENT_SAFETY_MODEL = os.getenv("HERMES_CONTENT_SAFETY_MODEL", "nvidia/nemotron-3.5-content-safety").strip()
+STRIPE_VENDOR_ACCOUNT = os.getenv("STRIPE_AGENT_SPEND_VENDOR_ACCOUNT", "").strip()
+MAX_AGENT_SPEND_CENTS = int(os.getenv("MAX_AGENT_SPEND_CENTS", "5000"))
 RUN_TIMEOUT = int(os.getenv("HERMES_RUN_TIMEOUT_SECONDS", "90"))
 PRIMARY_TIMEOUT = int(os.getenv("HERMES_OPERATOR_PRIMARY_TIMEOUT_SECONDS", str(RUN_TIMEOUT)))
 SEND_TIMEOUT = int(os.getenv("HERMES_SEND_TIMEOUT_SECONDS", "20"))
@@ -64,14 +66,26 @@ def _prompt(payload: dict[str, Any]) -> str:
         "spend_tickets": payload.get("spend_tickets") or [],
         "receipt": payload.get("receipt") or {},
     }
+    spend_instruction = ""
+    if payload.get("phase") == "spend_approved":
+        spend_instruction = (
+            " Phase spend_approved: initiate outbound spend as a Stripe Connect Transfer to the "
+            f"AINode vendor account {STRIPE_VENDOR_ACCOUNT or '[configured vendor env missing]'}. "
+            f"Hard circuit breaker MAX_AGENT_SPEND_CENTS={MAX_AGENT_SPEND_CENTS}. "
+            "Use the aegis-refine Stripe transfer helper or an available Stripe tool/skill. "
+            "Return spend.executed.stripe_transfer_id only if Stripe returned a real tr_ id. "
+            "Set spend.verified_against_stripe=false because the Aegis backend verifies it independently. "
+            "If no transfer is created, return spend.executed=null, route=temporarily_queue, next_action=queue."
+        )
     return (
         "Use aegis-refine. Return compact JSON only. "
         "Schema keys: operator, skill, job_id, service, aegis_health, primary_models, safety_gate, "
-        "route, cap, spend_decision, proof, next_action. "
+        "route, cap, spend_decision, spend, proof, next_action. "
         "Routes: run_local, synthesize, request_spend, temporarily_queue, fail_closed. "
         f"Operations primary={OPERATIONS_MODEL}. Content safety gate={CONTENT_SAFETY_MODEL}. "
         "If no raw dataset sample is present, safety_gate.status must be metadata_only or pending. "
-        "No raw data or secrets. Job="
+        "No raw data or secrets."
+        f"{spend_instruction} Job="
         f"{json.dumps(compact, separators=(',', ':'), sort_keys=True, default=str)}"
     )
 
@@ -185,6 +199,17 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any],
             "aar_expected": True,
             "delivery_allowed": payload.get("phase") == "completed",
         }
+    if not isinstance(out.get("spend"), dict):
+        receipt = payload.get("receipt") or {}
+        approved_cents = receipt.get("approved_spend_cents")
+        out["spend"] = {
+            "proposed_by": OPERATIONS_MODEL,
+            "approved_cap_cents": approved_cents,
+            "projected_spend_cents": approved_cents if payload.get("phase") == "spend_approved" else None,
+            "executed": None,
+            "cap_respected": True if approved_cents is not None else None,
+            "verified_against_stripe": False,
+        }
     out.setdefault("next_action", "queue" if out["route"] == "temporarily_queue" else "continue")
     return out
 
@@ -222,6 +247,14 @@ def _queued_result(payload: dict[str, Any], error: Exception) -> dict[str, Any]:
             "quote_receipt_verified": bool(quote.get("receipt")),
             "aar_expected": True,
             "delivery_allowed": False,
+        },
+        "spend": {
+            "proposed_by": OPERATIONS_MODEL,
+            "approved_cap_cents": (payload.get("receipt") or {}).get("approved_spend_cents"),
+            "projected_spend_cents": None,
+            "executed": None,
+            "cap_respected": None,
+            "verified_against_stripe": False,
         },
         "next_action": "queue",
         "hermes_error": _brief_error(error),

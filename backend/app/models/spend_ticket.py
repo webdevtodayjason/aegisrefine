@@ -25,3 +25,6 @@ class SpendTicket(Base):
     unit_price_usd = Column(Float)           # catalog price snapshot at decision time
     cost_source = Column(String)             # e.g. "deepinfra.com/pricing@2026-06-27"
     actual_amount = Column(Float)            # settled cost; null until executed
+    stripe_transfer_id = Column(String)      # outbound Stripe Connect transfer (when configured)
+    stripe_spend_status = Column(String)     # not_configured | transferred | failed
+    stripe_spend_error = Column(String)

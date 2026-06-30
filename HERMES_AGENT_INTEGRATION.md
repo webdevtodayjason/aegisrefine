@@ -9,7 +9,7 @@ Aegis Refine should be presented as a Hermes Agent-operated business workflow, n
 - **Nemotron 3 Nano**: `nvidia/nemotron-3-nano-30b-a3b`, the latency/cost fallback for fast receipt generation and low-risk routing.
 - **Nemotron 3.5 Content Safety**: `nvidia/nemotron-3.5-content-safety`, the safety gate for PII / unsafe-content review when raw or summarized safety evidence is available.
 - **Aegis-14B**: data-governance specialist trained from Hermes 14B for dataset quality, risk, and refinement decisions.
-- **Stripe**: capped Checkout earn rail and payment-to-job creation. Outbound agent spend is currently a governed internal ledger/test stub, not Stripe Skills money movement.
+- **Stripe**: capped Checkout earn rail and payment-to-job creation. Outbound agent spend is a Hermes-initiated Stripe Connect Transfer to the AINode compute vendor when approved; the backend independently verifies the returned Stripe object before recording execution.
 - **AAR / Frontier Infra**: signed proof layer for what the agent did.
 - **AInode / DGX Spark**: clustered local model serving environment.
 
@@ -84,6 +84,38 @@ Customers can see the latest stored receipt on `/jobs/{job_id}` and
 `/jobs/{job_id}/operator`; admins can manually retry with
 `POST /jobs/{job_id}/operator/dispatch`.
 
+## Stripe Agent Spend
+
+The honest spend path is:
+
+```text
+SpendTicket approved -> Hermes Agent aegis-refine skill -> Stripe Connect Transfer -> Aegis backend verification -> executed receipt
+```
+
+Required environment:
+
+```bash
+STRIPE_AGENT_SPEND_VENDOR_ACCOUNT=acct_...
+MAX_AGENT_SPEND_CENTS=5000
+```
+
+Hermes may create the transfer with:
+
+```bash
+python hermes/aegis-refine/scripts/create_stripe_transfer.py \
+  --job-id <job_id> \
+  --ticket-id <ticket_id> \
+  --amount-cents <approved_spend_cents> \
+  --service ainode_compute \
+  --purpose ocr_enrichment
+```
+
+The backend does not trust the agent's claim. It retrieves the returned `tr_...`
+from Stripe, checks the destination against `STRIPE_AGENT_SPEND_VENDOR_ACCOUNT`,
+checks `amount_cents <= approved_cap_cents`, records `livemode` from Stripe, and
+only then marks the spend ticket executed. If verification fails, the ticket
+stays approved/queued and no synthetic payment id is recorded.
+
 ## Demo Beat
 
 For the video, show a terminal or Hermes UI line like:
@@ -98,6 +130,6 @@ Then cut back to the browser showing the live job, Stripe payment, Hermes operat
 
 Use this stack line:
 
-> Hermes Agent is the operator. It loads an Aegis Refine skill, uses `nvidia/nemotron-3-ultra-550b-a55b` as the operations brain for routing and cap/spend decisions, records `nvidia/nemotron-3-nano-30b-a3b` as the latency fallback, uses `nvidia/nemotron-3.5-content-safety` for the safety gate when evidence is available, calls Aegis-14B for dataset governance, earns through capped Stripe Checkout, and leaves the customer with a refined dataset plus signed proof. Outbound spend is governed by an auditable internal cap ledger in this build; Stripe Skills outflow is the next milestone, not a completed claim.
+> Hermes Agent is the operator. It loads an Aegis Refine skill, uses `nvidia/nemotron-3-ultra-550b-a55b` as the operations brain for routing and cap/spend decisions, records `nvidia/nemotron-3-nano-30b-a3b` as the latency fallback, uses `nvidia/nemotron-3.5-content-safety` for the safety gate when evidence is available, calls Aegis-14B for dataset governance, earns through capped Stripe Checkout, spends through a capped Stripe Connect Transfer to AINode compute when approved, and leaves the customer with a refined dataset plus signed proof. Aegis independently verifies the transfer against Stripe before recording the spend receipt.
 
 Avoid saying Hermes Agent runs inside the production web container. The honest claim is that the backend dispatches job phases to the private Hermes Agent bridge on the Dell, Hermes runs the `aegis-refine` skill, and the app stores the returned operator receipt.

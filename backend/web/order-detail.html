@@ -436,12 +436,15 @@ function renderGate(job, ticket, completed, cert) {
               <a class="btn ghost" href="ops.html" style="flex:1;text-decoration:none">Open gate</a>`;
   } else if (st === "approved") {
     title = "Approved at the gate";
-    body = `A human approved this spend at the Ops console. Execution is the next step — outbound payout is a test stub in this build.`;
+    body = `A human approved this spend at the Ops console. Hermes Agent is the operator of record for the outbound spend; if Stripe cannot verify the transfer, the job stays temporarily queued.`;
     action = `<div style="flex:1;text-align:center" class="mono teal">APPROVED BY ${esc(ticket.approved_by || "operator")} · AWAITING EXECUTION</div>`;
   } else if (st === "executed") {
-    title = "Spend authorized (test)";
-    body = `The gate approved this spend and the run resumed. No real money moved — outbound payout is a test stub in this build.`;
-    action = `<div style="flex:1;text-align:center" class="mono green">${money(ticket.amount)} SPEND AUTHORIZED (TEST) · REFINEMENT RESUMED</div>`;
+    const transferId = ticket.stripe_transfer_id;
+    title = transferId ? "Stripe spend verified" : "Spend authorized";
+    body = transferId
+      ? `Hermes Agent initiated the outbound Stripe Connect transfer. Aegis independently retrieved that Stripe object, checked the destination and cap, then resumed the run.`
+      : `The gate approved this spend and the run resumed. This ticket does not include a verified outbound Stripe transfer.`;
+    action = `<div style="flex:1;text-align:center" class="mono green">${money(ticket.actual_amount ?? ticket.amount)} ${transferId ? "STRIPE TRANSFER VERIFIED" : "SPEND AUTHORIZED"} · REFINEMENT RESUMED</div>`;
   } else if (st === "rejected") {
     title = "Proposal rejected";
     body = `A human rejected the spend at the gate. The locked records were skipped, no money was spent, and the decision is recorded permanently in the audit trail.`;
@@ -468,12 +471,13 @@ function renderGate(job, ticket, completed, cert) {
           <div class="kv"><span class="k">Proposed by</span><span class="v">Aegis-14B</span></div>
           <div class="kv"><span class="k">Reason</span><span class="v">${esc(ticket.description || "external tool spend")}</span></div>
           <div class="kv"><span class="k">Spend amount</span><span class="v amber">${money(ticket.amount)}</span></div>
+          ${ticket.stripe_transfer_id ? `<div class="kv"><span class="k">Stripe transfer</span><span class="v green">${esc(ticket.stripe_transfer_id)}</span></div>` : ""}
           <div class="kv"><span class="k">Ticket</span><span class="v">#${ticket.id} · ${esc(st).toUpperCase()}</span></div>
         </div>
       </div>
     </div>
     <div style="margin-top:18px;display:flex;gap:10px;align-items:center">${action}</div>
-    <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Outbound payout is a test stub · approve/reject happens at the Ops console (X-Admin-Key)</div>
+    <div class="mono muted2" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-size:10px"><span class="teal">⛉</span> Spend executes only after Stripe verification · approve/reject happens at the Ops console</div>
   </div>`;
 }
 
@@ -541,7 +545,7 @@ function renderSidebar(job, ticket, completed) {
     loop = "Paid · ready for Aegis-14B"; th = THEME.teal;
     if (ticket && ticket.status === "proposed") { loop = "Human Gate · awaiting"; th = THEME.amber; }
     else if (ticket && ticket.status === "approved") { loop = "Gate approved · executing"; th = THEME.teal; }
-    else if (ticket && ticket.status === "executed") { loop = "Spend authorized (test) · resumed"; th = THEME.green; }
+    else if (ticket && ticket.status === "executed") { loop = ticket.stripe_transfer_id ? "Stripe transfer verified · resumed" : "Spend authorized · resumed"; th = THEME.green; }
     else if (ticket && ticket.status === "rejected" && !completed) { loop = "Halted at gate"; th = THEME.red; }
     else if (completed) { loop = "AAR · certified"; th = THEME.green; }
     else if (job.status === "processing") { loop = "Triage + scoring"; th = THEME.teal; }

@@ -39,7 +39,11 @@ _REQUIRED_COLUMNS = {
     "spend_tickets": [("kind", "VARCHAR DEFAULT 'gated'"), ("gate_reason", "VARCHAR"),
                       ("provider", "VARCHAR"), ("units", "DOUBLE PRECISION"),
                       ("unit_price_usd", "DOUBLE PRECISION"), ("cost_source", "VARCHAR"),
-                      ("actual_amount", "DOUBLE PRECISION")],
+                      ("stripe_payment_intent_id", "VARCHAR"),
+                      ("actual_amount", "DOUBLE PRECISION"),
+                      ("stripe_transfer_id", "VARCHAR"),
+                      ("stripe_spend_status", "VARCHAR"),
+                      ("stripe_spend_error", "VARCHAR")],
     "audit_certificates": [("content", "TEXT")],
 }
 

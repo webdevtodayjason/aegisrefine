@@ -239,7 +239,7 @@
             <div class="field"><span class="fname">amount</span><span class="ftype">decimal</span><span class="fdesc">proposed external spend</span></div>
             <div class="field"><span class="fname">description</span><span class="ftype">string</span><span class="fdesc">reason / rationale</span></div>
             <div class="field"><span class="fname">status</span><span class="ftype">enum</span><span class="fdesc">proposed · approved · rejected · executed</span></div>
-            <div class="field"><span class="fname">stripe_pi_id</span><span class="ftype">string</span><span class="fdesc">set once executed (test stub today)</span></div>
+            <div class="field"><span class="fname">stripe_transfer_id</span><span class="ftype">string</span><span class="fdesc">verified Stripe Connect Transfer id when executed</span></div>
           </div>
         </div>
 
@@ -282,9 +282,10 @@
     audit_log.append(action, actor, details)</pre>
       <div class="note" style="margin-top:16px">
         <span class="ico">⛉</span>
-        <p><b style="color:var(--text)">Honest status:</b> approving a ticket marks the spend
-          <span class="amber mono">authorized (test)</span>. Outbound execution is still a test stub —
-          no real funds move yet. Inbound revenue (the $20 Stripe Checkout) runs in Stripe test mode.</p>
+        <p><b style="color:var(--text)">Honest status:</b> approving a ticket lets Hermes Agent initiate
+          a capped Stripe Connect Transfer to AINode compute. Aegis retrieves that <span class="mono teal">tr_</span>
+          object from Stripe, checks destination and cap, then records execution. If verification fails,
+          the job stays temporarily queued. Demo money runs in Stripe test mode.</p>
       </div>
     </section>
 
@@ -302,7 +303,7 @@
       <pre class="code" id="tab-schema"><span class="key">cert_id</span>        <span class="num">string</span>     <span class="c"># cert_7a2b9c4d81</span>
 <span class="key">job_id</span>         <span class="num">string</span>     <span class="c"># JOB-2026-00147</span>
 <span class="key">issued_at</span>      <span class="num">datetime</span>
-<span class="key">ledger</span>         <span class="num">object</span>     <span class="c"># revenue, spend_authorized (test), approvals</span>
+<span class="key">ledger</span>         <span class="num">object</span>     <span class="c"># revenue, verified spend, approvals</span>
 <span class="key">decisions[]</span>    <span class="num">array</span>      <span class="c"># action, actor, amount</span>
 <span class="key">dataset</span>        <span class="num">object</span>     <span class="c"># rows, quality, pii_masked</span>
 <span class="key">signature</span>      <span class="num">string</span>     <span class="c"># ed25519</span></pre>
@@ -310,7 +311,7 @@
       <pre class="code" id="tab-sample" style="display:none"><span class="c">{</span>
   <span class="key">"cert_id"</span>: <span class="str">"cert_7a2b9c4d81"</span>,
   <span class="key">"job_id"</span>: <span class="str">"JOB-2026-00147"</span>,
-  <span class="key">"ledger"</span>: <span class="c">{</span> <span class="key">"revenue_usd"</span>: <span class="num">20.00</span>, <span class="key">"spend_authorized_usd"</span>: <span class="num">4.00</span>, <span class="key">"spend_status"</span>: <span class="str">"authorized (test)"</span>, <span class="key">"human_approvals"</span>: <span class="num">1</span> <span class="c">}</span>,
+  <span class="key">"ledger"</span>: <span class="c">{</span> <span class="key">"revenue_usd"</span>: <span class="num">20.00</span>, <span class="key">"spend_usd"</span>: <span class="num">4.00</span>, <span class="key">"spend_status"</span>: <span class="str">"stripe_transfer_verified"</span>, <span class="key">"human_approvals"</span>: <span class="num">1</span> <span class="c">}</span>,
   <span class="key">"dataset"</span>: <span class="c">{</span> <span class="key">"rows"</span>: <span class="num">128540</span>, <span class="key">"quality"</span>: <span class="num">94.7</span>, <span class="key">"pii_masked"</span>: <span class="num">true</span> <span class="c">}</span>,
   <span class="key">"signature"</span>: <span class="str">"ed25519:9f3a…c2e1"</span>
 <span class="c">}</span></pre>

@@ -9,7 +9,7 @@ Context:
 - Safety gate: nvidia/nemotron-3.5-content-safety for PII / unsafe-content review
 - Data-governance specialist: Aegis-14B, trained from Hermes 14B
 - Infrastructure: clustered NVIDIA DGX Spark via AInode
-- Money rail: Stripe capped Checkout for earned revenue; outbound spend is an internal cap ledger/test stub unless a Stripe payment intent is attached
+- Money rail: Stripe capped Checkout for earned revenue; outbound spend is a Hermes-initiated Stripe Connect Transfer to the configured AINode vendor when spend is approved
 - Proof: signed AAR certificate and admin receipt
 
 Task:

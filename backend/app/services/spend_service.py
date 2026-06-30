@@ -54,12 +54,16 @@ def reject_spend_ticket(db: Session, ticket_id: int, rejected_by: str = "admin")
                {"ticket_id": ticket.id, "amount": ticket.amount, "rejected_by": rejected_by})
     return ticket
 
-def execute_spend_ticket(db: Session, ticket_id: int, actual_amount: float | None = None):
+def execute_spend_ticket(db: Session, ticket_id: int, actual_amount: float | None = None,
+                         stripe_payment_intent_id: str | None = None,
+                         stripe_transfer_id: str | None = None,
+                         stripe_spend_status: str | None = None,
+                         stripe_spend_error: str | None = None):
     """Execute the approved spend. `actual_amount` settles the ledger with the real metered cost
     (pay-per-success); until a real provider adapter is wired it equals the reserved amount.
 
-    ponytail: real provider call (the cheapest-good-enough adapter) lands behind this — this
-    records the state transition + audit row so the gate is honest today.
+    The admin route must pass a Stripe-verified payment or transfer id before
+    using this for real outbound spend execution.
     """
     ticket = db.query(SpendTicket).filter(SpendTicket.id == ticket_id).first()
     if not ticket or ticket.status != "approved":
@@ -69,11 +73,27 @@ def execute_spend_ticket(db: Session, ticket_id: int, actual_amount: float | Non
     ticket.executed_at = datetime.utcnow()
     if actual_amount is not None:
         ticket.actual_amount = actual_amount
+    if stripe_payment_intent_id:
+        ticket.stripe_payment_intent_id = stripe_payment_intent_id
+        ticket.stripe_spend_status = stripe_spend_status or "verified"
+    if stripe_transfer_id:
+        ticket.stripe_transfer_id = stripe_transfer_id
+        ticket.stripe_spend_status = stripe_spend_status or "verified"
+    elif stripe_spend_status:
+        ticket.stripe_spend_status = stripe_spend_status
+    if stripe_spend_error:
+        ticket.stripe_spend_error = stripe_spend_error[:240]
     db.commit()
     db.refresh(ticket)
-    log_action(db, ticket.job_id, "spend_executed", "system",
-               {"ticket_id": ticket.id, "amount": ticket.actual_amount or ticket.amount,
-                "real_money": actual_amount is not None})
+    details = {
+        "ticket_id": ticket.id,
+        "amount": ticket.actual_amount or ticket.amount,
+        "real_money": bool(stripe_payment_intent_id or stripe_transfer_id),
+        "stripe_payment_intent_id": stripe_payment_intent_id,
+        "stripe_transfer_id": stripe_transfer_id,
+        "stripe_spend_status": ticket.stripe_spend_status,
+    }
+    log_action(db, ticket.job_id, "spend_executed", "system", details)
     return ticket
 
 
