@@ -11,6 +11,8 @@ certs/
 *.db
 *.zip
 local.env
+HANDOFF.md
+documents/HANDOFF.md
 .codegraph/
 .omx/
 uxtest/
