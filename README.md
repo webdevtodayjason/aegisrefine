@@ -234,6 +234,7 @@ The [Aegis-14B model card](https://huggingface.co/jbrashear/Aegis-14B) is also p
 Additional project notes live in:
 
 - `HERMES_AGENT_INTEGRATION.md` - deeper Hermes/Nemotron/Stripe operator integration notes.
+- `HUGGINGFACE_MODEL_CARD.md` - cleaned Aegis-14B model card, ready to publish to Hugging Face.
 - `QUOTE_ENGINE.md` - quote curve, pricing rules, and capped quote examples.
 - `API_CONTRACT.md` - backend API shape.
 - `CURATION_PLAN.md` - dataset refinement and AAR proof plan.
