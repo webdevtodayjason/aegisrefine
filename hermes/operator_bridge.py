@@ -17,6 +17,11 @@ from typing import Any
 HERMES_BIN = os.getenv("HERMES_BIN", "/home/sem/.local/bin/hermes")
 SKILL = os.getenv("HERMES_SKILL", "aegis-refine")
 TOKEN = os.getenv("HERMES_OPERATOR_TOKEN", "").strip()
+RUNTIME_MODE = os.getenv("HERMES_OPERATOR_RUNTIME", os.getenv("HERMES_OPERATOR_MODE", "local")).strip().lower()
+NEMOCLAW_BIN = os.getenv("NEMOCLAW_BIN", "nemohermes").strip()
+NEMOCLAW_SANDBOX = os.getenv("NEMOCLAW_SANDBOX", "aegis-hermes").strip()
+NEMOCLAW_HERMES_BIN = os.getenv("NEMOCLAW_HERMES_BIN", "hermes").strip()
+OPENSHELL_BIN = os.getenv("OPENSHELL_BIN", "openshell").strip()
 PROVIDER = os.getenv("HERMES_OPERATOR_PROVIDER", "").strip()
 MODEL = os.getenv("HERMES_OPERATOR_MODEL", "").strip()
 FALLBACK_MODEL = os.getenv("HERMES_OPERATOR_FALLBACK_MODEL", "").strip()
@@ -115,13 +120,53 @@ def _brief_error(error: Exception) -> str:
     return "Hermes model attempt failed"
 
 
-def _run_hermes_once(payload: dict[str, Any], model: str | None, timeout: int) -> dict[str, Any]:
-    cmd = [HERMES_BIN]
+def _runtime_label() -> str:
+    if RUNTIME_MODE in {"nemoclaw", "nemohermes"}:
+        return "NemoClaw / nemohermes"
+    if RUNTIME_MODE == "openshell":
+        return "NemoClaw / OpenShell"
+    return "local"
+
+
+def _runtime_metadata(status: str) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "mode": RUNTIME_MODE or "local",
+        "runtime": _runtime_label(),
+        "status": status,
+    }
+    if RUNTIME_MODE in {"nemoclaw", "nemohermes", "openshell"}:
+        metadata["sandbox"] = NEMOCLAW_SANDBOX
+    return metadata
+
+
+def _hermes_cmd(payload: dict[str, Any], model: str | None, hermes_bin: str | None = None) -> list[str]:
+    cmd = [hermes_bin or HERMES_BIN]
     if PROVIDER:
         cmd += ["--provider", PROVIDER]
     if model:
         cmd += ["-m", model]
     cmd += ["--skills", SKILL, "-z", _prompt(payload)]
+    return cmd
+
+
+def _operator_cmd(payload: dict[str, Any], model: str | None) -> list[str]:
+    if RUNTIME_MODE in {"", "local"}:
+        return _hermes_cmd(payload, model, HERMES_BIN)
+    if RUNTIME_MODE in {"nemoclaw", "nemohermes"}:
+        if not NEMOCLAW_SANDBOX:
+            raise RuntimeError("NEMOCLAW_SANDBOX is required for NemoClaw runtime")
+        cmd = _hermes_cmd(payload, model, NEMOCLAW_HERMES_BIN)
+        return [NEMOCLAW_BIN, NEMOCLAW_SANDBOX, "exec", "--", *cmd]
+    if RUNTIME_MODE == "openshell":
+        if not NEMOCLAW_SANDBOX:
+            raise RuntimeError("NEMOCLAW_SANDBOX is required for OpenShell runtime")
+        cmd = _hermes_cmd(payload, model, NEMOCLAW_HERMES_BIN)
+        return [OPENSHELL_BIN, "sandbox", "exec", "-n", NEMOCLAW_SANDBOX, "--", *cmd]
+    raise RuntimeError(f"Unsupported HERMES_OPERATOR_RUNTIME={RUNTIME_MODE!r}")
+
+
+def _run_hermes_once(payload: dict[str, Any], model: str | None, timeout: int) -> dict[str, Any]:
+    cmd = _operator_cmd(payload, model)
     proc = subprocess.run(
         cmd,
         capture_output=True,
@@ -161,6 +206,8 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any],
     out["skill"] = out.get("skill") or SKILL
     out["job_id"] = out.get("job_id") or payload.get("job_id")
     out["service"] = out.get("service") or payload.get("service")
+    if not isinstance(out.get("operator_runtime"), dict):
+        out["operator_runtime"] = _runtime_metadata("completed")
     if not isinstance(out.get("primary_models"), dict):
         out["primary_models"] = _model_roles(active_model, fallback_used)
     else:
@@ -256,6 +303,7 @@ def _queued_result(payload: dict[str, Any], error: Exception) -> dict[str, Any]:
             "cap_respected": None,
             "verified_against_stripe": False,
         },
+        "operator_runtime": _runtime_metadata("queued"),
         "next_action": "queue",
         "hermes_error": _brief_error(error),
     }
@@ -272,6 +320,7 @@ def _receipt_message(payload: dict[str, Any], result: dict[str, Any]) -> str:
         f"Route: {result.get('route')} / Next: {result.get('next_action')}",
         f"Ops model: {((result.get('primary_models') or {}).get('operations_brain') or {}).get('active') or 'unknown'}",
         f"Safety gate: {((result.get('safety_gate') or {}).get('model') or CONTENT_SAFETY_MODEL)}",
+        f"Runtime: {((result.get('operator_runtime') or {}).get('runtime') or 'local')}",
         f"Quote: ${quote.get('quoted_usd')} | Cap: ${quote.get('approved_cap_usd')}",
         f"Revenue: ${economics.get('revenue_collected_usd')} | Cost: ${economics.get('actual_cost_usd')}",
         f"AAR: {receipt.get('aar') or 'pending'}",
@@ -304,7 +353,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/health":
             _json_response(self, 404, {"ok": False, "error": "not found"})
             return
-        _json_response(self, 200, {"ok": True, "operator": "Hermes Agent", "skill": SKILL})
+        _json_response(self, 200, {
+            "ok": True,
+            "operator": "Hermes Agent",
+            "skill": SKILL,
+            "operator_runtime": _runtime_metadata("ready"),
+        })
 
     def do_POST(self) -> None:
         if self.path != "/operate":

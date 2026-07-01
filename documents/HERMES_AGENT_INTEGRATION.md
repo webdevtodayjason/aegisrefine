@@ -75,6 +75,84 @@ which model actually ran. The bridge also records the Content Safety gate status
 if raw data was not sent to the model, the status must be `metadata_only` or
 `pending`, not a claimed full scan.
 
+### Optional NemoClaw Runtime
+
+The bridge can run the same Hermes job locally or through a NemoClaw sandbox.
+This keeps the web app architecture stable: Aegis still dispatches to the
+private bridge, and the bridge decides where the Hermes operator command runs.
+
+Local default:
+
+```bash
+HERMES_OPERATOR_RUNTIME=local
+```
+
+NemoClaw Hermes wrapper:
+
+```bash
+HERMES_OPERATOR_RUNTIME=nemoclaw
+NEMOCLAW_BIN=nemohermes
+NEMOCLAW_SANDBOX=aegis-hermes
+NEMOCLAW_HERMES_BIN=hermes
+```
+
+This wraps the Hermes invocation as:
+
+```bash
+nemohermes aegis-hermes exec -- hermes --skills aegis-refine -z '<job prompt>'
+```
+
+OpenShell-compatible wrapper, if the box exposes the lower-level runtime
+instead of `nemohermes`:
+
+```bash
+HERMES_OPERATOR_RUNTIME=openshell
+OPENSHELL_BIN=openshell
+NEMOCLAW_SANDBOX=aegis-hermes
+NEMOCLAW_HERMES_BIN=hermes
+```
+
+This wraps the Hermes invocation as:
+
+```bash
+openshell sandbox exec -n aegis-hermes -- hermes --skills aegis-refine -z '<job prompt>'
+```
+
+Every operator receipt includes `operator_runtime` with the selected mode,
+runtime label, status, and sandbox name when applicable. If the sandbox command
+is missing, fails, or times out, the bridge returns `route=temporarily_queue`
+with `spend.executed=null`; it does not synthesize a successful sandbox run.
+
+Current Dell smoke-test status:
+
+- `nemohermes v0.0.55` and `openshell 0.0.44` installed under
+  `/home/sem/.local/bin`.
+- Sandbox `aegis-hermes` created on gateway port `18080`.
+- Provider: NVIDIA Endpoints via `inference.local`.
+- Model: `nvidia/llama-3.3-nemotron-super-49b-v1.5`.
+- Host GPU detected; sandbox GPU disabled because the host still needs NVIDIA
+  Container Toolkit/CDI setup before OpenShell GPU passthrough can be enabled.
+- `aegis-refine` skill installed and validated in the sandbox.
+
+Verified command:
+
+```bash
+nemohermes aegis-hermes exec -- hermes --skills aegis-refine -z 'Return compact JSON only...'
+```
+
+Verified response:
+
+```json
+{
+  "operator": "hermes-agent",
+  "skill": "aegis-refine",
+  "job_id": "test-nemoclaw",
+  "service": "refine",
+  "route": "run_local",
+  "next_action": "continue"
+}
+```
+
 The backend stores Hermes receipts as `audit_logs` rows:
 
 - `hermes_operator_decision`
