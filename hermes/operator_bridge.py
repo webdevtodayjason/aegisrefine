@@ -21,6 +21,7 @@ RUNTIME_MODE = os.getenv("HERMES_OPERATOR_RUNTIME", os.getenv("HERMES_OPERATOR_M
 NEMOCLAW_BIN = os.getenv("NEMOCLAW_BIN", "nemohermes").strip()
 NEMOCLAW_SANDBOX = os.getenv("NEMOCLAW_SANDBOX", "aegis-hermes").strip()
 NEMOCLAW_HERMES_BIN = os.getenv("NEMOCLAW_HERMES_BIN", "hermes").strip()
+NEMOCLAW_INFERENCE_MODEL = os.getenv("NEMOCLAW_INFERENCE_MODEL", "").strip()
 OPENSHELL_BIN = os.getenv("OPENSHELL_BIN", "openshell").strip()
 PROVIDER = os.getenv("HERMES_OPERATOR_PROVIDER", "").strip()
 MODEL = os.getenv("HERMES_OPERATOR_MODEL", "").strip()
@@ -96,11 +97,14 @@ def _prompt(payload: dict[str, Any]) -> str:
 
 
 def _model_roles(active_model: str | None, fallback_used: bool = False) -> dict[str, Any]:
+    active = active_model or MODEL or "Hermes configured default"
+    if RUNTIME_MODE in {"nemoclaw", "nemohermes", "openshell"} and not active_model:
+        active = NEMOCLAW_INFERENCE_MODEL or "NemoClaw inference.local configured model"
     return {
         "operator": "Hermes Agent",
         "operations_brain": {
             "primary": OPERATIONS_MODEL,
-            "active": active_model or MODEL or "Hermes configured default",
+            "active": active,
             "fallback": FALLBACK_MODEL or None,
             "fallback_used": fallback_used,
         },
@@ -136,7 +140,13 @@ def _runtime_metadata(status: str) -> dict[str, Any]:
     }
     if RUNTIME_MODE in {"nemoclaw", "nemohermes", "openshell"}:
         metadata["sandbox"] = NEMOCLAW_SANDBOX
+        if NEMOCLAW_INFERENCE_MODEL:
+            metadata["inference_model"] = NEMOCLAW_INFERENCE_MODEL
     return metadata
+
+
+def _is_sandbox_runtime() -> bool:
+    return RUNTIME_MODE in {"nemoclaw", "nemohermes", "openshell"}
 
 
 def _hermes_cmd(payload: dict[str, Any], model: str | None, hermes_bin: str | None = None) -> list[str]:
@@ -216,6 +226,12 @@ def _normalize_result(payload: dict[str, Any], result: dict[str, Any],
             roles["operations_brain"] = {
                 **_model_roles(active_model, fallback_used)["operations_brain"],
                 "label": roles.get("operations_brain"),
+            }
+        elif _is_sandbox_runtime() and not active_model:
+            roles["operations_brain"] = {
+                **roles["operations_brain"],
+                "active": NEMOCLAW_INFERENCE_MODEL or "NemoClaw inference.local configured model",
+                "active_source": "nemoclaw_inference_route",
             }
         out["primary_models"] = roles
     if not isinstance(out.get("safety_gate"), dict):

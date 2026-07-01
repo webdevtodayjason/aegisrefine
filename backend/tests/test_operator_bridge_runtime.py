@@ -11,6 +11,7 @@ RUNTIME_ENV_KEYS = (
     "NEMOCLAW_BIN",
     "NEMOCLAW_SANDBOX",
     "NEMOCLAW_HERMES_BIN",
+    "NEMOCLAW_INFERENCE_MODEL",
     "OPENSHELL_BIN",
 )
 
@@ -51,6 +52,7 @@ def test_operator_command_can_run_inside_nemoclaw(monkeypatch):
         NEMOCLAW_BIN="/usr/local/bin/nemohermes",
         NEMOCLAW_SANDBOX="aegis-sandbox",
         NEMOCLAW_HERMES_BIN="hermes",
+        NEMOCLAW_INFERENCE_MODEL="nvidia/test-model",
     )
 
     cmd = bridge._operator_cmd({"job_id": 17, "phase": "completed"}, None)
@@ -67,6 +69,7 @@ def test_operator_command_can_run_inside_nemoclaw(monkeypatch):
         "runtime": "NemoClaw / nemohermes",
         "status": "completed",
         "sandbox": "aegis-sandbox",
+        "inference_model": "nvidia/test-model",
     }
 
 
@@ -98,16 +101,25 @@ def test_normalized_receipt_records_operator_runtime(monkeypatch):
         monkeypatch,
         HERMES_OPERATOR_RUNTIME="nemoclaw",
         NEMOCLAW_SANDBOX="aegis-sandbox",
+        NEMOCLAW_INFERENCE_MODEL="nvidia/runtime-model",
     )
 
     out = bridge._normalize_result(
         {"job_id": 17, "service": "refine", "phase": "completed"},
-        {"route": "run_local"},
+        {
+            "route": "run_local",
+            "primary_models": {
+                "operations_brain": {"active": "model-self-reported-active"}
+            },
+        },
     )
 
     assert out["operator_runtime"]["runtime"] == "NemoClaw / nemohermes"
     assert out["operator_runtime"]["sandbox"] == "aegis-sandbox"
     assert out["operator_runtime"]["status"] == "completed"
+    assert out["operator_runtime"]["inference_model"] == "nvidia/runtime-model"
+    assert out["primary_models"]["operations_brain"]["active"] == "nvidia/runtime-model"
+    assert out["primary_models"]["operations_brain"]["active_source"] == "nemoclaw_inference_route"
 
 
 def test_queued_receipt_records_runtime_when_sandbox_fails(monkeypatch):

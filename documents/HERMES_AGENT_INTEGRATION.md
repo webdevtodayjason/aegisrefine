@@ -94,6 +94,7 @@ HERMES_OPERATOR_RUNTIME=nemoclaw
 NEMOCLAW_BIN=nemohermes
 NEMOCLAW_SANDBOX=aegis-hermes
 NEMOCLAW_HERMES_BIN=hermes
+NEMOCLAW_INFERENCE_MODEL=nvidia/llama-3.3-nemotron-super-49b-v1.5
 ```
 
 This wraps the Hermes invocation as:
@@ -110,6 +111,7 @@ HERMES_OPERATOR_RUNTIME=openshell
 OPENSHELL_BIN=openshell
 NEMOCLAW_SANDBOX=aegis-hermes
 NEMOCLAW_HERMES_BIN=hermes
+NEMOCLAW_INFERENCE_MODEL=nvidia/llama-3.3-nemotron-super-49b-v1.5
 ```
 
 This wraps the Hermes invocation as:
@@ -119,9 +121,12 @@ openshell sandbox exec -n aegis-hermes -- hermes --skills aegis-refine -z '<job 
 ```
 
 Every operator receipt includes `operator_runtime` with the selected mode,
-runtime label, status, and sandbox name when applicable. If the sandbox command
-is missing, fails, or times out, the bridge returns `route=temporarily_queue`
-with `spend.executed=null`; it does not synthesize a successful sandbox run.
+runtime label, status, sandbox name, and `NEMOCLAW_INFERENCE_MODEL` when
+configured. In sandbox mode the bridge treats the runtime-configured inference
+route as the active model source of truth; it does not trust a model-generated
+claim about which model was active. If the sandbox command is missing, fails, or
+times out, the bridge returns `route=temporarily_queue` with
+`spend.executed=null`; it does not synthesize a successful sandbox run.
 
 Current Dell smoke-test status:
 
