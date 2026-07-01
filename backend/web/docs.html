@@ -126,7 +126,6 @@
   <div class="nav-right">
     <div class="nav-links">
       <a href="how-it-works.html">How it works</a>
-      <a href="how-we-did-it.html">How we did it</a>
       <a href="pricing.html">Pricing</a>
       <a href="docs.html" class="active">Docs</a>
     </div>
@@ -143,7 +142,6 @@
     <a href="#quickstart" data-spy>Quickstart</a>
     <div class="toc-head">CONCEPTS</div>
     <a href="#loop" data-spy>The Aegis loop</a>
-    <a href="#nemoclaw" data-spy>NemoClaw runtime</a>
     <a href="#models" data-spy>Data models</a>
     <a href="#gate" data-spy>Spend gate policy</a>
     <div class="toc-head">REFERENCE</div>
@@ -160,12 +158,11 @@
       <h1>Aegis Refine docs</h1>
       <p class="lede">Aegis is an autonomous dataset refinery. It turns messy, unstructured data into clean
         ShareGPT / ChatML datasets — governed by the custom <span class="teal mono">Aegis-14B</span> model on
-        NVIDIA DGX Spark, operated by Hermes Agent through NemoClaw/OpenShell when enabled, with a human gate on every external spend and a signed audit certificate for every job.</p>
+        NVIDIA DGX Spark, with a human gate on every external spend and a signed audit certificate for every job.</p>
       <div class="chips">
         <span class="chip">FastAPI · Python</span>
         <span class="chip">PostgreSQL</span>
         <span class="chip">Stripe</span>
-        <span class="chip">NemoClaw · OpenShell</span>
         <span class="chip">Aegis-14B · DGX Spark</span>
         <span class="chip">Ed25519 certificates</span>
       </div>
@@ -214,26 +211,6 @@
       </div>
       <p style="margin-top:16px">The <span class="green mono">human_gate</span> step is the one place a person is required.
         Everything before it is autonomous scoring; everything after it is the signed record.</p>
-    </section>
-
-    <!-- nemoclaw -->
-    <section id="nemoclaw">
-      <h2>NemoClaw/OpenShell operator runtime</h2>
-      <p>Hermes Agent is not just described in the UI. The operator bridge can run the same bounded job payload inside a live
-        <span class="mono teal">NemoClaw/OpenShell</span> sandbox named <span class="mono teal">aegis-hermes</span> on the Dell R750.</p>
-      <div class="note" style="margin-top:16px">
-        <span class="ico">▰</span>
-        <p><b style="color:var(--text)">Runtime path:</b> <span class="mono">backend/app/services/hermes_operator.py</span>
-          dispatches to the private bridge. The bridge uses <span class="mono">HERMES_OPERATOR_RUNTIME=nemoclaw</span>
-          to wrap Hermes with <span class="mono">nemohermes aegis-hermes exec -- hermes --skills aegis-refine -z ...</span>.
-          Operator receipts record <span class="mono">operator_runtime.mode</span>, sandbox name, and the runtime-configured NVIDIA model.</p>
-      </div>
-      <pre class="code"><span class="c"># judge inspection points</span>
-<span class="key">Hermes skill</span>:        hermes/aegis-refine/SKILL.md
-<span class="key">Runtime switch</span>:      hermes/operator_bridge.py
-<span class="key">Backend handoff</span>:     backend/app/services/hermes_operator.py
-<span class="key">Integration notes</span>:   documents/HERMES_AGENT_INTEGRATION.md</pre>
-      <p>The demo uses Stripe sandbox/test objects for the money rail, but the NemoClaw/OpenShell operator route is a live runtime path. If sandbox proof is unavailable for a particular job, Aegis marks the job temporarily queued instead of inventing a receipt.</p>
     </section>
 
     <!-- data models -->
@@ -373,7 +350,6 @@
   <div style="display:flex;gap:22px">
     <a href="new-order.html">Start a job</a>
     <a href="certificate.html">Sample certificate</a>
-    <a href="how-we-did-it.html">How we did it</a>
     <a href="https://frontierinfra.org/" target="_blank" rel="noopener noreferrer">Frontier Infra</a>
     <a href="dashboard.html">Launch app →</a>
   </div>

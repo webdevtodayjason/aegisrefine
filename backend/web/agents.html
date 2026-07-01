@@ -75,7 +75,7 @@
         <div style="max-width:580px">
           <div class="eyebrow" style="margin-bottom:10px">// AGENT FLEET</div>
           <h1 style="font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 6px">Hermes Agent operates every job</h1>
-          <p class="muted" style="font-size:14px;margin:0">Hermes Agent loads the Aegis Refine skill and operates the customer job, locally or through the live NemoClaw/OpenShell sandbox when enabled. <span class="teal">nvidia/nemotron-3-ultra-550b-a55b</span> handles route, cap, and spend reasoning; <span class="teal">nvidia/nemotron-3.5-content-safety</span> is the PII / unsafe-content gate; <span class="teal">Aegis-14B</span>, trained from Hermes 14B, handles dataset governance on NVIDIA DGX Spark.</p>
+          <p class="muted" style="font-size:14px;margin:0">Hermes Agent loads the Aegis Refine skill and operates the customer job. <span class="teal">nvidia/nemotron-3-ultra-550b-a55b</span> handles route, cap, and spend reasoning; <span class="teal">nvidia/nemotron-3.5-content-safety</span> is the PII / unsafe-content gate; <span class="teal">Aegis-14B</span>, trained from Hermes 14B, handles dataset governance on NVIDIA DGX Spark.</p>
         </div>
 
         <div class="ident card">
@@ -96,7 +96,6 @@
             <div class="kv"><span class="k">Specialization</span><span class="v teal">LoRA fine-tune</span></div>
             <div class="kv"><span class="k">Parameters</span><span class="v">14B + gov. adapter</span></div>
             <div class="kv"><span class="k">Served on</span><span class="v">NVIDIA DGX Spark</span></div>
-            <div class="kv"><span class="k">Sandbox</span><span class="v">NemoClaw/OpenShell</span></div>
             <div class="kv"><span class="k">Runtime</span><span class="v">AInode</span></div>
           </div>
           <div class="repnote" style="margin-top:12px"><span class="teal">⛉</span> Model identity &amp; serving topology shown are representative of the deployed config.</div>
@@ -213,7 +212,6 @@
             <div class="kv"><span class="k">Accelerator</span><span class="v">NVIDIA DGX Spark</span></div>
             <div class="kv"><span class="k">Inference runtime</span><span class="v teal">AInode</span></div>
             <div class="kv"><span class="k">Agent runtime</span><span class="v">Hermes Agent skill</span></div>
-            <div class="kv"><span class="k">Sandbox runtime</span><span class="v">NemoClaw/OpenShell aegis-hermes</span></div>
             <div class="kv"><span class="k">Route model</span><span class="v">nvidia/nemotron-3-ultra-550b-a55b</span></div>
             <div class="kv"><span class="k">Safety model</span><span class="v">nvidia/nemotron-3.5-content-safety</span></div>
             <div class="kv"><span class="k">Adapter</span><span class="v">Aegis governance LoRA</span></div>

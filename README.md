@@ -13,8 +13,7 @@ Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA gover
 [![Hugging Face Likes](https://img.shields.io/badge/likes-1-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
 
 Live product: [aegisrefine.com](https://aegisrefine.com)<br>
-System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)<br>
-Build notes for judges: [aegisrefine.com/how-we-did-it.html](https://aegisrefine.com/how-we-did-it.html)
+System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
 
 ## What It Does
 
@@ -262,7 +261,7 @@ Code and documentation in this repository are released under the MIT License. Se
 
 - Stripe is demonstrated in test mode for the hackathon.
 - Completed jobs created before the pricing fix may still show their original paid quote.
-- Some older docs remain as project history; this README, the live How It Works page, and the live How We Did It page are the judge-facing entry points.
+- Some older docs remain as project history; this README and the live How It Works page are the judge-facing entry points.
 - Local-only jobs can complete with zero external spend; outbound spend only appears when the job route needs it and a verified Stripe object exists.
 
 ## Infrastructure And Related Work
@@ -294,4 +293,4 @@ Additional project notes live in [`documents/`](documents/):
 - [`documents/API_CONTRACT.md`](documents/API_CONTRACT.md) - backend API shape.
 - [`documents/CURATION_PLAN.md`](documents/CURATION_PLAN.md) - dataset refinement and AAR proof plan.
 
-Some older handoff/state-audit documents are retained under [`documents/`](documents/) as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the live [How We Did It](https://aegisrefine.com/how-we-did-it.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.
+Some older handoff/state-audit documents are retained under [`documents/`](documents/) as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.
