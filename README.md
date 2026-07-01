@@ -1,9 +1,10 @@
 # Aegis Refine
 
-Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA governance, verified spend receipts, and signed delivery proof.
+Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA governance, NemoClaw/OpenShell sandboxed operator runs, verified spend receipts, and signed delivery proof.
 
 [![Stripe Checkout + Connect](https://img.shields.io/badge/Stripe-Checkout%20%2B%20Connect-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com)
 [![NVIDIA Nemotron](https://img.shields.io/badge/NVIDIA-Nemotron-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/ai/)
+[![NVIDIA NemoClaw](https://img.shields.io/badge/NVIDIA-NemoClaw%20%2B%20OpenShell-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://docs.nvidia.com/nemoclaw/user-guide/openclaw/home)
 [![Hermes Agent](https://img.shields.io/badge/Hermes-Agent-FFD21E?style=for-the-badge)](https://github.com/NousResearch)
 [![Frontier Infra](https://img.shields.io/badge/Frontier%20Infra-AVL%20%7C%20AAR%20%7C%20ADL-00D1C1?style=for-the-badge)](https://frontierinfra.org/)
 [![Aegis--14B](https://img.shields.io/badge/Aegis--14B-Hermes--4%20LoRA-111827?style=for-the-badge)](https://aegisrefine.com/how-it-works.html)
@@ -11,8 +12,9 @@ Agent-operated dataset refinement with capped Stripe quotes, Hermes/NVIDIA gover
 [![Hugging Face Downloads](https://img.shields.io/badge/downloads-23-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
 [![Hugging Face Likes](https://img.shields.io/badge/likes-1-FF9D00?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/jbrashear/Aegis-14B)
 
-Live product: [aegisrefine.com](https://aegisrefine.com)  
-System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)
+Live product: [aegisrefine.com](https://aegisrefine.com)<br>
+System map for judges: [aegisrefine.com/how-it-works.html](https://aegisrefine.com/how-it-works.html)<br>
+Build notes for judges: [aegisrefine.com/how-we-did-it.html](https://aegisrefine.com/how-we-did-it.html)
 
 ## What It Does
 
@@ -36,6 +38,7 @@ The quote card intentionally shows the planned route before payment: data shape,
 Aegis Refine was built for the Hermes Agent Accelerated Business Hackathon:
 
 - **Hermes Agent** runs the operator workflow through a custom `aegis-refine` skill.
+- **NVIDIA NemoClaw / OpenShell** runs the Hermes operator path inside sandboxed infrastructure when `HERMES_OPERATOR_RUNTIME=nemoclaw`.
 - **NVIDIA / Nemotron** provides the operations model path and safety-gate story.
 - **[Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B)**, a LoRA fine-tune of `NousResearch/Hermes-4-14B`, performs data-governance judgment.
 - **Stripe Checkout** is the earn rail: the customer pays the capped quote.
@@ -53,7 +56,8 @@ flowchart LR
   Plan --> Price["Capped quote"]
   Price --> Checkout["Stripe Checkout"]
   Checkout --> Job["Paid job"]
-  Job --> Hermes["Hermes Agent + aegis-refine skill"]
+  Job --> Sandbox["NemoClaw/OpenShell sandbox"]
+  Sandbox --> Hermes["Hermes Agent + aegis-refine skill"]
   Hermes --> Run["Refine / synthesize / verify"]
   Run --> Spend{"Outbound spend needed?"}
   Spend -- no --> Cert["Signed AAR + dataset"]
@@ -72,6 +76,8 @@ The customer-facing architecture page renders this as Mermaid diagrams with mode
 - Deployed FastAPI application at `aegisrefine.com`.
 - Stripe test-mode Checkout for capped customer payments.
 - Stripe Connect test-mode transfer verification for agent-initiated spend.
+- NemoClaw/OpenShell sandbox `aegis-hermes` on the Dell R750, with Hermes Agent and the `aegis-refine` skill installed.
+- Operator receipts include `operator_runtime.mode=nemoclaw`, sandbox name, and the runtime-configured NVIDIA inference model.
 - Dataset parsing, curation, PII masking, and validation pipeline.
 - Signed quote tokens with 15-minute expiry.
 - Ed25519-signed AAR certificates and public verification endpoints.
@@ -79,7 +85,7 @@ The customer-facing architecture page renders this as Mermaid diagrams with mode
 - Telegram operator receipts from Hermes for completed jobs.
 - Backend regression suite: `74 passed`.
 
-Stripe objects are test-mode objects and are labeled honestly as such.
+Stripe objects are test-mode objects and are labeled honestly as such; the Hermes/NemoClaw/OpenShell operator path is live infrastructure for the demo.
 
 ## Implementation Map
 
@@ -92,6 +98,7 @@ Start here to trace the product workflow from demo claim to implementation.
 | Checkout charges exactly the signed cap | `backend/app/routers/jobs.py` -> `POST /jobs/` |
 | Stripe creates the paid job | `backend/app/routers/webhooks.py`, `backend/app/services/job_service.py` |
 | Hermes Agent handoff | `backend/app/services/hermes_operator.py` -> `dispatch_job()` |
+| NemoClaw/OpenShell operator runtime | `hermes/operator_bridge.py` -> `HERMES_OPERATOR_RUNTIME=nemoclaw`; `documents/HERMES_AGENT_INTEGRATION.md` |
 | Hermes skill definition | `hermes/aegis-refine/SKILL.md` |
 | Hermes prompt template | `hermes/aegis-refine/templates/operator-prompt.md` |
 | Hermes-created Stripe spend | `hermes/aegis-refine/scripts/create_stripe_transfer.py` |
@@ -110,12 +117,45 @@ The web app does not expose a terminal and does not ask the browser to impersona
 2. The backend builds a bounded job payload in `backend/app/services/hermes_operator.py`.
 3. The payload includes job id, phase, source kind, quote/cap, Stripe Checkout session id, current spend tickets, and receipt context.
 4. The backend sends that payload to the private `HERMES_OPERATOR_URL` with `HERMES_OPERATOR_TOKEN`.
-5. Hermes Agent loads `hermes/aegis-refine/SKILL.md`, operates the job, and returns a JSON operator receipt.
-6. The backend stores that receipt in the audit log as `hermes_operator_decision`.
-7. If the phase is `spend_approved`, Hermes can create a Stripe Connect Transfer through `hermes/aegis-refine/scripts/create_stripe_transfer.py`.
-8. The backend independently retrieves the returned `tr_...` from Stripe before marking the spend ticket executed.
+5. The private bridge runs Hermes locally by default or through `nemohermes aegis-hermes exec -- ...` when NemoClaw mode is enabled.
+6. Hermes Agent loads `hermes/aegis-refine/SKILL.md`, operates the job, and returns a JSON operator receipt.
+7. The backend stores that receipt in the audit log as `hermes_operator_decision`.
+8. If the phase is `spend_approved`, Hermes can create a Stripe Connect Transfer through `hermes/aegis-refine/scripts/create_stripe_transfer.py`.
+9. The backend independently retrieves the returned `tr_...` from Stripe before marking the spend ticket executed.
 
 The important boundary: the agent may initiate spend, but it cannot self-certify spend. Execution requires backend verification against Stripe.
+
+### NemoClaw / OpenShell Runtime
+
+The Dell R750 now has a NemoClaw/OpenShell sandbox named `aegis-hermes` with Hermes Agent and the `aegis-refine` skill installed.
+
+The bridge supports:
+
+```bash
+HERMES_OPERATOR_RUNTIME=local      # default direct Hermes bridge
+HERMES_OPERATOR_RUNTIME=nemoclaw   # sandboxed Hermes through nemohermes
+```
+
+In NemoClaw mode the bridge wraps the operator command as:
+
+```bash
+nemohermes aegis-hermes exec -- hermes --skills aegis-refine -z '<bounded job payload>'
+```
+
+Receipts include runtime evidence:
+
+```json
+{
+  "operator_runtime": {
+    "mode": "nemoclaw",
+    "runtime": "NemoClaw / nemohermes",
+    "sandbox": "aegis-hermes",
+    "inference_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+  }
+}
+```
+
+This path uses OpenShell policy enforcement and NemoClaw's `inference.local` broker so provider credentials stay host-managed rather than being injected into the sandbox. GPU passthrough is documented as a follow-up: the host detects the NVIDIA A40, but OpenShell sandbox GPU mode still needs NVIDIA Container Toolkit/CDI setup.
 
 ### Spend Verification Rules
 
@@ -153,6 +193,7 @@ Examples from the current quote curve:
 | `backend/app/curate/` | Deterministic dataset parsing, cleaning, PII masking, validation |
 | `backend/app/services/stripe_spend.py` | Stripe spend verification before execution |
 | `backend/app/services/hermes_operator.py` | Bridge from the web app to Hermes Agent |
+| `hermes/operator_bridge.py` | Private bridge that can run Hermes locally or through NemoClaw/OpenShell |
 | `hermes/aegis-refine/SKILL.md` | Hermes Agent skill used to operate jobs |
 | `hermes/aegis-refine/scripts/create_stripe_transfer.py` | Agent-side Stripe Connect Transfer creation |
 | `hermes/aegis-refine/templates/operator-prompt.md` | Prompt template for operating a job through Hermes |
@@ -203,6 +244,9 @@ Core environment variables:
 | `AINODE_MODEL` | Usually `Aegis-14B` |
 | `HERMES_OPERATOR_URL` | Private Hermes operator bridge |
 | `HERMES_OPERATOR_TOKEN` | Shared bridge token |
+| `HERMES_OPERATOR_RUNTIME` | `local`, `nemoclaw`, or `openshell` operator mode |
+| `NEMOCLAW_SANDBOX` | NemoClaw sandbox name, usually `aegis-hermes` |
+| `NEMOCLAW_INFERENCE_MODEL` | Runtime-configured NVIDIA model recorded in receipts |
 
 ## Collaboration
 
@@ -218,7 +262,7 @@ Code and documentation in this repository are released under the MIT License. Se
 
 - Stripe is demonstrated in test mode for the hackathon.
 - Completed jobs created before the pricing fix may still show their original paid quote.
-- Some older docs remain as project history; this README and the live How It Works page are the judge-facing entry points.
+- Some older docs remain as project history; this README, the live How It Works page, and the live How We Did It page are the judge-facing entry points.
 - Local-only jobs can complete with zero external spend; outbound spend only appears when the job route needs it and a verified Stripe object exists.
 
 ## Infrastructure And Related Work
@@ -230,6 +274,7 @@ This project sits inside a larger agent/business-ops stack. Public links are inc
 | [Aegis Refine](https://github.com/webdevtodayjason/aegisrefine) | This repo: customer intake, data inspection, quote generation, Stripe Checkout, job execution, receipt surfaces, downloads, and signed AAR proof. |
 | `hermes/aegis-refine` | The Hermes Agent skill shipped in this repo. It defines the operator protocol, spend route, receipt schema, and Telegram receipt behavior used by the demo. |
 | [Hermes Agent](https://github.com/NousResearch) | Agent runtime used as the business operator. Hermes receives bounded job payloads from Aegis and operates the job through the `aegis-refine` skill. |
+| [NVIDIA NemoClaw](https://docs.nvidia.com/nemoclaw/user-guide/openclaw/home) / OpenShell | Sandboxed operator runtime. The Dell R750 hosts `aegis-hermes`, where Hermes Agent can run the same `aegis-refine` skill through `nemohermes exec`; receipts record the sandbox and inference route. |
 | [Frontier Infra](https://frontierinfra.org/) | Standards and design influence for agent-verifiable business operations: AVL-style visibility, AAR-style attestations, and ADL-style decision/audit logs. |
 | [AINode](https://ainode.dev/) | Clustered NVIDIA/DGX Spark environment around the project. Aegis-14B is served through this infrastructure, and AINode compute is the modeled vendor for agent spend. |
 | [Aegis-14B](https://huggingface.co/jbrashear/Aegis-14B) | Public Hugging Face LoRA fine-tune of `NousResearch/Hermes-4-14B` for dataset quality, risk, route, and signing decisions. Served through the local NVIDIA/DGX Spark environment. |
@@ -249,4 +294,4 @@ Additional project notes live in [`documents/`](documents/):
 - [`documents/API_CONTRACT.md`](documents/API_CONTRACT.md) - backend API shape.
 - [`documents/CURATION_PLAN.md`](documents/CURATION_PLAN.md) - dataset refinement and AAR proof plan.
 
-Some older handoff/state-audit documents are retained under [`documents/`](documents/) as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.
+Some older handoff/state-audit documents are retained under [`documents/`](documents/) as project history. The current judge-facing sources are this README, the live [How It Works](https://aegisrefine.com/how-it-works.html) page, the live [How We Did It](https://aegisrefine.com/how-we-did-it.html) page, the `backend/app/` implementation, and the `hermes/aegis-refine/` skill.

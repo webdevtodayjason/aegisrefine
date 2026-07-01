@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How we did it · Aegis Refine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{--bg:#0B0C0E;--panel:#14161B;--panel2:#101216;--line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.15);--text:#F4F4F5;--muted:#A1A1AA;--muted2:#71717A;--teal:#00E5CC;--green:#22C55E;--amber:#F59E0B;--blue:#3A7BFF;--mono:'JetBrains Mono',monospace;--sans:Inter,system-ui,-apple-system,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 82% 5%,rgba(0,229,204,.11),transparent 34%),linear-gradient(180deg,#0E1014,#08090B 55%,#07080A);color:var(--text);font-family:var(--sans);letter-spacing:0}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--mono)}
+  .teal{color:var(--teal)}
+  .muted{color:var(--muted)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(20px,5vw,56px)}
+  .nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand img{width:30px;height:30px;filter:drop-shadow(0 0 8px rgba(0,229,204,.4))}
+  .links{display:flex;align-items:center;gap:26px;color:var(--muted);font-size:13px}
+  .links a:hover,.links .on{color:var(--teal)}
+  .cta{background:var(--teal);color:#04110F;padding:9px 16px;border-radius:7px;font-weight:700;box-shadow:0 0 22px rgba(0,229,204,.25)}
+  .hero{padding:clamp(54px,8vw,96px) 0 44px;text-align:center}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--teal)}
+  h1{font-size:clamp(38px,6vw,70px);line-height:1.02;font-weight:700;letter-spacing:-.02em;margin:18px auto;max-width:920px}
+  .lede{font-size:clamp(16px,1.7vw,20px);line-height:1.6;color:var(--muted);max-width:840px;margin:0 auto}
+  .section{padding:38px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(26px,3vw,38px);line-height:1.15;font-weight:650;letter-spacing:-.015em;margin:0 0 14px}
+  h3{font-size:18px;margin:0 0 8px}
+  p{line-height:1.65}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:10px;padding:22px}
+  .fact{display:grid;gap:8px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025);padding:16px}
+  .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted2)}
+  .v{font-size:14.5px;color:#D9D9DE;line-height:1.55}
+  .diagram{border:1px solid var(--line2);border-radius:12px;background:#0D0F13;padding:18px;overflow:auto}
+  pre.code{border:1px solid var(--line);border-radius:10px;background:#090A0C;color:#D4D4D8;padding:18px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.65}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)}
+  th,td{padding:14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);background:rgba(255,255,255,.045)}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:999px;padding:7px 11px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
+  footer{border-top:1px solid var(--line);padding:34px 0 56px;color:var(--muted);font-size:13px}
+  @media(max-width:760px){.nav{height:auto;padding:18px 0;gap:18px;align-items:flex-start}.links{flex-wrap:wrap;justify-content:flex-end;gap:14px}.hero{text-align:left}.lede{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav">
+    <a class="brand" href="index.html">
+      <img src="assets/shield.svg" alt="Aegis">
+      <span class="mono" style="font-size:16px;font-weight:700;letter-spacing:.16em">AEGIS<span class="teal">&nbsp;REFINE</span></span>
+    </a>
+    <div class="links">
+      <a href="how-it-works.html">How it works</a>
+      <a class="on" href="how-we-did-it.html">How we did it</a>
+      <a href="docs.html">Docs</a>
+      <a class="cta" href="dashboard.html">Launch app -></a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">// BUILD NOTES FOR JUDGES</div>
+    <h1>How we turned Aegis Refine into an agent-operated business.</h1>
+    <p class="lede">This page maps the demo to the code: quote generation, Hermes Agent handoff, NemoClaw/OpenShell sandboxing, NVIDIA model roles, Stripe earn/spend rails, and signed delivery proof.</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:26px">
+      <span class="pill"><span class="dot"></span>NemoClaw/OpenShell operator path</span>
+      <span class="pill"><span class="dot"></span>Hermes Agent skill</span>
+      <span class="pill"><span class="dot"></span>Stripe sandbox money rail</span>
+      <span class="pill"><span class="dot"></span>Signed AAR proof</span>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  Buyer["Buyer submits dataset"] --> Quote["Aegis quote<br/>signed 15-min token"]
+  Quote --> Checkout["Stripe Checkout<br/>sandbox earn rail"]
+  Checkout --> Job["Paid job"]
+  Job --> Bridge["Hermes operator bridge"]
+  Bridge --> Nemo["NemoClaw/OpenShell<br/>aegis-hermes sandbox"]
+  Nemo --> Hermes["Hermes Agent<br/>aegis-refine skill"]
+  Hermes --> Models["NVIDIA/Nemotron<br/>Aegis-14B governance"]
+  Hermes --> Spend["Stripe Connect Transfer<br/>sandbox spend rail"]
+  Spend --> Verify["Backend verifies<br/>tr id, cap, destination"]
+  Models --> Deliver["Refined dataset<br/>signed AAR certificate"]
+  Verify --> Deliver
+      </pre>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 1. QUOTE BEFORE PAYMENT</div>
+    <h2>The customer gets a capped quote before work starts.</h2>
+    <p class="muted">Aegis inspects the submitted dataset request, creates a signed quote token with a short expiry, and sends the buyer to Stripe Checkout only after the quote is accepted.</p>
+    <div class="grid">
+      <div class="fact"><div class="k">CODE</div><div class="v">backend/app/services/quote_service.py<br>backend/app/routers/jobs.py</div></div>
+      <div class="fact"><div class="k">PROOF</div><div class="v">Quote HMAC, expiry, user/job ownership checks, and Stripe Checkout metadata.</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 2. HERMES AGENT HANDOFF</div>
+    <h2>The backend hands the paid job to Hermes, not to a hidden script.</h2>
+    <p class="muted">The handoff payload includes job id, phase, source kind, quote, cap, checkout session id, existing spend tickets, and receipt context. Hermes returns structured JSON; the backend validates that response before advancing the job.</p>
+    <pre class="code">backend/app/services/hermes_operator.py
+hermes/operator_bridge.py
+hermes/aegis-refine/SKILL.md</pre>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 3. NEMOCLAW / OPENSHELL</div>
+    <h2>The operator can run inside the live NemoClaw/OpenShell sandbox.</h2>
+    <p class="muted">On the Dell R750, the sandbox is named <span class="teal mono">aegis-hermes</span>. In NemoClaw mode, the bridge wraps the exact same job payload with:</p>
+    <pre class="code">nemohermes aegis-hermes exec -- hermes --skills aegis-refine -z '&lt;bounded job payload&gt;'</pre>
+    <div class="grid">
+      <div class="fact"><div class="k">RUNTIME ENV</div><div class="v">HERMES_OPERATOR_RUNTIME=nemoclaw<br>NEMOCLAW_SANDBOX=aegis-hermes<br>NEMOCLAW_INFERENCE_MODEL=nvidia/llama-3.3-nemotron-super-49b-v1.5</div></div>
+      <div class="fact"><div class="k">RECEIPT FIELDS</div><div class="v">operator_runtime.mode<br>operator_runtime.runtime<br>operator_runtime.sandbox<br>operations_brain.active</div></div>
+      <div class="fact"><div class="k">HONEST FOLLOW-UP</div><div class="v">The host sees the NVIDIA A40; sandbox GPU passthrough is still pending NVIDIA Container Toolkit/CDI setup.</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 4. NVIDIA MODEL STACK</div>
+    <h2>NVIDIA and Hermes each have a specific role.</h2>
+    <div class="grid">
+      <div class="card"><h3>Aegis-14B</h3><p class="muted">Public LoRA fine-tune of Hermes 4 14B for dataset governance, route, risk, quality, and signing decisions.</p></div>
+      <div class="card"><h3>Nemotron</h3><p class="muted">Operations and safety model family for route, cap, spend, and content-safety judgment when configured.</p></div>
+      <div class="card"><h3>NemoClaw/OpenShell</h3><p class="muted">Sandboxed operator runtime for Hermes Agent, with provider credentials kept host-managed through the inference broker.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 5. STRIPE MONEY RAILS</div>
+    <h2>Checkout earns. Connect spends. The demo uses Stripe sandbox/test objects.</h2>
+    <p class="muted">The hackathon demo uses Stripe sandbox mode deliberately: a real Checkout object starts the job, and a real Connect Transfer object can represent approved agent spend. The backend independently retrieves the Stripe object before recording spend as executed.</p>
+    <div class="grid">
+      <div class="fact"><div class="k">EARN RAIL</div><div class="v">Stripe Checkout creates the paid job from the verified webhook.</div></div>
+      <div class="fact"><div class="k">SPEND RAIL</div><div class="v">Hermes can initiate a Connect Transfer after cap approval.</div></div>
+      <div class="fact"><div class="k">VERIFY</div><div class="v">Aegis checks transfer id, destination, amount <= cap, status, and Stripe livemode.</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// 6. SIGNED DELIVERY</div>
+    <h2>Every completed job closes with a signed receipt.</h2>
+    <p class="muted">The customer receives the refined dataset plus an AAR certificate signed with Ed25519. The certificate records the job, route, model decisions, dataset stats, ledger, spend verification, and runtime receipt metadata.</p>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// INSPECTION MAP</div>
+    <h2>Where to inspect the code.</h2>
+    <table>
+      <thead><tr><th>Area</th><th>Path</th></tr></thead>
+      <tbody>
+        <tr><td>Project overview</td><td>README.md</td></tr>
+        <tr><td>Hermes skill</td><td>hermes/aegis-refine/SKILL.md</td></tr>
+        <tr><td>NemoClaw/OpenShell runtime switch</td><td>hermes/operator_bridge.py</td></tr>
+        <tr><td>Backend agent handoff</td><td>backend/app/services/hermes_operator.py</td></tr>
+        <tr><td>Stripe spend verification</td><td>backend/app/services/stripe_spend.py</td></tr>
+        <tr><td>Integration notes</td><td>documents/HERMES_AGENT_INTEGRATION.md</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">// WHAT IS LIVE VS SANDBOX</div>
+    <h2>Runtime is live; Stripe money is sandboxed for the demo.</h2>
+    <div class="grid">
+      <div class="card"><h3>Live</h3><p class="muted">Aegis Refine app, Hermes Agent path, NemoClaw/OpenShell sandbox, NVIDIA inference route, public Aegis-14B model, dataset pipeline, Telegram receipts, and Ed25519 signing.</p></div>
+      <div class="card"><h3>Sandbox/Test</h3><p class="muted">Stripe Checkout and Stripe Connect objects are test-mode objects for the hackathon demo. Receipts store Stripe's own livemode field instead of hardcoding the claim.</p></div>
+      <div class="card"><h3>Next hardening</h3><p class="muted">Enable OpenShell GPU passthrough with NVIDIA Container Toolkit/CDI and cut Stripe to live-mode credentials when the business is ready for real customer money.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px">
+      <span class="mono">AEGIS REFINE · HERMES · NEMOCLAW · STRIPE · FRONTIER INFRA</span>
+      <span><a href="https://frontierinfra.org/" target="_blank" rel="noopener noreferrer">Frontier Infra</a> · <a href="https://huggingface.co/jbrashear/Aegis-14B" target="_blank" rel="noopener noreferrer">Aegis-14B</a> · <a href="docs.html">Docs</a></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+if (window.mermaid) {
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    securityLevel: 'loose',
+    themeVariables: {
+      background: '#0D0F13',
+      primaryColor: '#14161B',
+      primaryTextColor: '#F4F4F5',
+      primaryBorderColor: '#00E5CC',
+      lineColor: '#3A7BFF',
+      secondaryColor: '#101216',
+      tertiaryColor: '#0B0C0E',
+      fontFamily: 'Inter, sans-serif'
+    }
+  });
+}
+</script>
+</body>
+</html>

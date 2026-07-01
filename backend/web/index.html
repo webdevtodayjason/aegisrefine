@@ -53,6 +53,7 @@
     <div style="display:flex;align-items:center;gap:30px">
       <div class="lp-navlinks">
         <a href="#how">How it works</a>
+        <a href="how-we-did-it.html">How we did it</a>
         <a href="#pricing">Pricing</a>
         <a href="docs.html">Docs</a>
       </div>
@@ -65,7 +66,7 @@
     <div>
       <div style="display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid var(--teal-line);border-radius:100px;background:rgba(0,229,204,.06);margin-bottom:26px">
         <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:ag-pulse 2s infinite"></span>
-        <span class="mono muted" style="font-size:11.5px;letter-spacing:.16em;white-space:nowrap">REFINE + SYNTHESIZE · FLAT CAPPED QUOTE · SIGNED PROOF</span>
+        <span class="mono muted" style="font-size:11.5px;letter-spacing:.16em;white-space:nowrap">REFINE + SYNTHESIZE · NEMOCLAW OPERATOR · SIGNED PROOF</span>
       </div>
       <h1 style="font-size:clamp(44px,6vw,78px);line-height:1.02;font-weight:500;letter-spacing:-.02em;margin:0 0 22px">Messy data in.<br><span class="teal">Signed training data out.</span></h1>
       <p class="muted" style="font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:500px;margin:0 0 32px">Refine your data or synthesize new examples — one flat price, quoted up front and capped, with a certificate you can re-verify.</p>
@@ -435,6 +436,7 @@
           <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Clean ShareGPT / ChatML JSONL output</div>
           <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> PII masking, dedup &amp; schema validation</div>
           <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Hermes Agent operates within your cap</div>
+          <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> NemoClaw/OpenShell sandbox path available</div>
           <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Local DGX Spark inference included</div>
           <div style="display:flex;gap:10px;font-size:13.5px;color:#D4D4D8"><span class="teal">✓</span> Signed, re-verifiable certificate</div>
         </div>
@@ -477,13 +479,14 @@
         <div class="muted" style="display:flex;flex-wrap:wrap;gap:22px;font-size:13px">
           <a href="#how">How it works</a>
           <a href="#deliver">Deliverable</a>
+          <a href="how-we-did-it.html">How we did it</a>
           <a href="#pricing">Pricing</a>
           <a href="docs.html">Docs</a>
           <a href="https://frontierinfra.org/" target="_blank" rel="noopener noreferrer">Frontier Infra</a>
           <a href="dashboard.html">Launch app</a>
         </div>
         <div class="mono muted2" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;padding:7px 13px;border:1px solid var(--line-2);border-radius:5px">
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> HERMES AGENT · NEMOTRON · DGX SPARK
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> NEMOCLAW · HERMES · NEMOTRON
         </div>
       </div>
       <div class="mono muted3" style="font-size:10.5px;margin-top:24px">© 2026 Aegis Refine · aegisrefine.com · Hermes Agent operator · Aegis-14B on NVIDIA DGX Spark</div>
@@ -597,7 +600,7 @@ const Demo = (function(){
     if(approving) extra=[{t:"14:41:09",label:"Operator approved top-up — authorizing",actor:"ops@aegisrefine.com",dot:"#22C55E"}];
     if(approved) extra=[
       {t:"14:41:09",label:"Operator approved cap top-up",actor:"ops@aegisrefine.com",dot:"#22C55E"},
-      {t:"14:41:11",label:"Top-up authorized (test stub)",actor:"Stripe",dot:"#F59E0B"},
+      {t:"14:41:11",label:"Top-up authorized (Stripe sandbox)",actor:"Stripe",dot:"#F59E0B"},
       {t:"14:58:07",label:"Refinement completed",actor:"Aegis-14B",dot:"#A1A1AA"},
       {t:"14:58:11",label:"Audit certificate signed",actor:"System",dot:"#3A7BFF"},
     ];

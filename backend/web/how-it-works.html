@@ -68,6 +68,7 @@
     <div style="display:flex;align-items:center;gap:30px">
       <div class="mk-navlinks">
         <a class="on" href="how-it-works.html">How it works</a>
+        <a href="how-we-did-it.html">How we did it</a>
         <a href="pricing.html">Pricing</a>
         <a href="docs.html">Docs</a>
       </div>
@@ -79,10 +80,11 @@
   <header style="text-align:center;max-width:800px;margin:0 auto;padding:clamp(48px,7vw,88px) clamp(20px,5vw,64px) 44px">
     <div class="eyebrow" style="margin-bottom:18px">// HOW IT WORKS</div>
     <h1 style="font-size:clamp(34px,5vw,58px);line-height:1.05;font-weight:500;letter-spacing:-.02em;margin:0 0 18px">How Aegis Refine runs <span class="teal">an agent-operated data business.</span></h1>
-    <p class="muted" style="font-size:clamp(16px,1.7vw,19px);line-height:1.6;margin:0">Customer data goes in, Stripe Checkout earns the capped quote, Hermes Agent operates the job, NVIDIA models make the route and safety decisions, Stripe Connect handles approved spend, and the customer receives a signed dataset certificate.</p>
+    <p class="muted" style="font-size:clamp(16px,1.7vw,19px);line-height:1.6;margin:0">Customer data goes in, Stripe Checkout earns the capped quote, Hermes Agent operates the job through NemoClaw/OpenShell when enabled, NVIDIA models make the route and safety decisions, Stripe Connect handles approved spend, and the customer receives a signed dataset certificate.</p>
     <div class="mk-proofnav">
       <a href="#system-map">SYSTEM MAP</a>
       <a href="#model-roles">MODEL ROLES</a>
+      <a href="#nemoclaw-runtime">NEMOCLAW</a>
       <a href="#money-rails">MONEY RAILS</a>
       <a href="#failure-model">FAIL CLOSED</a>
       <a href="#customer-loop">CUSTOMER LOOP</a>
@@ -101,7 +103,8 @@ flowchart LR
   Order --> Quote["Aegis quote<br/>flat capped price"]
   Quote --> Checkout["Stripe Checkout<br/>earn rail"]
   Checkout --> Job["Paid Job"]
-  Job --> Hermes["Hermes Agent<br/>aegis-refine skill"]
+  Job --> Sandbox["NemoClaw/OpenShell<br/>aegis-hermes sandbox"]
+  Sandbox --> Hermes["Hermes Agent<br/>aegis-refine skill"]
   Hermes --> Ultra["Nemotron 3 Ultra<br/>operations brain"]
   Hermes --> Aegis["Aegis-14B<br/>data governance"]
   Hermes --> Safety["Nemotron 3.5<br/>content safety gate"]
@@ -119,6 +122,35 @@ flowchart LR
     </div>
   </section>
 
+  <!-- NEMOCLAW RUNTIME -->
+  <section id="nemoclaw-runtime" class="mk-section">
+    <div class="mk-grid-2">
+      <div>
+        <div class="mono" style="font-size:12px;letter-spacing:.2em;color:var(--green);margin-bottom:16px">// NEMOCLAW / OPENSHELL</div>
+        <h2 style="font-size:clamp(24px,3vw,34px);line-height:1.16;font-weight:500;letter-spacing:-.015em;margin:0 0 14px">Hermes can run inside a live NemoClaw/OpenShell sandbox.</h2>
+        <p class="muted" style="font-size:15px;line-height:1.65;margin:0 0 18px">The Dell R750 hosts a sandbox named <span class="mono teal">aegis-hermes</span>. The private operator bridge sends the same bounded job payload into that sandbox with <span class="mono">nemohermes exec</span>, where Hermes loads the <span class="mono">aegis-refine</span> skill. Receipts record the runtime mode, sandbox name, and runtime-configured NVIDIA inference model.</p>
+        <div style="display:grid;gap:10px">
+          <div class="mk-fact"><div class="k">CODE PATH</div><div class="v"><span class="teal">hermes/operator_bridge.py</span> switches between local, NemoClaw, and OpenShell modes with <span class="mono">HERMES_OPERATOR_RUNTIME</span>.</div></div>
+          <div class="mk-fact"><div class="k">SKILL</div><div class="v"><span class="teal">hermes/aegis-refine/SKILL.md</span> defines the operator task schema and fail-closed receipt contract.</div></div>
+          <div class="mk-fact"><div class="k">LIVE SANDBOX</div><div class="v"><span class="teal">aegis-hermes</span> runs on the Dell R750 through NemoClaw/OpenShell for the demo operator path.</div></div>
+          <div class="mk-fact"><div class="k">GPU NOTE</div><div class="v">The host detects the NVIDIA A40; sandbox GPU passthrough is documented as follow-up pending NVIDIA Container Toolkit/CDI setup.</div></div>
+        </div>
+      </div>
+      <div class="mk-diagram-wrap">
+        <pre class="mermaid">
+flowchart TB
+  Backend["Aegis backend<br/>paid job payload"] --> Bridge["Hermes operator bridge<br/>auth + bounded prompt"]
+  Bridge --> Nemo["NemoClaw/OpenShell<br/>aegis-hermes sandbox"]
+  Nemo --> Hermes["Hermes Agent<br/>--skills aegis-refine"]
+  Hermes --> Broker["inference.local<br/>host-managed broker"]
+  Broker --> Nvidia["NVIDIA Endpoints<br/>Nemotron route"]
+  Hermes --> Receipt["operator receipt<br/>runtime + model + route"]
+  Receipt --> Backend
+        </pre>
+      </div>
+    </div>
+  </section>
+
   <!-- MODEL ROLES -->
   <section id="model-roles" class="mk-section">
     <div class="mk-grid-2">
@@ -128,6 +160,7 @@ flowchart LR
         <p class="muted" style="font-size:15px;line-height:1.65;margin:0 0 18px">The receipt names the actual model used. Ultra is the primary operations brain; Nano is only a latency fallback when recorded as such. If the content-safety model did not inspect raw evidence, the receipt says metadata-only or pending.</p>
         <div style="display:grid;gap:10px">
           <div class="mk-fact"><div class="k">OPERATOR</div><div class="v"><span class="teal">Hermes Agent</span> loads the Aegis Refine skill and executes the business process.</div></div>
+          <div class="mk-fact"><div class="k">SANDBOX RUNTIME</div><div class="v"><span class="teal">NemoClaw/OpenShell</span> runs the Hermes operator path when <span class="mono">HERMES_OPERATOR_RUNTIME=nemoclaw</span>.</div></div>
           <div class="mk-fact"><div class="k">DATA GOVERNANCE</div><div class="v"><span class="teal">Aegis-14B</span>, trained from Hermes 14B, judges dataset quality, risk, and refinement route.</div></div>
           <div class="mk-fact"><div class="k">OPERATIONS BRAIN</div><div class="v"><span class="teal">nvidia/nemotron-3-ultra-550b-a55b</span> makes routing, cap, and spend decisions.</div></div>
           <div class="mk-fact"><div class="k">SAFETY GATE</div><div class="v"><span class="teal">nvidia/nemotron-3.5-content-safety</span> is the PII and unsafe-content review layer when evidence is available.</div></div>
@@ -136,7 +169,8 @@ flowchart LR
       <div class="mk-diagram-wrap">
         <pre class="mermaid">
 flowchart TB
-  Hermes["Hermes Agent<br/>operator runtime"] --> Skill["aegis-refine skill"]
+  Runtime["NemoClaw/OpenShell<br/>sandbox runtime"] --> Hermes["Hermes Agent<br/>operator runtime"]
+  Hermes --> Skill["aegis-refine skill"]
   Skill --> Ultra["Nemotron 3 Ultra<br/>routing + cap decisions"]
   Skill --> Aegis["Aegis-14B<br/>dataset governance"]
   Skill --> Safety["Nemotron 3.5 Content Safety<br/>PII and unsafe-content gate"]
@@ -280,8 +314,8 @@ flowchart TB
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:22px;padding:30px;border-radius:16px;background:linear-gradient(135deg,rgba(58,123,255,0.06),#16161A);border:1px solid rgba(58,123,255,0.25)">
       <span style="width:56px;height:56px;flex-shrink:0;border-radius:12px;background:rgba(58,123,255,0.1);border:1px solid rgba(58,123,255,0.4);display:flex;align-items:center;justify-content:center;color:#3A7BFF;font-size:24px">▰</span>
       <div style="flex:1;min-width:280px">
-        <h3 style="font-size:20px;font-weight:600;margin:0 0 8px">Bulk work runs on NVIDIA DGX Spark</h3>
-        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">The custom Aegis-14B model governs every job from local inference — fast, private, zero-marginal-cost refinement and synthesis with strong data residency. Paid external APIs are reserved for the rare cases that justify them, and only within the budget you approved.</p>
+        <h3 style="font-size:20px;font-weight:600;margin:0 0 8px">Bulk work runs on NVIDIA DGX Spark and Hermes can run through NemoClaw/OpenShell</h3>
+        <p class="muted" style="font-size:14.5px;line-height:1.6;margin:0">The custom Aegis-14B model governs every job from local inference. The Hermes operator path can be sandboxed through NemoClaw/OpenShell, while paid external APIs are reserved for cases that justify them and only within the budget you approved.</p>
       </div>
       <div class="mono" style="font-size:11px;color:#3A7BFF;letter-spacing:.08em">LOCAL-FIRST · SPARK 1</div>
     </div>
@@ -298,12 +332,13 @@ flowchart TB
         <a class="mk-brand" href="index.html"><img src="assets/shield.svg" alt="Aegis" style="width:26px;height:26px"><b style="font-size:14px">AEGIS<span class="teal">&nbsp;REFINE</span></b></a>
         <div class="mk-foot-links">
           <a href="how-it-works.html">How it works</a>
+          <a href="how-we-did-it.html">How we did it</a>
           <a href="pricing.html">Pricing</a>
           <a href="docs.html">Docs</a>
           <a href="https://frontierinfra.org/" target="_blank" rel="noopener noreferrer">Frontier Infra</a>
           <a href="dashboard.html">Launch app</a>
         </div>
-        <div class="mono muted2" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;padding:7px 13px;border:1px solid rgba(255,255,255,0.1);border-radius:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> RUNNING ON NVIDIA DGX SPARK</div>
+        <div class="mono muted2" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;padding:7px 13px;border:1px solid rgba(255,255,255,0.1);border-radius:5px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)"></span> NEMOCLAW · HERMES · NVIDIA</div>
       </div>
     </div>
 </footer>
